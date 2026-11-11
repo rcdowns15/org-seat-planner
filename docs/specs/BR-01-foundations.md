@@ -63,7 +63,8 @@ Planner · Second Republic Bank (fictional)". Update `.gitignore` if needed.
 - [ ] `pnpm test` runs at least one real unit test (e.g. a `formatSeatStatus` helper), not just a placeholder `expect(true)`
 - [ ] `pnpm test:e2e` starts the app and asserts the home page heading text
 - [ ] `tsconfig.json` has `"strict": true`; `.nvmrc` and `packageManager` are set
-Likely files: `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `.prettierrc`, `vitest.config.ts`, `playwright.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/*`, `tests/unit/*`, `tests/e2e/home.spec.ts`, `.nvmrc`.
+- [ ] `vercel.json` sets `"framework": "nextjs"` (the Vercel project was created before the app existed, so its preset is "Other"), and the Vercel preview deployment for this PR builds successfully
+Likely files: `vercel.json`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `.prettierrc`, `vitest.config.ts`, `playwright.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/*`, `tests/unit/*`, `tests/e2e/home.spec.ts`, `.nvmrc`.
 
 ### LR-01-03 · CI workflow · status: todo · depends: LR-01-02 · owner: agent · executor model: sonnet
 GitHub Actions `ci.yml` on `pull_request` and pushes to `main`: install with the pinned pnpm and
@@ -86,10 +87,15 @@ exists). `.env.example` documents every variable with localhost or placeholder v
 - [ ] `src/server/db.ts` starts with `import "server-only"`; no client component imports it (lint rule or test)
 Likely files: `docker-compose.yml`, `db/init/01-schemas.sql`, `src/server/db.ts`, `src/app/api/health/route.ts`, `.env.example`, `vitest.config.ts`, `tests/db/connection.test.ts`.
 
-### LR-01-05 · Link Vercel and Neon · status: todo · depends: LR-01-04 · owner: rob · executor model: —
-Import the GitHub repo into Vercel. Add Neon through the Vercel Marketplace integration (creates
-`DATABASE_URL` and `DATABASE_URL_UNPOOLED`). Create the `app`, `workday` and `analytics` schemas on
-Neon (paste `db/init/01-schemas.sql` into the Neon SQL editor). Set `DEMO_MODE=true` in Vercel.
+### LR-01-05 · Link Vercel and Neon · status: in-progress · depends: LR-01-04 (final check only) · owner: rob · executor model: —
+Linking done 2026-11-11 (ahead of LR-01-04): Vercel project `rob-c8e4/org-seat-planner`, connected
+to the GitHub repo (pushes to `main` deploy to production, PRs get previews). Neon resource
+`org-seat-planner-db` was provisioned through the Vercel Marketplace and connected, which set
+`DATABASE_URL`, `DATABASE_URL_UNPOOLED` and the `PG*` / `POSTGRES_*` variables for all
+environments. `DEMO_MODE=true` is set for production and preview. Schemas are **not** created by
+hand: the migrations create `app`, `workday` and `analytics` (LR-01-06), and `db-deploy` runs them
+on Neon (LR-01-09). Remaining: the health check once LR-01-04 is deployed.
+- [x] Vercel project linked to GitHub; Neon connected; `DEMO_MODE` set
 - [ ] The production URL's `/api/health` returns `200` with `"db":"ok"`
 - [ ] Production URL recorded in `docs/PROGRESS.md` and the README
 - [ ] No connection string committed anywhere (`git grep -n "neon.tech"` returns nothing)
@@ -115,7 +121,7 @@ Constraints: partial unique index on `seats(worker_id) WHERE worker_id IS NOT NU
 constraints for enums and for "filled ⇔ worker_id not null"; foreign keys. A custom migration adds a
 trigger that raises on `UPDATE` or `DELETE` of `app.seat_changes`. Write `docs/data-model.md` with
 a Mermaid ER diagram and one line per table.
-- [ ] `pnpm db:migrate` on an empty DB succeeds; running it again is a no-op
+- [ ] `pnpm db:migrate` on an empty DB (no schemas) succeeds and creates `app`, `workday` and `analytics` (`CREATE SCHEMA IF NOT EXISTS` in the first migration, so Neon needs no manual setup); running it again is a no-op
 - [ ] `pnpm test:db`: inserting a second seat for the same worker fails with a unique violation
 - [ ] `pnpm test:db`: `UPDATE` and `DELETE` on `app.seat_changes` both raise
 - [ ] `pnpm test:db`: an invalid status, and a `filled` seat with a null worker, are both rejected
