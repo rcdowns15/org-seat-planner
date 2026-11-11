@@ -2,6 +2,7 @@
 
 Good ideas, not now. Navigator adds here instead of expanding scope.
 
+- **Seat ↔ Workday position link** (D-029) — add `position_id` to `app.seats` and reconcile by position as well as by worker. Open design questions: does a saved move change the worker's Workday position, or only the plan until HR acts? Who creates the position for a new open seat? What's the exception when the plan and HRIS disagree on a position? Back with BR-07 (multi-source reconciliation).
 - **Real authentication (SSO / NextAuth)** — mock "acting as" shows the authorization logic, which is the interesting part. Back if the demo ever holds non-mock data.
 - **Postgres row-level security** for leader scopes — a strong second line of defense; covered in the write-back explainer as the production answer. Back after BR-07 roles.
 - **As-of-date board with pending future-dated moves** — more realistic effective dating (D-012). Back after the interview if the board feels too simple.

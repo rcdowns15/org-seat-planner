@@ -167,3 +167,15 @@ reloads idempotent. A reader interface lets a RaaS/API reader (BR-07) replace th
 changing anything downstream. TypeScript keeps one language across app, seed and ingest; dbt holds
 the transforms in SQL.
 **Alternatives:** seed writes typed Workday tables directly (no ingestion story); Python ingest in `analytics/` (a second language for the same team; reasonable, parked).
+
+### D-029 · 2026-11-11 · accepted (Rob, 2026-11-11) · Workday report carries Position_ID, Cost_Center and Location; seats are not linked to Workday positions before the interview
+**Why:** these are standard columns on a real Workday worker report, and a reviewer who knows
+Workday would notice them missing. They're cheap to add (LR-01-06 schema, LR-01-07 seed, LR-03-02
+staging casts) and give the pipeline more real cleaning to do. Linking `app.seats` to Workday
+positions is a different kind of change: it needs answers to when a move changes a Workday position,
+who creates the position behind a new open seat, and how to reconcile when the plan and HRIS disagree
+on a position. That's a new reconciliation dimension on the critical path of a 4-day timeline, so
+it's parked (see `PARKING_LOT.md`, back with BR-07). Until then, seats match Workday by `worker_id`
+only, and the README says so.
+**Alternatives:** no new columns (less realistic report); full seat ↔ position link now (too much
+design and risk before the interview).

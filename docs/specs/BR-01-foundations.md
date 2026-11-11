@@ -106,8 +106,10 @@ Define the data model in Drizzle and generate migrations (see D-010 and the "Dom
 `CLAUDE.md`):
 - `workday.workers`: the typed, current view of Workday (worker_id, names, email, worker_type
   `employee|contingent`, status `active|leave|terminated`, hire_date, termination_date,
-  manager_worker_id, job_title, supervisory_org, as_of_report_date, updated_at). BR-03 adds the raw
-  report landing tables.
+  manager_worker_id, job_title, supervisory_org, position_id, cost_center, location,
+  as_of_report_date, updated_at). BR-03 adds the raw report landing tables. `position_id` is
+  unique among non-terminated workers and is **not** linked to `app.seats` (D-029): seats match
+  Workday by `worker_id` only.
 - `app.divisions`, `app.groups`, `app.squads` (explicit three-level hierarchy)
 - `app.leaders` (leader_id, worker_id, display name, scope_type `division|group`, scope_id)
 - `app.seats` (seat_id, squad_id, seat_type `employee|contingent`, status
@@ -125,6 +127,7 @@ a Mermaid ER diagram and one line per table.
 - [ ] `pnpm test:db`: inserting a second seat for the same worker fails with a unique violation
 - [ ] `pnpm test:db`: `UPDATE` and `DELETE` on `app.seat_changes` both raise
 - [ ] `pnpm test:db`: an invalid status, and a `filled` seat with a null worker, are both rejected
+- [ ] `workday.workers` has `position_id`, `cost_center` and `location` columns; `app.seats` has no position column (D-029)
 - [ ] `docs/data-model.md` lists every table and column created by the migrations
 Likely files: `db/schema/app.ts`, `db/schema/workday.ts`, `db/migrations/*`, `drizzle.config.ts`, `tests/db/constraints.test.ts`, `docs/data-model.md`.
 
@@ -144,7 +147,11 @@ From the same generated data, the seed also writes two mock **Workday custom rep
 the seeded state) and `worker_report_2026-11-15.csv` (the next biweekly report: a handful of hires,
 terminations including seated workers, manager changes, a leave). The reports use Workday-style
 formats on purpose (`Last, First` names, `MM/DD/YYYY` dates, status text like `On Leave`, a
-`Worker_Type` of `Employee` / `Contingent Worker`) so BR-03 has real cleaning to do. In this little
+`Worker_Type` of `Employee` / `Contingent Worker`) so BR-03 has real cleaning to do. The report also
+carries `Position_ID` (Workday-style, e.g. `P-004217`; one per worker, and a new hire in the 11-15
+report gets a new one), `Cost_Center` (one per group, shown Workday-style as
+`CC-1040 Platform Engineering`, using the fictional group name), and `Location` (a short fixed list
+of office cities plus `Remote`; no company or building names). In this little
 rock the seed writes `workday.workers` directly; LR-03-01 switches it to load through the ingest
 script.
 - [ ] Running `pnpm db:seed` twice prints the same checksum (test)
@@ -152,7 +159,7 @@ script.
 - [ ] Every named demo fixture exists (test looks each one up by its documented key)
 - [ ] Both report CSVs are written, byte-identical across runs (hash test); the 11-15 report's differences from 11-01 match the documented change list in `scripts/seed/README.md`
 - [ ] `scripts/seed/README.md` documents the worker report layout, modeled on a typical Workday worker custom report: one row per column with column name, format and example value, plus one full sample row. A test asserts that the generated CSV header matches the documented column list exactly, in order. Rob approves the layout during PR review.
-- [ ] Plausibility test over the seeded workers: every manager has 3–15 direct reports; following `manager_worker_id` from any worker reaches the top without a cycle; every `hire_date` is before the report date; every `termination_date` is on or after its `hire_date`; only `terminated` workers have a `termination_date`
+- [ ] Plausibility test over the seeded workers: every manager has 3–15 direct reports; following `manager_worker_id` from any worker reaches the top without a cycle; every `hire_date` is before the report date; every `termination_date` is on or after its `hire_date`; only `terminated` workers have a `termination_date`; every worker has a non-empty `position_id`, `cost_center` and `location`; no two non-terminated workers share a `position_id`; every worker's `cost_center` is the one assigned to their seat's group (workers without a seat are exempt)
 - [ ] `git grep -niE "inc\.|llc|corp"` over `scripts/seed` finds no company-like names other than Second Republic Bank
 - [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) and the `CLAUDE.md` rule, never seed data, UI, fixtures or the README
 Likely files: `scripts/seed/index.ts`, `scripts/seed/org.ts`, `scripts/seed/workers.ts`, `scripts/seed/seats.ts`, `scripts/seed/names.ts`, `scripts/seed/workday-reports.ts`, `scripts/seed/README.md`, `tests/db/seed.test.ts`, `package.json`.
