@@ -1,0 +1,14 @@
+# Written by Copier from the code/ harness. Do not edit by hand; run `uv run scripts/harness.py update <folder>`.
+_commit: d462403
+_src_path: C:\Users\robdo\code
+codex_model: gpt-6-luna
+description: A portfolio demo where engineering leaders edit org and seat data in
+    a write-back app, a dbt pipeline models it, and a semantic layer serves consistent
+    headcount metrics. Fictional company (Northwind Financial), mock data only.
+executor_model: claude-sonnet-5-5
+github_user: rcdowns15
+main_model: claude-opus-5-5
+owner_name: Rob
+project_name: Org Seat Planner
+project_slug: hr-app
+stack: none

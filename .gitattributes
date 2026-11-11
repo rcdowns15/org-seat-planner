@@ -1,0 +1,11 @@
+# Normalize line endings: LF in the repo and the working tree, on every OS.
+# Stops CRLF churn and conflict markers that survive CRLF rebases (LESSONS.md, 2026-10-06).
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Raw fixtures are hashed in their manifests: keep exact bytes, never convert line endings.
+tests/fixtures/raw/** -text

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# uv
+.venv/
+
+# Secrets
+.env
+
+# Local data
+data/*
+!data/.gitkeep
+*.duckdb
+*.duckdb.wal
+
+# OS
+.DS_Store
+
+# Agent worktrees
+.claude/worktrees/
+.claude/settings.local.json
