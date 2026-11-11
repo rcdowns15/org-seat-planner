@@ -42,13 +42,13 @@ Checked 2026-11-11: Docker missing, `LongPathsEnabled = 0`, pnpm missing; Node 2
 - [ ] `(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem").LongPathsEnabled` returns `1`
 - [ ] `pnpm --version` prints a version
 
-### LR-01-01 · Create the GitHub repo · status: todo · depends: — · owner: rob · executor model: —
-Create a public GitHub repo named `org-seat-planner` (local folder stays `hr-app`), add it as `origin`,
-push `main`. Turn on branch protection for `main`: require a PR (and, once LR-01-03 merges, require
-the CI check).
-- [ ] `gh repo view --json visibility,name` shows `PUBLIC`
-- [ ] `git push` to `main` directly is rejected; a PR is required
-- [ ] Repo description mentions "fictional company, mock data"
+### LR-01-01 · Create the GitHub repo · status: done · depends: — · owner: rob · executor model: —
+Created 2026-11-11: https://github.com/rcdowns15/org-seat-planner (public, `main` pushed, `origin` set).
+Branch protection is deliberately **not** on yet: the orchestrator commits plan-status updates
+directly to `main` with Rob's credentials, and a "require PR" rule would either block that or be
+bypassed as admin anyway. Revisit after LR-01-03 (option: a ruleset requiring the CI check on PRs only).
+- [x] `gh repo view --json visibility,name` shows `PUBLIC`
+- [x] Repo description mentions "fictional company, mock data"
 Likely files: none (GitHub settings).
 
 ### LR-01-02 · Next.js TypeScript scaffold and tooling · status: todo · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
