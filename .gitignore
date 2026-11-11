@@ -39,6 +39,7 @@ logs/
 # Local data
 data/*
 !data/.gitkeep
+data/workday/
 
 # OS / editors
 .DS_Store

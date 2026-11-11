@@ -49,7 +49,7 @@ Rules:
 - **Commit the doc changes** after every plan change.
 - **The cut line is protected.** Adding anything above the cut line pushes something else below it, and the navigator says what.
 
-## Stack (details and reasons in `docs/DECISIONS.md`; all `proposed` until Rob confirms)
+## Stack (details and reasons in `docs/DECISIONS.md`; accepted 2026-11-11)
 - **App:** Next.js (App Router) in **TypeScript** (strict) at the repo root, pnpm, Tailwind + shadcn/ui, dnd-kit, Zod, Drizzle ORM + drizzle-kit migrations, node-postgres (`pg`) driver. Deployed on Vercel.
 - **Database:** Postgres 16. Local: Docker Compose. Deployed: Neon via the Vercel integration. Schemas: `app` (seat planner), `workday` (mock HRIS, read-only to the app), `analytics` (dbt marts; dbt also writes `analytics_staging`, `analytics_intermediate`, `snapshots`).
 - **Mock data:** deterministic TypeScript generator using `@faker-js/faker` with a fixed seed.

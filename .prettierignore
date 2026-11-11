@@ -1,0 +1,13 @@
+docs/
+.claude/
+.next/
+out/
+node_modules/
+coverage/
+test-results/
+playwright-report/
+pnpm-lock.yaml
+next-env.d.ts
+data/
+.copier-answers.yml
+CLAUDE.md

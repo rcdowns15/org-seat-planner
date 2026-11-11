@@ -13,10 +13,26 @@ changes, exceptions to drive to zero).
 > arrive in BR-04. See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for scope and status.
 
 ## Planned stack
+
 Next.js (TypeScript) · Tailwind + shadcn/ui · dnd-kit · Zod · Drizzle · Postgres (Docker / Neon) ·
 Vercel · dbt-core + MetricFlow · GitHub Actions. Reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
+## Development
+
+Needs Node 24 (`.nvmrc`) and pnpm (`corepack enable`; version pinned in `package.json`).
+
+```
+pnpm install
+pnpm dev          # http://localhost:3000
+pnpm lint         # ESLint + Prettier check
+pnpm typecheck
+pnpm test         # Vitest unit tests
+pnpm test:e2e     # Playwright (first run: pnpm exec playwright install chromium)
+pnpm build
+```
+
 ## Working in this repo with Claude Code
+
 - Talk through progress and ideas: `claude --agent navigator`
 - Run a navigator brief: `claude --agent orchestrator`, then paste the brief
 - Do a specific little rock directly: in a normal `claude` session, `@agent-executor do LR-01-02`
