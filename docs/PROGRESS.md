@@ -3,17 +3,24 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-11 · scaffold
-- **Milestone:** M0 — Scaffolded
+- **Last updated:** 2026-11-11 · planning session
+- **Milestone:** M0 — Planned (interview Mon 2026-11-16; cut line BR-01–BR-04 by Sun 11/15 noon)
 - **In flight:** none
 - **Blocked:** none
-- **Waiting on Rob:** write the north star and big rocks in `docs/MASTER_PLAN.md` (with the navigator)
-- **Next:** LR-01-01 · owner: orchestrator
+- **Waiting on Rob:** confirm the `proposed` decisions in `docs/DECISIONS.md` (D-001–D-028); answer the open questions from the planning report; LR-01-01 (create the GitHub repo)
+- **Next:** LR-01-02 (Next.js scaffold) · owner: orchestrator, once LR-01-01 is done
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
+## Production
+- Live URL: (set in LR-01-05)
+- GitHub repo: (set in LR-01-01)
+
 ## Runbook
-- (failure mode → what you'll see → what to do)
+- Neon cold start → first request after idle takes a few seconds → load the board once before demoing.
+- Demo data messed up by visitors → board looks wrong → "Reset demo data" button, or run `db-deploy` with `reseed: true`.
+- `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
-- 2026-11-11 — Repo scaffolded from the harness template.
+- 2026-11-11 — Repo scaffolded from the harness template (docs and agents only).
+- 2026-11-11 — Planning session: master plan, eight big rock specs, decisions D-001–D-028 (all proposed), parking lot. Re-cut for a 4-day timeline as a thin slice through every layer (write-back, Workday ingestion, dbt reconciliation); read-only SQL panel added (LR-02-08) at Rob's request; undo and audit page moved after the interview.

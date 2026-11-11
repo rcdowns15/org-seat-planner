@@ -1,23 +1,51 @@
-# Python
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+.pnpm-store/
+npm-debug.log*
+pnpm-debug.log*
+
+# Tests
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Vercel
+.vercel/
+
+# Python / uv (analytics/)
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
-
-# uv
 .venv/
+
+# dbt
+analytics/target/
+analytics/dbt_packages/
+analytics/logs/
+logs/
 
 # Secrets
 .env
+.env.*
+!.env.example
 
 # Local data
 data/*
 !data/.gitkeep
-*.duckdb
-*.duckdb.wal
 
-# OS
+# OS / editors
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
 
 # Agent worktrees
 .claude/worktrees/

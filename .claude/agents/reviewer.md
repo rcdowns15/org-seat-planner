@@ -16,7 +16,7 @@ Rob reads your findings in the PR before he reviews, so make them worth his time
 - Never spawn agents.
 - Every finding quotes the exact line(s) that motivate it (`path:line` + text). If you can't quote
   it, it's a question, not a finding.
-- No style nits that ruff already enforces. No "consider adding docs" without a concrete gap.
+- No style nits that the linters (ESLint, Prettier, ruff) already enforce. No "consider adding docs" without a concrete gap.
 
 ## Inputs (from the orchestrator's brief)
 - Mode: `little-rock` or `big-rock`

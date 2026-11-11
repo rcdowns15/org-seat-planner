@@ -1,0 +1,105 @@
+# BR-03 — Workday ingestion and reconciliation (thin pipeline slice)
+
+**Status:** todo · **Depends on:** BR-01 (can run in parallel with BR-02) · **Milestone:** M3 · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** yes
+
+## Goal
+A biweekly mock Workday custom report (CSV) is validated and ingested into a raw landing table and a
+typed current table. dbt cleans it, then compares HRIS facts with the leaders' seat plan to produce
+three outputs: squad headcount vs. the approved plan, what changed since the last report, and
+reconciliation exceptions. One command, `pnpm pipeline`, runs ingest → dbt build. The design lets a
+real Workday RaaS/API pull replace the CSV reader without changing anything downstream.
+
+## Why it matters
+People-data work is mostly this: take a messy HRIS extract, clean it repeatably, reconcile it with
+the plan, and drive the gaps to zero. Paired with BR-02, the demo covers both halves of the job:
+leaders edit the plan, and the pipeline checks the plan against the HRIS.
+
+## Scope
+In: report ingestion with file-level validation, raw + current tables, ingest run log, dbt project
+(sources, staging, two dims, three reports), grain and custom tests, `pnpm pipeline`, CI dbt job,
+manual dbt-on-Neon workflow, SQL panel presets for the marts.
+Out: 18 months of history, snapshots and daily facts (BR-05), semantic layer (BR-06), live API
+client, other sources (TA, FP&A) and an exceptions UI (BR-07), dashboard (BR-08).
+
+## Key risks / open questions
+- Keep it small: three marts plus two dims. Resist adding more models before the interview.
+- "Terminated worker still seated" is supposed to show up as an exception: that's the demo. It's a
+  report row, not a failing test. An error-level test checks the report catches every seeded case.
+
+## Exit criteria
+- `pnpm pipeline` on a fresh local DB ingests the 11-01 report, then the 11-15 report, and
+  `dbt build` passes, all from a single command.
+- After the 11-15 report, `rpt_reconciliation_exceptions` lists exactly the seeded exceptions, and
+  `rpt_workday_changes` lists exactly the documented changes.
+- The dbt CI job is green; the manual dbt-on-Neon workflow is green; the SQL panel shows both marts on production.
+
+## Little rocks
+Parallel: LR-03-01 and LR-03-02 together (different folders). LR-03-03 needs LR-03-02 and LR-03-04
+needs LR-03-01 and LR-03-03.
+
+### LR-03-01 · Workday report ingestion with validation · status: todo · depends: LR-01-07 · owner: agent · executor model: sonnet
+`pnpm workday:ingest <file>` (code in `scripts/ingest/`, written as a reader interface with a CSV
+implementation, so an API reader can replace it later). Steps:
+1. Validate the whole file before loading anything: required columns present, `Employee_ID`
+   unique and non-empty, dates parse, status and worker-type values in the known set, the report
+   date taken from the file name. Any failure rejects the whole file with a readable report and loads nothing.
+2. Load every row as text into `workday.raw_worker_report` (plus `report_date`, `source_file`,
+   `file_sha256`, `loaded_at`). Loading the same file twice is a no-op (by hash).
+3. Upsert the typed `workday.workers` current table from the report.
+4. Record the run in `workday.ingest_runs` (file, hash, row count, status, rejection reasons).
+
+Switch `pnpm db:seed` to load Workday through this script.
+- [ ] DB test: ingesting 11-01 then 11-15 gives the expected row counts in raw (both reports) and current tables
+- [ ] DB test: re-ingesting the same file changes nothing and records a `skipped` run
+- [ ] Unit tests: a file with a duplicate ID, a missing column, a bad date, or an unknown status is rejected with a message naming the row and column; nothing is loaded
+- [ ] Seed checksum from LR-01-07 is unchanged after the switch
+Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
+
+### LR-03-02 · dbt project, sources and staging · status: todo · depends: LR-01-08 · owner: agent · executor model: sonnet
+`analytics/` as a uv project (`pyproject.toml`, `uv.lock`, `.python-version`) with dbt-core and
+dbt-postgres pinned. `profiles.yml` reads `DBT_*` env vars. Custom schema naming (`analytics_staging`,
+`analytics_intermediate`, `analytics`). Sources for `workday.raw_worker_report`,
+`workday.ingest_runs` and the `app` tables, with key tests. Staging: `stg_workday__worker_report`
+does the Workday report transforms (split `Last, First`, parse `MM/DD/YYYY`, map status and worker
+type text to enums, trim and normalize IDs), one `stg_app__*` model per app table. CI job: Postgres
+service → migrate → seed → `uv run dbt build`.
+- [ ] `cd analytics && uv run dbt build` passes locally and in CI
+- [ ] Every staging model has a description and key tests; every enum has `accepted_values`
+- [ ] A singular test proves the cleaning: every raw row maps to exactly one staged row, with no null status or type
+- [ ] No credentials in `profiles.yml` (env vars only)
+Likely files: `analytics/pyproject.toml`, `analytics/uv.lock`, `analytics/.python-version`, `analytics/dbt_project.yml`, `analytics/profiles.yml`, `analytics/macros/generate_schema_name.sql`, `analytics/models/staging/**`, `.github/workflows/ci.yml`.
+
+### LR-03-03 · Dimensions, squad headcount vs. plan, and custom tests · status: todo · depends: LR-03-02 · owner: agent · executor model: sonnet
+`dim_squads` (squad with group and division), `dim_people` (latest report per worker plus current
+seat). `rpt_squad_headcount` (grain: squad × report date): filled employee seats, filled contingent
+seats, open, backfill, offer accepted, approved plan for that quarter, variance, fill rate. Custom
+tests: `no_double_seating` (error), `squad_not_over_plan` (error: filled + offer accepted ≤ approved).
+- [ ] Grain tests on all three models (`unique` / `not_null`, or `unique_combination_of_columns`)
+- [ ] Singular test: `rpt_squad_headcount` totals for the latest report equal live counts from `app.seats`
+- [ ] Each custom test fails on a hand-made bad row (show the failing run in the PR) and passes on the seed
+Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_squads.sql`, `analytics/models/marts/dim_people.sql`, `analytics/models/marts/rpt_squad_headcount.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
+
+### LR-03-04 · Refresh changes and reconciliation exceptions · status: todo · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
+`rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
+(hire, termination, manager change, worker-type change, leave start/end). `rpt_reconciliation_exceptions`
+(grain: exception type × worker), comparing the latest report with the seat plan: terminated in
+Workday but still seated; seated but missing from the report; worker type doesn't match seat type;
+on leave and seated (info severity). Each row has a severity and a suggested action.
+- [ ] After both reports: `rpt_workday_changes` matches the change list documented in `scripts/seed/README.md` exactly (singular test)
+- [ ] `rpt_reconciliation_exceptions` contains each seeded exception exactly once (singular test), and nothing else on the seed
+- [ ] Error-level test: every seated worker whose latest status is `terminated` appears in the exceptions report
+- [ ] Every model has a description; grain tests on both reports
+Likely files: `analytics/models/intermediate/int_worker_report_versions.sql`, `analytics/models/marts/rpt_workday_changes.sql`, `analytics/models/marts/rpt_reconciliation_exceptions.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
+
+### LR-03-05 · `pnpm pipeline`, dbt on Neon, SQL panel presets · status: todo · depends: LR-03-04, LR-02-08, LR-01-09 · owner: agent · executor model: sonnet
+`pnpm pipeline [--report <file>]`: ingest the given (or latest) report → `uv run dbt build`, stopping
+at the first failure and printing a summary (rows ingested, models built, tests passed, exception
+counts by type). `pipeline.yml` (manual `workflow_dispatch`) runs the same against Neon with the
+`DBT_*` and `NEON_DATABASE_URL_UNPOOLED` secrets. Add three read-only presets to the SQL panel:
+reconciliation exceptions, latest Workday changes, squad headcount vs. plan (with a friendly message
+if `analytics` is empty). Write `docs/orchestration.md`: each pipeline step mapped to the Airflow
+task it would be in production (sensor on the report, ingest, dbt build, alert on exceptions).
+- [ ] `pnpm pipeline` on a freshly seeded DB runs both reports and prints the summary; a failing dbt test makes it exit non-zero (test)
+- [ ] A `pipeline.yml` run against Neon is green (link it)
+- [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
+Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
