@@ -40,7 +40,8 @@ Checked 2026-11-11: Docker missing, `LongPathsEnabled = 0`, pnpm missing; Node 2
 3. `corepack enable` (provides pnpm; LR-01-02 pins the exact version in `packageManager`).
 - [ ] `docker run --rm hello-world` succeeds
 - [x] `(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem").LongPathsEnabled` returns `1` (done 2026-11-11; takes full effect after a restart)
-- [ ] `pnpm --version` prints a version
+- [x] `pnpm --version` prints a version (12.18.0 via corepack, 2026-11-11)
+Status 2026-11-11: Docker Desktop 4.99.0 and WSL 2 installed; a Windows restart is needed before `docker run --rm hello-world` can pass.
 
 ### LR-01-01 · Create the GitHub repo · status: done · depends: — · owner: rob · executor model: —
 Created 2026-11-11: https://github.com/rcdowns15/org-seat-planner (public, `main` pushed, `origin` set).
