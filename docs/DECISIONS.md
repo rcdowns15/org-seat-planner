@@ -62,7 +62,7 @@ trigger and grants block `UPDATE`/`DELETE`, so history can't be rewritten; undo 
 write fit. `UPDATE ... WHERE version = $n` affecting 0 rows → `CONFLICT` → rollback and a refresh prompt.
 **Alternatives:** `SELECT ... FOR UPDATE` held across a user's think time (impossible over HTTP), last-write-wins (silently loses edits).
 
-### D-012 · 2026-11-11 · proposed · Effective dates: today to +90 days, no backdating; the board shows the planned state as soon as a move is saved
+### D-012 · 2026-11-11 · accepted (Rob, 2026-11-11) · Effective dates: today to +90 days, no backdating; the board shows the planned state as soon as a move is saved
 **Why:** this is a planning tool, so the board is the plan of record. `effective_date` is stored on
 every change for analytics (when the move counts in headcount). Allowing backdating would
 rewrite history that dbt has already modeled.

@@ -55,8 +55,11 @@ Executors write the code. Rob's time goes into `rob`-owned setup, reviewing and 
 
 Estimates: ~25 min per PR review, ~2.5 h of `rob` setup tasks, ~3 h of orchestrator and navigator
 time, ~4–5 h of rehearsal and explainer study. **This is tight.** It fits only if Rob has about 5
-hours a day, BR-02 and BR-03 run in parallel, and PRs are reviewed the same day. With less time,
-drop items in this order (each is a small spec edit for the navigator):
+hours a day (**Rob confirmed 5 h/day, 2026-11-11**), BR-02 and BR-03 run in parallel, and PRs are
+reviewed the same day. If the schedule slips, drop items in this order (each is a small spec edit
+for the navigator). Write-back extras go first and the pipeline goes last, because Workday
+ingestion and reconciliation are the least replaceable part of the story for this role. The
+write-back core (move, validation, locking, conflict) is never cut.
 1. The "Last save: SQL executed" part of LR-02-08 (keep the preset queries)
 2. LR-02-06 seat history panel
 3. LR-03-05's Neon workflow (run the pipeline locally and against Neon from Rob's machine instead)
@@ -65,7 +68,7 @@ drop items in this order (each is a small spec edit for the navigator):
 ### Day-by-day
 | Day | Agents | Rob |
 |---|---|---|
-| Wed 11/11 (tonight) | — | Confirm decisions; LR-01-01 (GitHub repo) |
+| Wed 11/11 (tonight) | — | LR-01-10 (Docker, long paths, pnpm); LR-01-01 (GitHub repo); confirm decisions |
 | Thu 11/12 | BR-01: LR-01-02…04, 06…08 | LR-01-05 (Vercel + Neon), LR-01-09 (secrets, seed Neon); review ~6 PRs |
 | Fri 11/13 | Thin slice LR-02-01…04 **in parallel with** LR-03-01, LR-03-02 | Review ~6 PRs; try a move locally |
 | Sat 11/14 | LR-02-05, 06, 08; LR-03-03…05; LR-04-01 | Review ~7 PRs |
