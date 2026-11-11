@@ -39,7 +39,7 @@ Checked 2026-11-11: Docker missing, `LongPathsEnabled = 0`, pnpm missing; Node 2
 2. Install Docker Desktop for Windows (WSL 2 backend), then restart once (this also applies the long-paths change).
 3. `corepack enable` (provides pnpm; LR-01-02 pins the exact version in `packageManager`).
 - [ ] `docker run --rm hello-world` succeeds
-- [ ] `(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem").LongPathsEnabled` returns `1`
+- [x] `(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem").LongPathsEnabled` returns `1` (done 2026-11-11; takes full effect after a restart)
 - [ ] `pnpm --version` prints a version
 
 ### LR-01-01 · Create the GitHub repo · status: done · depends: — · owner: rob · executor model: —
