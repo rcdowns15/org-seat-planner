@@ -5,10 +5,14 @@ Format: ID · date · status (proposed / accepted / superseded) · decision · w
 Everything below is `proposed` until Rob confirms it. The navigator flips confirmed entries to
 `accepted`.
 
-### D-001 · 2026-11-11 · proposed · Fictional company "Northwind Financial", mock data only
-**Why:** NDA and privacy. Nothing about any real employer, the interviewing company, or real people
-can appear. A financial-services setting makes people data, approvals and audit trails feel natural.
-**Alternatives:** a generic "Acme" (reads as a toy).
+### D-001 · 2026-11-11 · accepted (Rob, 2026-11-11) · Fictional company "Second Republic Bank", mock data only
+**Why:** NDA and privacy: no real data, systems or people can appear. The name is Rob's deliberate
+homage to his time at First Republic Bank (on his resume, including its collapse), and it's a story
+he can tell in the interview. The homage is **the name only**: no First Republic branding, logos,
+colors, products, org or team names, internal terminology, or anything about how its systems or
+data worked. Nothing about the interviewing company appears at all. A bank makes people data,
+approvals and audit trails feel natural.
+**Alternatives:** "Northwind Financial" (the original placeholder; neutral but generic), a generic "Acme" (reads as a toy).
 
 ### D-002 · 2026-11-11 · proposed · Next.js (App Router) + TypeScript (strict), single app at the repo root, pnpm
 **Why:** first-class on Vercel. Server actions keep every mutation on the server. TypeScript end to

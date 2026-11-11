@@ -1,6 +1,6 @@
 # Org Seat Planner — repo guide for every agent
 
-A portfolio demo where engineering leaders at a fictional company, **Northwind Financial**, edit
+A portfolio demo where engineering leaders at a fictional company, **Second Republic Bank**, edit
 org and seat data in a write-back app (move people between squads, with validation, audit history
 and conflict handling). A pipeline ingests mock biweekly Workday reports, dbt models the data and
 reconciles HRIS facts against the leaders' plan, and (later) a semantic layer defines consistent
@@ -139,7 +139,7 @@ one, and cite the decision ID. Domain edge cases worth testing also go here.
 - **Ingestion validates the whole file before loading anything**, loads raw rows unchanged, and is idempotent by file hash (D-028). Cleaning happens in dbt staging, not in the loader.
 - **Demo-only actions** (simulate another leader's edit, simulate Workday refresh, reset demo) sit behind `DEMO_MODE=true`, checked on the server, and return 404 otherwise (D-023).
 - **No secrets or connection strings** in code, fixtures, docs, or CI logs. The one exception: the localhost-only Docker Compose defaults in `docker-compose.yml` and `.env.example`.
-- **Mock data only.** The company is Northwind Financial. No real company, employer, product, or person names anywhere: seed word lists, fixtures, tests, screenshots, or docs. Person names come from faker with the fixed seed. Never describe or imitate any real company's internal systems.
+- **Mock data only.** The company is Second Republic Bank, a fictional bank whose name is a deliberate homage (D-001). The homage is the name only: no First Republic branding, logos, colors, products, org or team names, or internal terminology. Otherwise, no real company, employer, product, or person names anywhere: seed word lists, fixtures, tests, screenshots, or docs. Person names come from faker with the fixed seed. Never describe or imitate any real company's internal systems, and never mention the interviewing company.
 - **dbt conventions** (above): right layer, description on every model, grain tests on every mart, `accepted_values` on enums.
 - **Analytics reads are read-only.** The dashboard reads `analytics` marts with `SELECT`s only; dbt never writes `app` or `workday`.
 

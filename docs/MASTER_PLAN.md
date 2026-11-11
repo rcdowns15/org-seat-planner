@@ -3,7 +3,7 @@
 ## North star
 By **Monday 2026-11-16** (the hiring-manager interview), a public GitHub repo and a live Vercel demo
 show a **thin slice through every layer** of a people-data operations system at a fictional company,
-Northwind Financial:
+Second Republic Bank:
 1. **Write-back tool:** an engineering leader drags a person to an open seat in another squad. The
    server validates the move, saves it with optimistic locking, and appends it to an audit trail.
 2. **Workday pipeline:** a biweekly mock Workday report is validated, ingested and cleaned with dbt.
@@ -38,7 +38,7 @@ executive reporting. The specs for that growth (BR-05…BR-08) are in the repo a
   test, or query.
 - **Deploy early.** Hello-world on Vercel + Neon on day 1.
 - **Correctness lives on the server and in the database.** The UI is a convenience.
-- **Mock data only.** Northwind Financial is fictional. Nothing about any real employer or the
+- **Mock data only.** Second Republic Bank is fictional. Nothing about any real employer or the
   interviewing company goes in this repo.
 - **Honest docs.** Built and planned are labeled. "Here's the spec" is a fine interview answer;
   claiming unbuilt work is not.

@@ -58,7 +58,7 @@ with pnpm, Tailwind and shadcn/ui (init plus `button`, `card`, `dialog`, `select
 ESLint + Prettier, Vitest, and Playwright. Add the scripts named in "Commands" and "Checks"
 (`lint`, `typecheck`, `test`, `test:e2e`, `build`; DB scripts can be stubs that print "added in
 LR-01-04/06"). Pin Node in `.nvmrc` and pnpm in `packageManager`. The home page shows "Org Seat
-Planner · Northwind Financial (fictional)". Update `.gitignore` if needed.
+Planner · Second Republic Bank (fictional)". Update `.gitignore` if needed.
 - [ ] `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm test && pnpm build` all pass
 - [ ] `pnpm test` runs at least one real unit test (e.g. a `formatSeatStatus` helper), not just a placeholder `expect(true)`
 - [ ] `pnpm test:e2e` starts the app and asserts the home page heading text
@@ -145,7 +145,8 @@ script.
 - [ ] Invariants test: no double-seating, 1,900–2,100 workers, contingent share 8–12%, open+backfill seats 170–230, every seat's type matches its worker's type, every squad has at least one plan row per quarter
 - [ ] Every named demo fixture exists (test looks each one up by its documented key)
 - [ ] Both report CSVs are written, byte-identical across runs (hash test); the 11-15 report's differences from 11-01 match the documented change list in `scripts/seed/README.md`
-- [ ] `git grep -niE "inc\.|llc|corp"` over `scripts/seed` finds no company-like names other than Northwind Financial
+- [ ] `git grep -niE "inc\.|llc|corp"` over `scripts/seed` finds no company-like names other than Second Republic Bank
+- [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) and the `CLAUDE.md` rule, never seed data, UI, fixtures or the README
 Likely files: `scripts/seed/index.ts`, `scripts/seed/org.ts`, `scripts/seed/workers.ts`, `scripts/seed/seats.ts`, `scripts/seed/names.ts`, `scripts/seed/workday-reports.ts`, `scripts/seed/README.md`, `tests/db/seed.test.ts`, `package.json`.
 
 ### LR-01-08 · CI database job and Neon deploy workflow · status: todo · depends: LR-01-03, LR-01-07 · owner: agent · executor model: sonnet
