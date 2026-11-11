@@ -21,7 +21,7 @@ DB role separation (BR-07).
 - Windows long paths with pnpm inside deep worktree paths: run checks from a short path if needed.
 - Neon via the Vercel integration sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED`. The app
   uses the pooled URL; migrations, seed and dbt use the unpooled one (D-007).
-- Docker Desktop must be running for `pnpm test:db`; it isn't installed yet (LR-01-10).
+- Docker Desktop must be running for `pnpm test:db` (installed and verified in LR-01-10).
 
 ## Exit criteria
 - Every command under "Checks" in `CLAUDE.md` that exists passes locally and in CI on `main`.
@@ -33,12 +33,12 @@ DB role separation (BR-07).
 Parallel: LR-01-03 and LR-01-04 can run together after LR-01-02. LR-01-05 (Rob) can happen as soon
 as LR-01-04 is merged, while LR-01-06 runs.
 
-### LR-01-10 · Machine setup (tonight, before any executor runs) · status: todo · depends: — · owner: rob · executor model: —
+### LR-01-10 · Machine setup (tonight, before any executor runs) · status: done · depends: — · owner: rob · executor model: —
 Checked 2026-11-11: Docker missing, `LongPathsEnabled = 0`, pnpm missing; Node 24, WSL and `gh` present.
 1. Admin PowerShell: `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force`
 2. Install Docker Desktop for Windows (WSL 2 backend), then restart once (this also applies the long-paths change).
 3. `corepack enable` (provides pnpm; LR-01-02 pins the exact version in `packageManager`).
-- [ ] `docker run --rm hello-world` succeeds
+- [x] `docker run --rm hello-world` succeeds (2026-11-11, after restart)
 - [x] `(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem").LongPathsEnabled` returns `1` (done 2026-11-11; takes full effect after a restart)
 - [x] `pnpm --version` prints a version (12.18.0 via corepack, 2026-11-11)
 Status 2026-11-11: Docker Desktop 4.99.0 and WSL 2 installed; a Windows restart is needed before `docker run --rm hello-world` can pass.
@@ -52,7 +52,7 @@ bypassed as admin anyway. Revisit after LR-01-03 (option: a ruleset requiring th
 - [x] Repo description mentions "fictional company, mock data"
 Likely files: none (GitHub settings).
 
-### LR-01-02 · Next.js TypeScript scaffold and tooling · status: todo · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
+### LR-01-02 · Next.js TypeScript scaffold and tooling · status: ready · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
 Scaffold Next.js (current stable, App Router, `src/` dir) in TypeScript strict mode at the repo root
 with pnpm, Tailwind and shadcn/ui (init plus `button`, `card`, `dialog`, `select`, `badge`). Add
 ESLint + Prettier, Vitest, and Playwright. Add the scripts named in "Commands" and "Checks"
