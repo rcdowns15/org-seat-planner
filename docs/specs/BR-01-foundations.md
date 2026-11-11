@@ -151,6 +151,8 @@ script.
 - [ ] Invariants test: no double-seating, 1,900–2,100 workers, contingent share 8–12%, open+backfill seats 170–230, every seat's type matches its worker's type, every squad has at least one plan row per quarter
 - [ ] Every named demo fixture exists (test looks each one up by its documented key)
 - [ ] Both report CSVs are written, byte-identical across runs (hash test); the 11-15 report's differences from 11-01 match the documented change list in `scripts/seed/README.md`
+- [ ] `scripts/seed/README.md` documents the worker report layout, modeled on a typical Workday worker custom report: one row per column with column name, format and example value, plus one full sample row. A test asserts that the generated CSV header matches the documented column list exactly, in order. Rob approves the layout during PR review.
+- [ ] Plausibility test over the seeded workers: every manager has 3–15 direct reports; following `manager_worker_id` from any worker reaches the top without a cycle; every `hire_date` is before the report date; every `termination_date` is on or after its `hire_date`; only `terminated` workers have a `termination_date`
 - [ ] `git grep -niE "inc\.|llc|corp"` over `scripts/seed` finds no company-like names other than Second Republic Bank
 - [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) and the `CLAUDE.md` rule, never seed data, UI, fixtures or the README
 Likely files: `scripts/seed/index.ts`, `scripts/seed/org.ts`, `scripts/seed/workers.ts`, `scripts/seed/seats.ts`, `scripts/seed/names.ts`, `scripts/seed/workday-reports.ts`, `scripts/seed/README.md`, `tests/db/seed.test.ts`, `package.json`.
