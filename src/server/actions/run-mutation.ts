@@ -10,11 +10,12 @@ import type { Leader } from "@/server/services/permissions";
 // the acting leader from the server-side cookie, never from input. Zod objects drop unknown keys,
 // so a spoofed `leaderId` field in the input never reaches the handler. Permission checks
 // (step 3) and the transaction (step 4) happen in the handler/service.
-export async function runMutation<S extends z.ZodType, R extends object>(
+// The failure codes are typed: the handler's codes plus the two this helper can return.
+export async function runMutation<S extends z.ZodType, R extends object, C extends string = string>(
   schema: S,
   rawInput: unknown,
-  handler: (input: z.output<S>, leader: Leader) => Promise<ActionResult<R>>,
-): Promise<ActionResult<R>> {
+  handler: (input: z.output<S>, leader: Leader) => Promise<ActionResult<R, C>>,
+): Promise<ActionResult<R, C | "INVALID_INPUT" | "READ_ONLY">> {
   const parsed = schema.safeParse(rawInput);
   if (!parsed.success) {
     return { ok: false, code: "INVALID_INPUT", message: "Invalid input." };
