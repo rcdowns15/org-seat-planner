@@ -52,7 +52,7 @@ bypassed as admin anyway. Revisit after LR-01-03 (option: a ruleset requiring th
 - [x] Repo description mentions "fictional company, mock data"
 Likely files: none (GitHub settings).
 
-### LR-01-02 · Next.js TypeScript scaffold and tooling · status: ready · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
+### LR-01-02 · Next.js TypeScript scaffold and tooling · status: review (https://github.com/rcdowns15/org-seat-planner/pull/1) · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
 Scaffold Next.js (current stable, App Router, `src/` dir) in TypeScript strict mode at the repo root
 with pnpm, Tailwind and shadcn/ui (init plus `button`, `card`, `dialog`, `select`, `badge`). Add
 ESLint + Prettier, Vitest, and Playwright. Add the scripts named in "Commands" and "Checks"

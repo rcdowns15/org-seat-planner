@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-11 (late) · D-029 (Workday position/cost center/location columns) settled; LR-01-06 and LR-01-07 criteria updated
-- **Milestone:** M1 — Foundations (BR-01), 2 of 10 little rocks done (LR-01-01, LR-01-10). LR-01-05 linking done (only the live `/api/health` check is left, after LR-01-04).
-- **In flight:** LR-01-02 (executor running, no PR yet), via the BR-01 orchestrator session.
-- **Blocked:** none
-- **Waiting on Rob:** commit and push the D-029 doc changes, then tell the orchestrator they're on `main` (LR-01-06 is clear to go once LR-01-04 merges); review and merge PRs as they open; LR-01-05 health check after LR-01-04 deploys; LR-01-09 (GitHub secrets, `db-deploy` with `reseed: true`) once LR-01-08 merges.
-- **Next:** orchestrator runs LR-01-02, then LR-01-03 and LR-01-04 in parallel, then LR-01-06 → LR-01-07 → LR-01-08 · owner: orchestrator
+- **Last updated:** 2026-11-11 (late) · LR-01-02 PR #1 open (orchestrator)
+- **Milestone:** M1 — Foundations (BR-01), 2 of 10 little rocks done (LR-01-01, LR-01-10). LR-01-05 linking done (only the live `/api/health` check is left, after LR-01-04). D-029 is on `main`.
+- **In flight:** LR-01-02 in review: https://github.com/rcdowns15/org-seat-planner/pull/1 (checks pass, Vercel preview green, reviewer P2 fixed).
+- **Blocked:** none. Everything else in BR-01 waits on PR #1 merging.
+- **Waiting on Rob:** review and merge PR #1; LR-01-05 health check after LR-01-04 deploys; LR-01-09 (GitHub secrets, `db-deploy` with `reseed: true`) once LR-01-08 merges.
+- **Next:** after PR #1 merges, the orchestrator runs LR-01-03 and LR-01-04 in parallel, then LR-01-06 → LR-01-07 → LR-01-08 · owner: orchestrator
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-11 — LR-01-02 → `review`: PR #1 opened (Sonnet executor; reviewer pass, P2 duplicate `cn` helper fixed; Vercel preview builds).
 - 2026-11-11 — D-029 accepted: the Workday report and `workday.workers` gain `Position_ID`, `Cost_Center` and `Location` (LR-01-06 and LR-01-07 criteria updated); the seat ↔ position link is parked until BR-07.
 - 2026-11-11 — LR-01-07 criteria tightened (orchestrator, Rob's OK): documented Workday report layout with a header-match test and Rob's sign-off, plus a plausibility test (span of control 3–15, no manager cycles, date ordering). Open question for the navigator: add `Position_ID`, cost center and location to the report and `workday.workers` (touches LR-01-06).
 - 2026-11-11 — Rob accepted all decisions D-001…D-028. LR-01-02 → `ready`. BR-01 orchestrator brief handed off.
