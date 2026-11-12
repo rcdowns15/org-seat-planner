@@ -27,6 +27,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — New little rock LR-03-06 (`todo`, needs a navigator call: touches D-029): a position backfill can wedge ingestion under upsert-only workers. Found in the LR-03-01 round-2 review; waived in the LR-03-01 PR, which is outside this brief.
 - 2026-11-12 — LR-02-01 → `review`: PR #7 (Sonnet build + 1 fix round; review 1 two P2s fixed, review 2 pass; P3s noted).
 - 2026-11-12 — LR-02-02 → `review`: PR #8 (Sonnet build + 1 fix round; review 1 one P2 fixed, review 2 pass; P3s noted).
 - 2026-11-12 — Rob approved the three LR-03-01 deviations (newer-report-only, upsert-only workers, extra required columns); written into the LR-03-01 spec text. The fix round still documents them in `docs/data-model.md` (review P2-3).

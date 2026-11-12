@@ -123,3 +123,14 @@ task it would be in production (sensor on the report, ingest, dbt build, alert o
 - [ ] A `pipeline.yml` run against Neon is green (link it)
 - [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
 Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
+
+### LR-03-06 · Stop a position backfill from wedging ingestion · status: todo · depends: LR-03-01 · owner: agent · executor model: sonnet
+From the LR-03-01 round-2 review (P2, waived in that PR). `workday.workers` is upsert-only (approved), and the partial unique
+index `workers_position_id_active_key` (migration 0001, D-029) allows one non-terminated holder per `Position_ID`. If worker A
+drops out of the extract while still non-terminated and B is backfilled into A's position, every later report fails that
+index and is recorded `rejected` until someone edits the table by hand. That contradicts "a missing worker is an exception, not
+a blocker". The seed never triggers it. Needs a navigator call (`docs/DECISIONS.md`, touches D-029) before dispatch.
+- [ ] New migration drops or relaxes the index (e.g. scoped to the latest report); merged migrations stay untouched
+- [ ] DB test: the backfill scenario ingests successfully, and the missing worker still surfaces as an exception input
+- [ ] "One current holder per position" is enforced on the latest report as a dbt test or reconciliation exception
+Likely files: `db/schema/workday.ts`, `db/migrations/*`, `tests/db/ingest.test.ts`, `analytics/` tests, `docs/data-model.md`.
