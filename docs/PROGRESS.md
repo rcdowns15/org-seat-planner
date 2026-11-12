@@ -3,11 +3,11 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-06 merged (PR #4); LR-01-07 dispatched (orchestrator, session 2)
+- **Last updated:** 2026-11-12 · navigator: D-031 Workday realism and the LR-02-08 impact preset added; LR-01-07 in flight (orchestrator, session 2)
 - **Milestone:** M1 — Foundations (BR-01), 6 of 10 little rocks done (LR-01-01…04, LR-01-06, LR-01-10). LR-01-05: all criteria met except the README line (orchestrator add-on).
 - **In flight:** LR-01-07 (seed generator, Sonnet executor) on `lr/LR-01-07-seed`.
 - **Blocked:** none
-- **Waiting on Rob:** LR-01-07 PR review incl. sign-off on the Workday report layout (when opened); LR-01-09 once LR-01-08 merges.
+- **Waiting on Rob:** paste the D-031 message into the orchestrator (if not yet done); LR-01-07 PR review incl. sign-off on the Workday report layout, checked against D-031's five items; LR-01-09 once LR-01-08 merges; harness edit "orchestrator stages only its own files" (project agent file, template, `LESSONS.md`; text in the 2026-11-12 navigator session); decide at Friday's check-in whether to pull a thin TA slice (proposed LR-03-06: mock TA offers as a dbt seed plus two exceptions) above the cut line, swapping out the "Last save: SQL executed" part of LR-02-08.
 - **Next:** LR-01-07 Workday realism additions (D-031) on the same branch → review + PR → LR-01-08 (CI DB job, `db-deploy`) · owner: orchestrator.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
