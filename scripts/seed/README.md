@@ -162,7 +162,11 @@ changed by the report: these are what a later ingest and reconciliation have to 
 ## How the reset works
 
 The seed runs one transaction: `SET LOCAL app.allow_seat_changes_reset = 'on'`, `TRUNCATE` every
-`app` and `workday` table with `RESTART IDENTITY`, then batched inserts. The setting is the escape
+`app` and `workday` table (including `workday.raw_worker_report` and `workday.ingest_runs`) with
+`RESTART IDENTITY`, then batched inserts of the `app` tables. After the transaction the seed writes the
+two report CSVs and loads `workday.workers` by ingesting the 11-01 file with `scripts/ingest/` (the same
+code as `pnpm workday:ingest`); the 11-15 file is left for the refresh demo. The truncate has to cover the
+ingest tables: otherwise a second seed would wipe `workers` and then skip the file as already loaded. The setting is the escape
 hatch in the `app.seat_changes` TRUNCATE guard (migration `0002`) and ends with the transaction.
 The checksum covers every seeded row except columns the database fills with the clock.
 
@@ -182,4 +186,5 @@ The checksum covers every seeded row except columns the database fills with the 
   supervisory orgs; `seats.ts` seats, leaders, plan.
 - `workday-reports.ts` report columns, CSV rows, the 11-15 changes and the diff; `csv.ts` writer
   (BOM, CRLF, quoting) and parser.
+- `../ingest/` loads the reports (`pnpm workday:ingest`): `reader.ts` reader interface and CSV file reader, `parse-csv.ts` its own CSV parser (not `csv.ts`, so a quoting bug can't hide behind a matching one), `validate.ts`, `load.ts`.
 - `generate.ts` pure generator; `run-seed.ts` database writes and report files; `checksum.ts`; `index.ts` CLI.

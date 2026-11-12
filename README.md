@@ -41,6 +41,7 @@ cp .env.example .env.local          # DATABASE_URL points at the compose databas
 pnpm db:migrate                     # apply db/migrations (uses DATABASE_URL_UNPOOLED, else DATABASE_URL)
 pnpm db:seed                        # wipe and reseed app + workday; writes data/workday/*.csv; prints a checksum
 pnpm db:seed:check                  # print the checksum of the seeded rows (see scripts/seed/README.md)
+pnpm workday:ingest <file>          # validate and load one Workday report CSV (e.g. data/workday/worker_report_2026-11-15.csv)
 pnpm test:db                        # migrates, then runs constraint and schema tests (local DB only)
 curl -i localhost:3000/api/health   # 200 {"ok":true,"db":"ok","seats":N} (N = rows in app.seats: 0 before db:seed); 503 when the database is down
 ```
