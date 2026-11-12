@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-08 and LR-01-05 done (PR #6 merged) (orchestrator); navigator checked the block, committed D-033, and set BR-01 to `in-progress` in the master plan
-- **Milestone:** M1 — Foundations (BR-01), 9 of 10 little rocks done (LR-01-01…08, LR-01-10). Only LR-01-09 (Rob) is left, then the BR-01 big-rock review.
+- **Last updated:** 2026-11-12 · LR-01-09 done: secrets added, `db-deploy` reseeded Neon, production health shows 2202 seats (navigator)
+- **Milestone:** M1 — Foundations (BR-01), 10 of 10 little rocks done. Only the BR-01 big-rock review is left.
 - **In flight:** none
 - **Blocked:** none
-- **Waiting on Rob:** LR-01-09: add the `NEON_DATABASE_URL_UNPOOLED` and `DBT_HOST`/`DBT_USER`/`DBT_PASSWORD`/`DBT_DBNAME` GitHub secrets, run `db-deploy` with `reseed: true`, and confirm production `/api/health` shows `"seats":2202`.
-- **Next:** LR-01-09 (Rob), then the BR-01 big-rock review (orchestrator), then BR-02.
+- **Waiting on Rob:** start a fresh navigator session for the BR-01 big-rock review brief and the Friday BR-02 + BR-03 parallel brief.
+- **Next:** BR-01 big-rock review (orchestrator, fresh session), then BR-02 (LR-02-01…) and BR-03 (LR-03-01, LR-03-02) in parallel.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-01-09 done (Rob): five GitHub secrets added (`NEON_DATABASE_URL_UNPOOLED`, `DBT_*`); `db-deploy` with `reseed: true` green (run 43288883379); production `/api/health` → `{"ok":true,"db":"ok","seats":2202}`, matching local. BR-01 has all 10 little rocks done; the big-rock review is next.
 - 2026-11-12 — Master plan rollup: BR-01 `todo` → `in-progress` (9/10). LR-01-08 P3s noted for later: the CLI refusal test may need a longer Vitest timeout on slow runners; a repeated `?host=` in the URL could slip past the seed guard; no Playwright test touches the database until BR-02's board tests.
 - 2026-11-12 — LR-01-08 done: PR #6 merged (CI green, run 43286534662). LR-01-05 done with it (README production URL). LR-01-09 (Rob) is now unblocked.
 - 2026-11-12 — LR-01-08 → `review`: PR #6 (Sonnet build + one fix round; review 1 two P2s fixed: LR-01-05 status, CLI-level refusal test; four P3s fixed, four noted; review 2 pass; CI green). The PR also closes LR-01-05 (README URL) and adds the D-032 seed README note (seed checksum unchanged).

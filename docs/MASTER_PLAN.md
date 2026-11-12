@@ -89,7 +89,7 @@ reconciliation, exceptions UI, roles), BR-08 (dashboard).
 ## Big rocks
 | ID | Big rock | Depends on | Exit criteria (summary) | Status | When |
 |---|---|---|---|---|---|
-| BR-01 | [Foundations](specs/BR-01-foundations.md) | — | App scaffold, CI, Postgres + migrations, deterministic seed + mock Workday reports, hello-world on Vercel + Neon | in-progress (9/10; LR-01-09 + big-rock review left) | Thu · cut line |
+| BR-01 | [Foundations](specs/BR-01-foundations.md) | — | App scaffold, CI, Postgres + migrations, deterministic seed + mock Workday reports, hello-world on Vercel + Neon | in-progress (10/10 LRs done; big-rock review left) | Thu · cut line |
 | BR-02 | [Seat board and write-back](specs/BR-02-seat-board-write-back.md) | BR-01 | Board, drag-and-drop move, server validation, optimistic locking, conflict demo, history, read-only SQL panel | todo | Fri–Sat · cut line (undo and audit page after) |
 | BR-03 | [Workday ingestion and reconciliation](specs/BR-03-workday-ingestion-reconciliation.md) | BR-01 | Validated report ingest, dbt staging, headcount vs. plan, refresh changes, reconciliation exceptions, `pnpm pipeline` | todo | Fri–Sat · cut line |
 | BR-04 | [Demo-ready: README, explainers, rehearsal](specs/BR-04-demo-ready.md) | BR-02, BR-03 | Demo reset, README case study, two explainers, rehearsed five-minute demo | todo | Sat–Sun · cut line (prod smoke after) |

@@ -204,9 +204,9 @@ the seed against the database in the `NEON_DATABASE_URL_UNPOOLED` secret, with a
 - [x] `db-deploy.yml` installs with plain `pnpm install --frozen-lockfile` (the seed needs dev dependency `@faker-js/faker`; no `--prod`)
 Likely files: `.github/workflows/ci.yml`, `.github/workflows/db-deploy.yml`, `src/app/api/health/route.ts`, `tests/db/health.test.ts`.
 
-### LR-01-09 · GitHub secrets and first Neon seed · status: todo · depends: LR-01-05, LR-01-08 · owner: rob · executor model: —
+### LR-01-09 · GitHub secrets and first Neon seed · status: done (2026-11-12) · depends: LR-01-05, LR-01-08 · owner: rob · executor model: —
 Add `NEON_DATABASE_URL_UNPOOLED` as a GitHub Actions secret (copy from Vercel → Storage → Neon).
 Also add the `DBT_HOST`, `DBT_USER`, `DBT_PASSWORD`, `DBT_DBNAME` secrets now (same Neon database;
 LR-03-05 uses them), so there's only one trip to the settings page. Run `db-deploy` with `reseed: true`.
-- [ ] The `db-deploy` run is green
-- [ ] Production `/api/health` shows the same seat count as local
+- [x] The `db-deploy` run is green (2026-11-12, `reseed: true`: https://github.com/rcdowns15/org-seat-planner/actions/runs/43288883379)
+- [x] Production `/api/health` shows the same seat count as local (2026-11-12: `{"ok":true,"db":"ok","seats":2202}`)
