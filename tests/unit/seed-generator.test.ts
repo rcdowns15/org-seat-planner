@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { NEXT_REPORT_DATE, SEED_DATE } from "../../scripts/seed/config";
 import { BOM, formatCsv, parseCsv } from "../../scripts/seed/csv";
-import { dayNumber, fromUsDate } from "../../scripts/seed/dates";
+import { dayNumber, fromDayNumber, fromUsDate } from "../../scripts/seed/dates";
+import { SQUAD_NOUNS, SQUAD_WORDS } from "../../scripts/seed/names";
 import { generateSeedData } from "../../scripts/seed/generate";
 import {
   CHANGE_KINDS,
@@ -10,7 +11,11 @@ import {
   buildReportCsv,
   diffReports,
 } from "../../scripts/seed/workday-reports";
-import { inReportPopulation, terminationWindowStart } from "../../scripts/seed/workers";
+import {
+  inReportPopulation,
+  terminationWindowStart,
+  type SeedWorker,
+} from "../../scripts/seed/workers";
 import {
   documentedChanges,
   documentedColumns,
@@ -83,9 +88,19 @@ describe("report realism (D-031)", () => {
         expect(age, r.Worker_ID).toBeLessThan(30);
       }
     }
-    // The generator's own population helper agrees with the files.
-    expect(data.workers.every((w) => inReportPopulation(w, SEED_DATE))).toBe(true);
-    expect(data.nextReportWorkers.every((w) => inReportPopulation(w, NEXT_REPORT_DATE))).toBe(true);
+  });
+
+  it.each([
+    ["2026-11-15", "2026-10-17"],
+    ["2026-11-01", "2026-10-03"],
+  ])("opens the termination window for the %s report on %s", (reportDate, windowStart) => {
+    expect(terminationWindowStart(reportDate)).toBe(windowStart);
+    const terminatedOn = (date: string) =>
+      ({ status: "terminated", terminationDate: date }) as SeedWorker;
+    const dayBefore = fromDayNumber(dayNumber(windowStart) - 1);
+    expect(inReportPopulation(terminatedOn(dayBefore), reportDate)).toBe(false);
+    expect(inReportPopulation(terminatedOn(windowStart), reportDate)).toBe(true);
+    expect(inReportPopulation(terminatedOn(reportDate), reportDate)).toBe(true);
   });
 
   it("drops documented aged-out workers legitimately and exactly one documented missing worker", () => {
@@ -209,14 +224,43 @@ describe("report realism (D-031)", () => {
   });
 
   it("has at least 3 names with an apostrophe, accent or hyphen that round-trip unchanged", () => {
+    // Parsed here with the generator's own parseCsv; BR-03's ingest tests will re-parse the files
+    // with an independent parser.
     const special = /['\-À-ſ]/;
     const expected = new Map(
-      data.workers.map((w) => [w.workerId, `${w.lastName}, ${w.firstName}`]),
+      [...data.workers, ...data.nextReportWorkers].map((w) => [
+        w.workerId,
+        `${w.lastName}, ${w.firstName}`,
+      ]),
     );
-    const names = records(report1).filter((r) => special.test(r.Worker_Name));
-    expect(names.length).toBeGreaterThanOrEqual(3);
-    expect(names.filter((r) => /[À-ſ]/.test(r.Worker_Name)).length).toBeGreaterThanOrEqual(3);
-    for (const r of names) expect(r.Worker_Name).toBe(expected.get(r.Worker_ID));
+    for (const { csv } of REPORTS) {
+      const names = records(csv).filter((r) => special.test(r.Worker_Name));
+      expect(names.length).toBeGreaterThanOrEqual(3);
+      expect(names.filter((r) => /[À-ſ]/.test(r.Worker_Name)).length).toBeGreaterThanOrEqual(3);
+      for (const r of names) expect(r.Worker_Name).toBe(expected.get(r.Worker_ID));
+    }
+  });
+
+  it("uses no squad name that is, or contains, a real product name", () => {
+    const blocked = [
+      "Quartz Scheduler",
+      "Onyx",
+      "Falcon",
+      "Juniper",
+      "Summit",
+      "Beacon",
+      "Kafka",
+      "Airflow",
+      "Spark",
+    ];
+    const hit = (name: string) => blocked.find((b) => new RegExp(`\\b${b}\\b`, "i").test(name));
+    // Every possible name the vocabulary can produce, not only the 180 used.
+    const vocabulary = SQUAD_WORDS.flatMap((w) => SQUAD_NOUNS.map((n) => `${w} ${n}`));
+    expect(vocabulary.filter((n) => hit(n))).toEqual([]);
+    expect(data.org.squads.filter((s) => hit(s.name))).toEqual([]);
+    // The check itself catches what it should.
+    expect(hit("Quartz Scheduler")).toBe("Quartz Scheduler");
+    expect(hit("falcon Vault")).toBe("Falcon");
   });
 });
 

@@ -2,7 +2,7 @@
 // export looks like (D-031): a UTF-8 byte order mark, CRLF line endings, and quotes around any
 // field that contains a comma, quote or line break. The output is the same bytes on every OS.
 
-export const BOM = "﻿";
+export const BOM = "\uFEFF";
 
 function quote(field: string): string {
   return /[",\n\r]/.test(field) ? `"${field.replaceAll('"', '""')}"` : field;

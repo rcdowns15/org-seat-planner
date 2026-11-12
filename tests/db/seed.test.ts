@@ -395,6 +395,42 @@ describe("Workday report files", () => {
   });
 });
 
+describe("facts quoted in scripts/seed/README.md prose", () => {
+  const readme = readFileSync("scripts/seed/README.md", "utf8");
+
+  // Seats and squads the README cites by number and name.
+  it.each([
+    { seat: 28, squad: "Harbor Bridge", worker: "100042" },
+    { seat: 39, squad: "Valley Portal", worker: "100052" },
+    { seat: 206, squad: "Saffron Scheduler", worker: null },
+    { seat: 955, squad: "Maple Bridge", worker: "100878" },
+  ])("seat $seat is in squad $squad and the README says so", async ({ seat, squad, worker }) => {
+    const found = await one<{ name: string; worker_id: string | null }>(
+      `select q.name, s.worker_id from app.seats s join app.squads q using (squad_id)
+        where s.seat_id = $1`,
+      [seat],
+    );
+    expect(found.name).toBe(squad);
+    expect(found.worker_id).toBe(worker);
+    // The README still cites this squad (prose can wrap lines, so collapse whitespace).
+    const prose = readme.replace(/\s+/g, " ");
+    expect(prose).toContain(squad);
+    if (worker) expect(prose).toContain(`seat ${seat}`);
+  });
+
+  it("has the offer_accepted counts the future-hire prose cites", async () => {
+    const counts = await rows<{ name: string; offers: string }>(
+      `select g.name, count(*) offers from app.seats s
+         join app.squads q using (squad_id) join app.groups g using (group_id)
+        where s.status = 'offer_accepted' group by g.name`,
+    );
+    const byGroup = Object.fromEntries(counts.map((c) => [c.name, Number(c.offers)]));
+    expect(byGroup["Digital Channels"]).toBe(2);
+    expect(byGroup["Platform Engineering"]).toBe(1);
+    expect(byGroup["Credit Decisioning"]).toBe(2);
+  });
+});
+
 describe("plausibility", () => {
   let workers: Worker[];
   beforeAll(async () => {

@@ -32,7 +32,7 @@ export const SQUAD_WORDS = [
   "Basalt",
   "Lantern",
   "Prairie",
-  "Quartz",
+  "Garnet",
   "Ridge",
   "Saffron",
   "Timber",
