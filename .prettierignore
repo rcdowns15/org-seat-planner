@@ -11,3 +11,5 @@ next-env.d.ts
 data/
 .copier-answers.yml
 CLAUDE.md
+# drizzle-kit output: generated, committed, never hand-formatted
+db/migrations/
