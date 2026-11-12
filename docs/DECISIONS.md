@@ -203,3 +203,17 @@ LR-01-07, LR-03-01, LR-03-02 and LR-03-04. No new little rock, and the cut line 
 Rehires, FTE, leave types, job profile detail, and event-based change feeds are parked.
 **Alternatives:** formats only (reconciliation results would be naive about filtered reports);
 the full set including parked items (too much for the timeline).
+
+### D-032 · 2026-11-12 · accepted (Rob, 2026-11-12) · LR-01-07 seed layout choices: layout signed off, leaders keep group cost centers for now, `<group> Team <n>` org names
+**Decision:** (1) Rob's merge of PR #5 counts as his approval of the 14-column worker report
+layout in `scripts/seed/README.md`. (2) The head of engineering and the division VPs stay charged
+to a squad group's cost center (e.g. `CC-1010 Digital Channels`). This is a known simplification:
+it's documented in the seed README and parked, to be raised again after the interview. (3) Squad
+managers' supervisory orgs are named `<group> Team <n>`, as the executor chose.
+**Why:** (1) The PR review was the planned sign-off point. (2) Leaders usually sit in a
+leadership cost center, but changing it now would change the seed checksum and both reports just
+before BR-03 builds on them. The flaw is small and makes a good interview talking point if it's
+documented honestly. (3) It's a common Workday naming pattern for team orgs, and it's fictional.
+**Alternatives:** add a leadership cost center now (e.g. `CC-1000 Engineering Leadership`;
+reopens a merged seed on the critical path); name orgs after squads (wrong: D-031 keeps
+supervisory orgs separate from squads).

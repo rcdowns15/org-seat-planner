@@ -56,6 +56,7 @@ Switch `pnpm db:seed` to load Workday through this script.
 - [ ] DB test: re-ingesting the same file changes nothing and records a `skipped` run
 - [ ] Unit tests: a file with a duplicate ID, a missing column, a bad date, an unknown status, or a `Worker_ID` whose format contradicts its `Worker_Type` is rejected with a message naming the row and column; nothing is loaded
 - [ ] Unit test: a BOM-prefixed, CRLF file with quoted `"O'Brien, Seán"`-style names parses, and the names come through byte-for-byte
+- [ ] The ingest CSV parsing doesn't reuse the seed's CSV writer or parser code, so a quoting bug in the seed can't hide behind a matching bug in ingest (from the LR-01-07 review)
 - [ ] Seed checksum from LR-01-07 is unchanged after the switch
 Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
 
@@ -89,7 +90,8 @@ Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_sq
 `rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
 (hire, future-dated hire, termination, manager change, worker-type change, leave start/end, and
 `aged_out`: a terminated worker who drops off under the report's 30-day termination window, which is
-not an exception). `rpt_reconciliation_exceptions` (grain: exception type × subject, where the
+not an exception). The window is the one the seed uses: inclusive, from report date minus 29 days
+through the report date. `rpt_reconciliation_exceptions` (grain: exception type × subject, where the
 subject is a worker, or a group for the hiring check), comparing the latest report with the seat
 plan: terminated in Workday but still seated; seated but missing from the report (always an
 exception, even if they aged out); in the previous report as `Active`/`On Leave` but missing now

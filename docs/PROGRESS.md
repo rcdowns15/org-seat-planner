@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-07 merged (PR #5); orchestrator session 2 stopped at its context budget before LR-01-08 (orchestrator)
-- **Milestone:** M1 — Foundations (BR-01), 7 of 10 little rocks done (LR-01-01…04, LR-01-06, LR-01-07, LR-01-10). LR-01-05: all criteria met except the README line.
-- **In flight:** none.
+- **Last updated:** 2026-11-12 · D-032 recorded (LR-01-07 layout choices); LR-01-08 brief handed to Rob (navigator)
+- **Milestone:** M1 — Foundations (BR-01), 7 of 10 little rocks done (LR-01-01…04, LR-01-06, LR-01-07, LR-01-10). LR-01-05: all criteria met except the README line (folded into the LR-01-08 brief).
+- **In flight:** none (LR-01-08 brief ready, not yet started).
 - **Blocked:** none
-- **Waiting on Rob:** start a fresh orchestrator session for LR-01-08; record the LR-01-07 layout decisions with the navigator (leader cost centers, `<group> Team <n>` org naming; PR #5 merged = layout signed off?); LR-01-09 once LR-01-08 merges.
-- **Next:** LR-01-08 (Sonnet; CI DB job, `db-deploy`, `/api/health` seat count, `db:seed --allow-remote` guard, plain install) · owner: orchestrator. Then LR-01-09 (Rob), then the BR-01 big-rock review.
+- **Waiting on Rob:** paste the LR-01-08 brief into a fresh orchestrator session; LR-01-09 once LR-01-08 merges; clarify the "TA-slice decision pending" note from commit ba60871 (it isn't in any doc).
+- **Next:** LR-01-08 (Sonnet; CI DB job, `db-deploy`, `/api/health` seat count, `db:seed --allow-remote` guard, plain install, README URL, seed README leader-cost-center note) · owner: orchestrator. Then LR-01-09 (Rob), then the BR-01 big-rock review.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — D-032 accepted: PR #5 merge = layout sign-off (LR-01-07 criterion annotated); leaders keep group cost centers for now (parked; raise again after the interview); `<group> Team <n>` supervisory org names confirmed. LR-01-08 brief handed off, carrying the LR-01-05 README line and a seed README note.
+- 2026-11-12 — Criteria (navigator, from the LR-01-07 review notes): LR-03-01 ingest must not reuse the seed's CSV code; LR-03-04 pins the termination window (report date − 29 days through the report date, as the seed does); LR-01-07 spec wording now says the hand-written special-character names include given names.
 - 2026-11-12 — LR-01-07 done: PR #5 merged. LR-01-08 is ready (deps LR-01-03, LR-01-07 merged).
 - 2026-11-12 — LR-01-07 → `review`: PR #5 (Sonnet build + fixes, Opus D-031 pass; review 1 P1 test-env leak and P2 brand names fixed, review 2 P2 "Quartz Scheduler" fixed; layout sign-off pending).
 - 2026-11-12 — Criteria tightened (orchestrator): LR-01-07 "first republic" grep allows the criterion's own spec line; LR-01-08 gains a `db:seed` remote-database guard (`--allow-remote`) and a plain-install note, both from the LR-01-07 review.
