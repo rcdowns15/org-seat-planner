@@ -189,7 +189,7 @@ script.
 - [ ] Plausibility test over the seeded workers: every manager has 3–15 direct reports; following `manager_worker_id` from any worker reaches the top without a cycle; every `hire_date` is on or before the report date, except the documented future-dated hires (1–60 days after); every `termination_date` is on or after its `hire_date`; only `terminated` workers have a `termination_date`; every worker has a non-empty `position_id`, `cost_center` and `location`; no two non-terminated workers share a `position_id`; every worker's `cost_center` is the one assigned to their seat's group (workers without a seat are exempt)
 - [ ] Report realism test over both CSVs: the file starts with a UTF-8 BOM and uses CRLF; every terminated row's termination date is within 30 days of the report date; the documented aged-out and missing-without-termination workers behave as described; 2–3 future-dated hires appear in 11-15, each in a group with an `offer_accepted` seat; every `Supervisory_Organization` matches `^.+ \(.+\)$`; every `Worker_ID` matches `^\d{6}$` for employees and `^C-\d{5}$` for contingent workers; `Contract_End_Date` is set exactly for contingent rows; at least 3 names contain an apostrophe, accent or hyphen and round-trip through a CSV parser unchanged
 - [ ] `git grep -niE "inc\.|llc|corp"` over `scripts/seed` finds no company-like names other than Second Republic Bank
-- [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) and the `CLAUDE.md` rule, never seed data, UI, fixtures or the README
+- [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) the `CLAUDE.md` rule, and this criterion's own line in this spec, never seed data, UI, fixtures or the README
 Likely files: `scripts/seed/index.ts`, `scripts/seed/org.ts`, `scripts/seed/workers.ts`, `scripts/seed/seats.ts`, `scripts/seed/names.ts`, `scripts/seed/workday-reports.ts`, `scripts/seed/README.md`, `tests/db/seed.test.ts`, `package.json`.
 
 ### LR-01-08 · CI database job and Neon deploy workflow · status: todo · depends: LR-01-03, LR-01-07 · owner: agent · executor model: sonnet
@@ -200,6 +200,8 @@ the seed against the database in the `NEON_DATABASE_URL_UNPOOLED` secret, with a
 - [ ] CI DB job passes on this PR (link the run)
 - [ ] `db-deploy.yml` passes `actionlint` (or the GitHub workflow validator) and never echoes the secret
 - [ ] `/api/health` returns the seeded seat count locally (test)
+- [ ] `pnpm db:seed` refuses a non-local database (host not `localhost`/`127.0.0.1`) unless `--allow-remote` is passed, and prints the target host (never the connection string); `db-deploy.yml` passes `--allow-remote`. Test covers the refusal. (Added by orchestrator from the LR-01-07 review: after `vercel env pull`, a bare `pnpm db:seed` would truncate Neon.)
+- [ ] `db-deploy.yml` installs with plain `pnpm install --frozen-lockfile` (the seed needs dev dependency `@faker-js/faker`; no `--prod`)
 Likely files: `.github/workflows/ci.yml`, `.github/workflows/db-deploy.yml`, `src/app/api/health/route.ts`, `tests/db/health.test.ts`.
 
 ### LR-01-09 · GitHub secrets and first Neon seed · status: todo · depends: LR-01-05, LR-01-08 · owner: rob · executor model: —
