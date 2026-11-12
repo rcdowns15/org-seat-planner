@@ -4,11 +4,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { checkSeed, runSeed, type SeedResult } from "../../scripts/seed/run-seed";
-import { parseCsv } from "../../scripts/seed/csv";
+import { BOM, parseCsv } from "../../scripts/seed/csv";
 import { fromUsDate } from "../../scripts/seed/dates";
 import { REPORT_COLUMNS } from "../../scripts/seed/workday-reports";
 import { getPool } from "@/server/db";
-import { documentedFixtures } from "../support/seed-readme";
+import { documentedChanges, documentedFixtures } from "../support/seed-readme";
 import { localChildEnv } from "./local-db";
 
 const REPORT_1 = path.join("data", "workday", "worker_report_2026-11-01.csv");
@@ -264,9 +264,22 @@ describe("named demo fixtures (keys documented in scripts/seed/README.md)", () =
 describe("Workday report files", () => {
   const read = (file: string) => parseCsv(readFileSync(file, "utf8"));
 
+  it("writes each file with a UTF-8 BOM and CRLF line endings", () => {
+    for (const file of [REPORT_1, REPORT_2]) {
+      const bytes = readFileSync(file);
+      expect(bytes.subarray(0, 3)).toEqual(Buffer.from([0xef, 0xbb, 0xbf]));
+      const text = bytes.toString("utf8");
+      expect(text.startsWith(BOM)).toBe(true);
+      expect(text.endsWith("\r\n")).toBe(true);
+      expect(text.replaceAll("\r\n", "")).not.toMatch(/[\r\n]/);
+    }
+  });
+
   it("matches the seeded state: the 11-01 report equals workday.workers", async () => {
     const [header, ...body] = read(REPORT_1);
     expect(header).toEqual([...REPORT_COLUMNS]);
+    // Contract_End_Date is CSV only (D-031): drop it before comparing with the database.
+    const contractCol = header.indexOf("Contract_End_Date");
     const db = await rows<Record<string, string | null>>(
       `select worker_id, last_name, first_name, email, worker_type, status,
               hire_date::text, termination_date::text, manager_worker_id, job_title,
@@ -284,7 +297,7 @@ describe("Workday report files", () => {
       terminated: "Terminated",
     };
     const fromFile = body
-      .map((cells) => cells.map((c) => c.trim()))
+      .map((cells) => cells.map((c) => c.trim()).filter((_, i) => i !== contractCol))
       .sort((a, b) => a[0].localeCompare(b[0]));
     const fromDb = db.map((w) => [
       w.worker_id,
@@ -328,12 +341,57 @@ describe("Workday report files", () => {
     expect(body.some((cells) => cells.some((c) => c !== c.trim()))).toBe(true);
   });
 
-  it("has an 11-15 report that is a full extract with the documented changes", () => {
+  it("has an 11-15 report that drops only the documented aged-out and missing workers", () => {
     const a = read(REPORT_1);
     const b = read(REPORT_2);
-    expect(b.length).toBeGreaterThan(a.length); // hires add rows; nobody is dropped
     const ids = new Set(b.slice(1).map((r) => r[0]));
-    for (const r of a.slice(1)) expect(ids.has(r[0])).toBe(true);
+    const dropped = a
+      .slice(1)
+      .map((r) => r[0])
+      .filter((id) => !ids.has(id))
+      .sort();
+    const documented = documentedChanges()
+      .filter((c) => c.change === "aged_out" || c.change === "missing")
+      .map((c) => c.workerId)
+      .sort();
+    expect(dropped).toEqual(documented);
+    expect(dropped.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps the documented missing worker seated and active in the database", async () => {
+    const missing = documentedChanges().filter((c) => c.change === "missing");
+    expect(missing).toHaveLength(1);
+    const w = await one<{ status: string; termination_date: string | null; seat_id: number }>(
+      `select w.status, w.termination_date::text, s.seat_id from workday.workers w
+         join app.seats s on s.worker_id = w.worker_id where w.worker_id = $1`,
+      [missing[0].workerId],
+    );
+    expect(w.status).toBe("active");
+    expect(w.termination_date).toBeNull();
+  });
+
+  it("puts each future-dated hire in a group with an offer_accepted seat, holding no seat", async () => {
+    const [header, ...body] = read(REPORT_2);
+    const col = (name: string) => header.indexOf(name);
+    const future = documentedChanges().filter((c) => c.change === "future_hire");
+    expect(future.length).toBeGreaterThanOrEqual(2);
+    expect(future.length).toBeLessThanOrEqual(3);
+    for (const hire of future) {
+      const row = body.find((r) => r[col("Worker_ID")] === hire.workerId)!;
+      const costCenter = row[col("Cost_Center")].trim();
+      const found = await one<{ in_workday: boolean; seated: boolean; offers: string }>(
+        `select exists (select 1 from workday.workers where worker_id = $1) in_workday,
+                exists (select 1 from app.seats where worker_id = $1) seated,
+                (select count(*) from app.seats s join app.squads q using (squad_id)
+                   join app.groups g using (group_id)
+                  where s.status = 'offer_accepted'
+                    and regexp_replace($2, '^CC-[0-9]{4} ', '') = g.name) offers`,
+        [hire.workerId, costCenter],
+      );
+      expect(found.in_workday, hire.workerId).toBe(false); // the seeded state is 11-01
+      expect(found.seated, hire.workerId).toBe(false);
+      expect(Number(found.offers), hire.workerId).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -377,13 +435,48 @@ describe("plausibility", () => {
   });
 
   it("has sensible hire and termination dates", () => {
+    // Future-dated hires are only in the 11-15 CSV (see README), so every seeded worker's hire
+    // date is on or before the seeded report date.
     for (const w of workers) {
-      expect(w.hire_date < "2026-11-01", `hire ${w.worker_id}`).toBe(true);
+      expect(w.hire_date <= "2026-11-01", `hire ${w.worker_id}`).toBe(true);
       if (w.termination_date) expect(w.termination_date >= w.hire_date).toBe(true);
       expect(w.termination_date !== null, `termination ${w.worker_id}`).toBe(
         w.status === "terminated",
       );
     }
+  });
+
+  it("uses the D-031 worker id schemes in workday.workers, app.seats and app.leaders", async () => {
+    for (const w of workers) {
+      expect(w.worker_id).toMatch(w.worker_type === "employee" ? /^\d{6}$/ : /^C-\d{5}$/);
+    }
+    const badSeats = await rows(
+      `select seat_id from app.seats
+        where worker_id is not null
+          and not (seat_type = 'employee' and worker_id ~ '^[0-9]{6}$')
+          and not (seat_type = 'contingent' and worker_id ~ '^C-[0-9]{5}$')`,
+    );
+    expect(badSeats).toEqual([]);
+    const badLeaders = await rows(
+      "select leader_id from app.leaders where worker_id !~ '^[0-9]{6}$'",
+    );
+    expect(badLeaders).toEqual([]);
+  });
+
+  it("stores supervisory orgs as `<org> (<manager>)`, following the manager", async () => {
+    const bad = await rows<{ worker_id: string }>(
+      `with orgs as (
+         select w.worker_id, w.supervisory_org,
+                ' (' || m.first_name || ' ' || m.last_name || ')' manager_suffix
+           from workday.workers w
+           join workday.workers m on m.worker_id = coalesce(w.manager_worker_id, w.worker_id))
+       select worker_id from orgs
+        where supervisory_org !~ '^.+ [(].+[)]$'
+           or right(supervisory_org, length(manager_suffix)) <> manager_suffix`,
+    );
+    expect(bad).toEqual([]);
+    const all = await one<{ n: string }>("select count(*) n from workday.workers");
+    expect(Number(all.n)).toBeGreaterThan(1900);
   });
 
   it("populates position, cost center and location, with unique positions among current workers", () => {
