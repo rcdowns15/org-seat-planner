@@ -1,6 +1,6 @@
 # BR-01 — Foundations
 
-**Status:** todo · **Depends on:** — · **Milestone:** M1 · **Target:** Thu 2026-11-12 · **Cut line:** yes
+**Status:** in-progress · **Depends on:** — · **Milestone:** M1 · **Target:** Thu 2026-11-12 · **Cut line:** yes
 
 ## Goal
 A TypeScript Next.js app with CI, a local Docker Postgres, migrations for the `app` and `workday`
@@ -52,7 +52,7 @@ bypassed as admin anyway. Revisit after LR-01-03 (option: a ruleset requiring th
 - [x] Repo description mentions "fictional company, mock data"
 Likely files: none (GitHub settings).
 
-### LR-01-02 · Next.js TypeScript scaffold and tooling · status: review (https://github.com/rcdowns15/org-seat-planner/pull/1) · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
+### LR-01-02 · Next.js TypeScript scaffold and tooling · status: done (https://github.com/rcdowns15/org-seat-planner/pull/1) · depends: LR-01-01, LR-01-10 · owner: agent · executor model: sonnet
 Scaffold Next.js (current stable, App Router, `src/` dir) in TypeScript strict mode at the repo root
 with pnpm, Tailwind and shadcn/ui (init plus `button`, `card`, `dialog`, `select`, `badge`). Add
 ESLint + Prettier, Vitest, and Playwright. Add the scripts named in "Commands" and "Checks"
@@ -66,7 +66,7 @@ Planner · Second Republic Bank (fictional)". Update `.gitignore` if needed.
 - [ ] `vercel.json` sets `"framework": "nextjs"` (the Vercel project was created before the app existed, so its preset is "Other"), and the Vercel preview deployment for this PR builds successfully
 Likely files: `vercel.json`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `.prettierrc`, `vitest.config.ts`, `playwright.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/*`, `tests/unit/*`, `tests/e2e/home.spec.ts`, `.nvmrc`.
 
-### LR-01-03 · CI workflow · status: todo · depends: LR-01-02 · owner: agent · executor model: sonnet
+### LR-01-03 · CI workflow · status: in-progress · depends: LR-01-02 · owner: agent · executor model: sonnet
 GitHub Actions `ci.yml` on `pull_request` and pushes to `main`: install with the pinned pnpm and
 Node (cache the pnpm store), then `lint`, `typecheck`, `test`, `build`, and a Playwright job
 (install Chromium only).
@@ -75,7 +75,7 @@ Node (cache the pnpm store), then `lint`, `typecheck`, `test`, `build`, and a Pl
 - [ ] Node and pnpm versions come from `.nvmrc` / `packageManager`, not hardcoded in the workflow
 Likely files: `.github/workflows/ci.yml`.
 
-### LR-01-04 · Local Postgres, DB client, health route · status: todo · depends: LR-01-02 · owner: agent · executor model: sonnet
+### LR-01-04 · Local Postgres, DB client, health route · status: in-progress · depends: LR-01-02 · owner: agent · executor model: sonnet
 `docker-compose.yml` with Postgres 16 (localhost-only defaults) and an init script creating the
 `app`, `workday` and `analytics` schemas. A server-only DB module using `pg` + Drizzle that reads
 `DATABASE_URL`. `GET /api/health` returns `{ ok, db, seats }` (`seats` is `null` until the schema
