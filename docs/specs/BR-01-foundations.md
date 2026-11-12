@@ -192,12 +192,12 @@ script.
 - [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) the `CLAUDE.md` rule, and this criterion's own line in this spec, never seed data, UI, fixtures or the README
 Likely files: `scripts/seed/index.ts`, `scripts/seed/org.ts`, `scripts/seed/workers.ts`, `scripts/seed/seats.ts`, `scripts/seed/names.ts`, `scripts/seed/workday-reports.ts`, `scripts/seed/README.md`, `tests/db/seed.test.ts`, `package.json`.
 
-### LR-01-08 · CI database job and Neon deploy workflow · status: todo · depends: LR-01-03, LR-01-07 · owner: agent · executor model: sonnet
+### LR-01-08 · CI database job and Neon deploy workflow · status: done (PR #6) · depends: LR-01-03, LR-01-07 · owner: agent · executor model: sonnet
 Add a CI job with a Postgres 16 service container: migrate, seed, `pnpm test:db`, and run Playwright
 against the seeded DB. Add `db-deploy.yml` (manual `workflow_dispatch` only): runs migrations and
 the seed against the database in the `NEON_DATABASE_URL_UNPOOLED` secret, with an input
 `reseed: true|false`. Extend `/api/health` to report the seat count.
-- [ ] CI DB job passes on this PR (link the run)
+- [x] CI DB job passes on this PR (link the run): https://github.com/rcdowns15/org-seat-planner/actions/runs/43286534662
 - [x] `db-deploy.yml` passes `actionlint` (or the GitHub workflow validator) and never echoes the secret
 - [x] `/api/health` returns the seeded seat count locally (test)
 - [x] `pnpm db:seed` refuses a non-local database (host not `localhost`/`127.0.0.1`) unless `--allow-remote` is passed, and prints the target host (never the connection string); `db-deploy.yml` passes `--allow-remote`. Test covers the refusal. (Added by orchestrator from the LR-01-07 review: after `vercel env pull`, a bare `pnpm db:seed` would truncate Neon.)

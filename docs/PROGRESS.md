@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · D-032 recorded (LR-01-07 layout choices); LR-01-08 brief handed to Rob (navigator)
-- **Milestone:** M1 — Foundations (BR-01), 7 of 10 little rocks done (LR-01-01…04, LR-01-06, LR-01-07, LR-01-10). LR-01-05: all criteria met except the README line (folded into the LR-01-08 brief).
-- **In flight:** none (LR-01-08 brief ready, not yet started).
+- **Last updated:** 2026-11-12 · LR-01-08 and LR-01-05 done (PR #6 merged) (orchestrator)
+- **Milestone:** M1 — Foundations (BR-01), 9 of 10 little rocks done (LR-01-01…08, LR-01-10). Only LR-01-09 (Rob) is left, then the BR-01 big-rock review.
+- **In flight:** none
 - **Blocked:** none
-- **Waiting on Rob:** paste the LR-01-08 brief into a fresh orchestrator session; LR-01-09 once LR-01-08 merges; clarify the "TA-slice decision pending" note from commit ba60871 (it isn't in any doc).
-- **Next:** LR-01-08 (Sonnet; CI DB job, `db-deploy`, `/api/health` seat count, `db:seed --allow-remote` guard, plain install, README URL, seed README leader-cost-center note) · owner: orchestrator. Then LR-01-09 (Rob), then the BR-01 big-rock review.
+- **Waiting on Rob:** LR-01-09: add the `NEON_DATABASE_URL_UNPOOLED` and `DBT_HOST`/`DBT_USER`/`DBT_PASSWORD`/`DBT_DBNAME` GitHub secrets, run `db-deploy` with `reseed: true`, and confirm production `/api/health` shows `"seats":2202`.
+- **Next:** LR-01-09 (Rob), then the BR-01 big-rock review (orchestrator), then BR-02.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-01-08 done: PR #6 merged (CI green, run 43286534662). LR-01-05 done with it (README production URL). LR-01-09 (Rob) is now unblocked.
+- 2026-11-12 — LR-01-08 → `review`: PR #6 (Sonnet build + one fix round; review 1 two P2s fixed: LR-01-05 status, CLI-level refusal test; four P3s fixed, four noted; review 2 pass; CI green). The PR also closes LR-01-05 (README URL) and adds the D-032 seed README note (seed checksum unchanged).
 - 2026-11-12 — D-032 accepted: PR #5 merge = layout sign-off (LR-01-07 criterion annotated); leaders keep group cost centers for now (parked; raise again after the interview); `<group> Team <n>` supervisory org names confirmed. LR-01-08 brief handed off, carrying the LR-01-05 README line and a seed README note.
 - 2026-11-12 — Criteria (navigator, from the LR-01-07 review notes): LR-03-01 ingest must not reuse the seed's CSV code; LR-03-04 pins the termination window (report date − 29 days through the report date, as the seed does); LR-01-07 spec wording now says the hand-written special-character names include given names.
 - 2026-11-12 — LR-01-07 done: PR #5 merged. LR-01-08 is ready (deps LR-01-03, LR-01-07 merged).
