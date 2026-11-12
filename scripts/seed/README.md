@@ -5,7 +5,11 @@ two mock Workday report CSVs to `data/workday/` (gitignored; regenerated every r
 isn't on `localhost` or `127.0.0.1` unless you pass `--allow-remote`.
 `pnpm db:seed:check` prints a SHA-256 checksum of the rows now in the database. Running the seed
 twice prints the same checksum, because nothing in the generator reads the clock or global
-randomness (D-014).
+randomness (D-014). The expected checksum is pinned in `tests/db/seed.test.ts`:
+
+```
+8cb477f9fde138983f8740eb86a026f5e77f39c229bae64a4dafab10f79af340
+```
 
 ## What it generates
 

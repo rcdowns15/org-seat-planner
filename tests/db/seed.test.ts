@@ -11,6 +11,10 @@ import { getPool } from "@/server/db";
 import { documentedChanges, documentedFixtures } from "../support/seed-readme";
 import { localChildEnv } from "./local-db";
 
+// The seed's checksum, pinned (D-014). It changes only when the generator or the seeded schema
+// changes on purpose; update it together with scripts/seed/README.md when that happens.
+const EXPECTED_SEED_CHECKSUM = "8cb477f9fde138983f8740eb86a026f5e77f39c229bae64a4dafab10f79af340";
+
 const REPORT_1 = path.join("data", "workday", "worker_report_2026-11-01.csv");
 const REPORT_2 = path.join("data", "workday", "worker_report_2026-11-15.csv");
 const url = () => process.env.DATABASE_URL!;
@@ -47,7 +51,7 @@ beforeAll(async () => {
 
 describe("determinism", () => {
   it("prints the same checksum when seeded twice, and db:seed:check agrees", async () => {
-    expect(first.checksum).toMatch(/^[0-9a-f]{64}$/);
+    expect(first.checksum).toBe(EXPECTED_SEED_CHECKSUM);
     expect(second.checksum).toBe(first.checksum);
     expect(await checkSeed(url())).toBe(first.checksum);
   });
