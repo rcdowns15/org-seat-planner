@@ -66,7 +66,7 @@ Planner · Second Republic Bank (fictional)". Update `.gitignore` if needed.
 - [ ] `vercel.json` sets `"framework": "nextjs"` (the Vercel project was created before the app existed, so its preset is "Other"), and the Vercel preview deployment for this PR builds successfully
 Likely files: `vercel.json`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `.prettierrc`, `vitest.config.ts`, `playwright.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/*`, `tests/unit/*`, `tests/e2e/home.spec.ts`, `.nvmrc`.
 
-### LR-01-03 · CI workflow · status: review (https://github.com/rcdowns15/org-seat-planner/pull/2) · depends: LR-01-02 · owner: agent · executor model: sonnet
+### LR-01-03 · CI workflow · status: done (https://github.com/rcdowns15/org-seat-planner/pull/2) · depends: LR-01-02 · owner: agent · executor model: sonnet
 GitHub Actions `ci.yml` on `pull_request` and pushes to `main`: install with the pinned pnpm and
 Node (cache the pnpm store), then `lint`, `typecheck`, `test`, `build`, and a Playwright job
 (install Chromium only).
