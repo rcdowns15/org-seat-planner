@@ -133,7 +133,7 @@ a Mermaid ER diagram and one line per table.
 - [ ] `docs/data-model.md` lists every table and column created by the migrations
 Likely files: `db/schema/app.ts`, `db/schema/workday.ts`, `db/migrations/*`, `drizzle.config.ts`, `tests/db/constraints.test.ts`, `docs/data-model.md`.
 
-### LR-01-07 · Deterministic seed generator (current state) · status: in-progress · depends: LR-01-06 · owner: agent · executor model: sonnet
+### LR-01-07 · Deterministic seed generator (current state) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/5) · depends: LR-01-06 · owner: agent · executor model: sonnet
 `pnpm db:seed` truncates and reseeds `app` and `workday` from a fixed faker seed (D-014): 4
 divisions, 12 groups, about 180 squads, about 2,000 workers (~10% contingent), about 200
 open/backfill seats, some `offer_accepted`, leaders for each division and group, and an approved headcount plan

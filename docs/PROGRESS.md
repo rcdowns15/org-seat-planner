@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · navigator: D-031 Workday realism and the LR-02-08 impact preset added; LR-01-07 in flight (orchestrator, session 2)
+- **Last updated:** 2026-11-12 · LR-01-07 PR #5 opened, waiting on Rob (orchestrator, session 2)
 - **Milestone:** M1 — Foundations (BR-01), 6 of 10 little rocks done (LR-01-01…04, LR-01-06, LR-01-10). LR-01-05: all criteria met except the README line (orchestrator add-on).
-- **In flight:** LR-01-07 (seed generator, Sonnet executor) on `lr/LR-01-07-seed`.
+- **In flight:** LR-01-07 → `review`, PR #5 (https://github.com/rcdowns15/org-seat-planner/pull/5) at d63a6e5. Two reviews (P1 + 2 P2s fixed), D-031 realism pass applied; 2 of 2 retries used.
 - **Blocked:** none
-- **Waiting on Rob:** paste the D-031 message into the orchestrator (if not yet done); LR-01-07 PR review incl. sign-off on the Workday report layout, checked against D-031's five items; LR-01-09 once LR-01-08 merges; harness edit "orchestrator stages only its own files" (project agent file, template, `LESSONS.md`; text in the 2026-11-12 navigator session); decide at Friday's check-in whether to pull a thin TA slice (proposed LR-03-06: mock TA offers as a dbt seed plus two exceptions) above the cut line, swapping out the "Last save: SQL executed" part of LR-02-08.
-- **Next:** LR-01-07 Workday realism additions (D-031) on the same branch → review + PR → LR-01-08 (CI DB job, `db-deploy`) · owner: orchestrator.
+- **Waiting on Rob:** PR #5 review + Workday report layout sign-off (criterion), incl. decisions: leader cost centers (squad group's CC vs a leadership CC), supervisory-org naming `<group> Team <n>`; LR-01-09 once LR-01-08 merges.
+- **Next:** after PR #5 merges → LR-01-08 (CI DB job, `db-deploy`, `/api/health` seat count, `db:seed --allow-remote` guard) · owner: orchestrator.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-01-07 → `review`: PR #5 (Sonnet build + fixes, Opus D-031 pass; review 1 P1 test-env leak and P2 brand names fixed, review 2 P2 "Quartz Scheduler" fixed; layout sign-off pending).
 - 2026-11-12 — Criteria tightened (orchestrator): LR-01-07 "first republic" grep allows the criterion's own spec line; LR-01-08 gains a `db:seed` remote-database guard (`--allow-remote`) and a plain-install note, both from the LR-01-07 review.
 - 2026-11-12 — LR-02-08 criteria: added an "Impact of last move" preset (before/after seat counts and plan variance for the squads a move touched), rebuilt from `seat_changes`. Inside the existing little rock; cut line unchanged. Full dashboard stays BR-08.
 - 2026-11-12 — D-031 accepted: the mock Workday reports model real report behavior (30-day termination window, future-dated hires, `Name (Manager)` supervisory orgs, employee and contingent ID schemes plus `Contract_End_Date`, BOM/CRLF/accented names). Criteria updated in LR-01-07 (in flight: apply before the PR), LR-03-01, LR-03-02, LR-03-04, LR-04-02. Rehires, FTE, leave types and event feeds parked.
