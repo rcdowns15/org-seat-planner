@@ -62,7 +62,7 @@ Rules approved by Rob (2026-11-12, from the LR-03-01 build): (a) a report whose 
 - [ ] Seed checksum from LR-01-07 is unchanged after the switch: first commit pins `8cb477f9fde138983f8740eb86a026f5e77f39c229bae64a4dafab10f79af340` as a constant asserted in `tests/db/seed.test.ts` (and in `scripts/seed/README.md`), so the after-switch run is checked against a recorded baseline (BR-01 review P2-2)
 Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
 
-### LR-03-02 · dbt project, sources and staging · status: in-progress (stacked on LR-03-01 at adc16ed) · depends: LR-01-08, LR-03-01 (migration only) · owner: agent · executor model: sonnet
+### LR-03-02 · dbt project, sources and staging · status: review (https://github.com/rcdowns15/org-seat-planner/pull/10, merge after #9) · depends: LR-01-08, LR-03-01 (migration only) · owner: agent · executor model: sonnet
 Dependency note (navigator, 2026-11-12): `workday.raw_worker_report` and `workday.ingest_runs` don't
 exist until LR-03-01's migration, so this little rock's sources can't build before then. It branches
 from LR-03-01's branch once that migration is committed, and its PR merges after LR-03-01's (stacked).

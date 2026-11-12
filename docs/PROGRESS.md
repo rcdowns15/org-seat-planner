@@ -3,17 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · orchestrator stopped at the context budget; handoff below. No PRs open yet.
-- **Milestone:** M1 done (BR-01 `done`). M2/M3: four LRs built and verified, in review/fix loops.
-- **In flight:**
-  - LR-02-01 `lr/LR-02-01-acting-as` @3a44051: fix round 1 (retry 1/2) committed (both P2s + six P3s fixed, new leader-switcher e2e). Next: verify (all Checks), re-review, PR.
-  - LR-02-02 `lr/LR-02-02-board` @3589b33: fix round 1 (retry 1/2) committed (P2 header-count DB test + six P3s; executor reports lint/typecheck/test 48/test:db 65/build/e2e 6 pass). Next: verify (all Checks), re-review, PR.
-  - LR-03-01 `lr/LR-03-01-workday-ingest` @664ef59: verified; review 1 pass with 3 P2s, none touching migration 0003. Next: fix round 1 (retry 1/2): P2-1 validate `Position_ID` unique among non-terminated rows, and record a `rejected` run when the load throws; P2-2 advisory lock on one constant key (`hashtext('workday_ingest')`), not the file hash; P2-3 document upsert-only + newer-report-only in data-model.md and the schema comment. Cheap P3s: fatal UTF-8 decode, reject unknown/duplicate headers, consistent row numbering, `﻿` literal. Then verify, re-review, PR.
-  - LR-03-02 `lr/LR-03-02-dbt-staging` @b1f07bd, rebased onto LR-03-01 @664ef59: verified with seed-loaded data (lint/typecheck/test pass; dbt build PASS=119 ERROR=0). Next: rebase again onto LR-03-01's final tip after its fixes, re-run dbt build, review, PR with "Merge after LR-03-01 (#N)". Consider reviewer P3: a dbt test that staged latest report = `workday.workers`.
-  - Verification worktrees `code/v0201`, `v0202`, `v0301`, `v0302`; per-LR local DBs `seatplanner_lr0201/0202/0301/0302`.
+- **Last updated:** 2026-11-12 · orchestrator stopped (usage limit) with all four PRs done or open
+- **Milestone:** M1 done. M2: LR-02-01, LR-02-02 done (#7, #8). M3: LR-03-01 and LR-03-02 in review.
+- **In flight:** PR #9 LR-03-01 (CI green), then PR for LR-03-02 (https://github.com/rcdowns15/org-seat-planner/pull/10), stacked: merge #9 first.
 - **Blocked:** none.
-- **Waiting on Rob:** nothing until the four PRs open (merge LR-03-01 before LR-03-02).
-- **Next:** fresh `claude --agent orchestrator` session continues from this block → four PRs (merge LR-03-01 before LR-03-02).
+- **Waiting on Rob:** review and merge #9, then the LR-03-02 PR. Navigator: a DECISIONS entry for the dbt 1.10 pin; a D-029 call for LR-03-06.
+- **Next:** LR-02-03 (Opus) is ready now. LR-03-03 after LR-03-02 merges. Clean up the worktrees `code/v0201`, `v0202`, `v0301`, `v0302` and the local DBs `seatplanner_lr0*` after the merges.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -27,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-03-02 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/10 (Sonnet build + 2 fix rounds; review 1 P2 fixed, review 2 P2 fixed and checked by the orchestrator; dbt build 121 pass). Stacked on #9.
 - 2026-11-12 — LR-03-01 → `review`: PR #9 (Sonnet build + 2 fix rounds; review 1 three P2s fixed, review 2 one P2 fixed and one waived → LR-03-06, review 3 pass). Rebased onto main after #7/#8; checksum unchanged.
 - 2026-11-12 — LR-02-01 done (PR #7 merged) and LR-02-02 done (PR #8 merged). LR-02-03 (Opus) is now ready: deps LR-02-01 merged.
 - 2026-11-12 — New little rock LR-03-06 (`todo`, needs a navigator call: touches D-029): a position backfill can wedge ingestion under upsert-only workers. Found in the LR-03-01 round-2 review; waived in the LR-03-01 PR, which is outside this brief.
