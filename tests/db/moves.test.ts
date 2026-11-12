@@ -100,6 +100,8 @@ let backfillTarget: SeatRow; // a backfill employee seat in another Digital Chan
 let offerSeat: SeatRow; // an offer_accepted employee seat in Digital Channels
 let contingentOpenSeat: SeatRow; // an open contingent seat in Digital Channels
 let someoneElsesSeat: SeatRow; // a filled seat in another Digital Channels squad
+let outsideMovers: SeatRow[]; // active employees seated in the division but outside the group
+let contingentMover: SeatRow; // an active contingent worker seated in Digital Channels
 
 beforeAll(async () => {
   divisionLeader = await leaderByWorker(DIVISION_LEADER_WORKER);
@@ -132,10 +134,39 @@ beforeAll(async () => {
   [offerSeat] = await groupSeats("offer_accepted", "employee", false);
   [contingentOpenSeat] = await groupSeats("open", "contingent", false);
   [someoneElsesSeat] = await groupSeats("filled", "employee", true);
+  outsideMovers = await query<SeatRow>(
+    `select s.seat_id, s.status, s.worker_id, s.version
+     from app.seats s
+     join app.squads q on q.squad_id = s.squad_id
+     join app.groups g on g.group_id = q.group_id
+     join workday.workers w on w.worker_id = s.worker_id
+     where g.division_id = $1 and q.group_id <> $2 and s.seat_type = 'employee'
+       and w.status = 'active' and w.worker_type = 'employee'
+     order by s.seat_id
+     limit 3`,
+    [divisionLeader.divisionId, groupLeader.groupId],
+  );
+  [contingentMover] = await query<SeatRow>(
+    `select s.seat_id, s.status, s.worker_id, s.version
+     from app.seats s
+     join app.squads q on q.squad_id = s.squad_id
+     join workday.workers w on w.worker_id = s.worker_id
+     where q.group_id = $1 and s.seat_type = 'contingent'
+       and w.status = 'active' and w.worker_type = 'contingent'
+     order by s.seat_id`,
+    [groupLeader.groupId],
+  );
 
   expect(movers.length).toBeGreaterThanOrEqual(7);
-  expect(openTargets.length).toBeGreaterThanOrEqual(3);
-  for (const s of [backfillTarget, offerSeat, contingentOpenSeat, someoneElsesSeat]) {
+  expect(openTargets.length).toBeGreaterThanOrEqual(5);
+  expect(outsideMovers).toHaveLength(3);
+  for (const s of [
+    backfillTarget,
+    offerSeat,
+    contingentOpenSeat,
+    someoneElsesSeat,
+    contingentMover,
+  ]) {
     expect(s).toBeDefined();
   }
 }, 30_000);
@@ -177,6 +208,17 @@ describe("moveWorker failure codes: each returns its code and writes nothing", (
     const result = await expectNothingWritten(
       () => moveWorker(moveOf(movers[0], target), groupLeader),
       [movers[0].seat_id, target.seat_id],
+    );
+    expect(result).toMatchObject({ ok: false, code: "FORBIDDEN" });
+  });
+
+  it("FORBIDDEN: the group leader can't move someone out of a squad outside their group", async () => {
+    // The target is an open employee seat inside Digital Channels, so only the source squad
+    // (in the division, outside the group) is out of scope.
+    const mover = outsideMovers[0];
+    const result = await expectNothingWritten(
+      () => moveWorker(moveOf(mover, openTargets[0]), groupLeader),
+      [mover.seat_id, openTargets[0].seat_id],
     );
     expect(result).toMatchObject({ ok: false, code: "FORBIDDEN" });
   });
@@ -258,6 +300,14 @@ describe("moveWorker failure codes: each returns its code and writes nothing", (
     expect(result).toMatchObject({ ok: false, code: "SEAT_TYPE_MISMATCH" });
   });
 
+  it("SEAT_TYPE_MISMATCH: a contingent worker can't fill an employee seat", async () => {
+    const result = await expectNothingWritten(
+      () => moveWorker(moveOf(contingentMover, openTargets[0]), groupLeader),
+      [contingentMover.seat_id, openTargets[0].seat_id],
+    );
+    expect(result).toMatchObject({ ok: false, code: "SEAT_TYPE_MISMATCH" });
+  });
+
   it.each([
     ["yesterday (backdated)", -1],
     ["today + 91 days", 91],
@@ -269,21 +319,6 @@ describe("moveWorker failure codes: each returns its code and writes nothing", (
       [movers[0].seat_id, openTargets[0].seat_id],
     );
     expect(result).toMatchObject({ ok: false, code: "INVALID_EFFECTIVE_DATE" });
-  });
-
-  it.each([
-    ["today", 0],
-    ["today + 90 days", 90],
-  ])("the window includes %s (proved by reaching the next check, CONFLICT)", async (_l, days) => {
-    const input = moveOf(movers[0], openTargets[0], {
-      effectiveDate: addUtcDays(today(), days),
-      toSeatVersion: openTargets[0].version + 5, // stale on purpose, so nothing is written
-    });
-    const result = await expectNothingWritten(
-      () => moveWorker(input, groupLeader),
-      [movers[0].seat_id, openTargets[0].seat_id],
-    );
-    expect(result).toMatchObject({ ok: false, code: "CONFLICT" });
   });
 
   it("'today' is the UTC calendar date of the injected clock", async () => {
@@ -304,7 +339,10 @@ describe("moveWorker failure codes: each returns its code and writes nothing", (
     expect(result).toMatchObject({ ok: false, code: "CONFLICT" });
   });
 
-  it("CONFLICT: the target seat's version is stale, and the source update is rolled back", async () => {
+  it("CONFLICT: a target version one ahead of the row is caught at the read, before any UPDATE", async () => {
+    // A forged version one ahead would match the UPDATE right after a racing move bumped the
+    // row, so the read must reject it: every check then runs on the state the lock guards.
+    // (A matched source UPDATE being rolled back is proved by the concurrency test's loser.)
     clearSqlLog();
     const input = moveOf(movers[0], openTargets[0], { toSeatVersion: openTargets[0].version + 1 });
     const result = await expectNothingWritten(
@@ -312,11 +350,20 @@ describe("moveWorker failure codes: each returns its code and writes nothing", (
       [movers[0].seat_id, openTargets[0].seat_id],
     );
     expect(result).toMatchObject({ ok: false, code: "CONFLICT" });
-    // The source UPDATE really ran (and matched), then the transaction rolled back.
     const sqls = lastSave()!.statements.map((s) => s.sql);
-    expect(sqls.filter((s) => /^update "app"\."seats"/.test(s))).toHaveLength(2);
+    expect(sqls.filter((s) => /^update "app"\."seats"/.test(s))).toHaveLength(0);
     expect(sqls.at(-1)).toBe("rollback");
     expect(lastSave()).toMatchObject({ action: "move", ok: false, code: "CONFLICT" });
+  });
+
+  it("CONFLICT: a stale version is reported before the later checks", async () => {
+    // At the right version, this offer_accepted target would be SEAT_NOT_AVAILABLE.
+    const input = moveOf(movers[0], offerSeat, { toSeatVersion: offerSeat.version + 1 });
+    const result = await expectNothingWritten(
+      () => moveWorker(input, groupLeader),
+      [movers[0].seat_id, offerSeat.seat_id],
+    );
+    expect(result).toMatchObject({ ok: false, code: "CONFLICT" });
   });
 });
 
@@ -408,6 +455,26 @@ describe("moveWorker success", () => {
   });
 });
 
+describe("moveWorker effective-date window boundaries", () => {
+  // Proved by succeeding: at the loaded versions, nothing after the date check can fail.
+  it.each([
+    ["today", 0, 1, 3],
+    ["today + 90 days", 90, 2, 4],
+  ])("accepts %s", async (_label, days, moverIndex, targetIndex) => {
+    const mover = outsideMovers[moverIndex];
+    const target = openTargets[targetIndex];
+    const effectiveDate = addUtcDays(today(), days);
+    const result = await moveWorker(moveOf(mover, target, { effectiveDate }), divisionLeader);
+    expect(result).toMatchObject({ ok: true });
+    const [row] = await query<{ effective_date: string }>(
+      `select distinct to_char(effective_date, 'YYYY-MM-DD') effective_date
+       from app.seat_changes where move_id = $1`,
+      [result.ok ? result.moveId : null],
+    );
+    expect(row.effective_date).toBe(effectiveDate);
+  });
+});
+
 describe("SQL log (ring buffer for the SQL panel)", () => {
   it("captures the version-checked UPDATEs and the two audit INSERTs, with bound values", async () => {
     clearSqlLog();
@@ -461,7 +528,8 @@ describe("concurrency", () => {
     for (;;) {
       const [row] = await query<{ n: number }>(
         `select count(*)::int n from pg_stat_activity
-         where datname = current_database() and wait_event_type = 'Lock'`,
+         where datname = current_database() and wait_event_type = 'Lock'
+           and query ilike 'update "app"."seats"%'`,
       );
       if (row.n >= n) return;
       if (Date.now() > deadline) throw new Error(`only ${row.n} of ${n} lock waiters`);
@@ -475,7 +543,9 @@ describe("concurrency", () => {
     const changesBefore = await changeCount();
 
     // A third connection holds the target row so both moves are guaranteed to have read the seat
-    // as open (and passed every check) before either writes: the real race. Each moveWorker
+    // as open at the version they were given (and passed every check, including the read-time
+    // version check) before either writes: the real race. The loser read the old version before
+    // the winner committed, so only its version-checked UPDATE can stop it. Each moveWorker
     // runs on its own pooled connection and transaction and blocks in its target UPDATE.
     const blocker = await getPool().connect();
     let results: MoveResult[];

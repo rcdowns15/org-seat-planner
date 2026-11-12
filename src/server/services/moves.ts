@@ -19,6 +19,8 @@ import { workers } from "../../../db/schema/workday";
 // Seat statuses a move can land on. `offer_accepted` seats are reserved for an incoming hire.
 const RECEIVING_STATUSES = ["open", "backfill"];
 
+const CONFLICT_MESSAGE = "This seat changed since you loaded it. Refresh and try again.";
+
 // Thrown inside the transaction to roll it back with a typed failure; caught in moveWorker and
 // returned as a value, so callers never see it (expected failures are results, not errors).
 class MoveAborted extends Error {
@@ -47,15 +49,18 @@ export type MoveOptions = {
 };
 
 // Moves a worker from one seat to another (LR-02-03). Checks run in this order, and the first
-// one that fails is returned: INVALID_INPUT, READ_ONLY (no leader), FORBIDDEN, WORKER_NOT_ACTIVE,
-// NOT_IN_SEAT, SEAT_NOT_AVAILABLE, SEAT_TYPE_MISMATCH, INVALID_EFFECTIVE_DATE, CONFLICT.
+// one that fails is returned: INVALID_INPUT, READ_ONLY (no leader), FORBIDDEN, CONFLICT (versions
+// as read), WORKER_NOT_ACTIVE, NOT_IN_SEAT, SEAT_NOT_AVAILABLE, SEAT_TYPE_MISMATCH,
+// INVALID_EFFECTIVE_DATE, CONFLICT (versions at write).
 //
-// Concurrency (D-011, optimistic locking): the reads take no row locks. The guard is in the
-// writes: each seat UPDATE has `WHERE seat_id = $1 AND version = $2` and bumps the version, so
-// if anyone changed either seat since the leader loaded it, the UPDATE matches 0 rows, the move
-// returns CONFLICT and the whole transaction rolls back. When two moves race for the same seat,
-// Postgres makes the second UPDATE wait for the first transaction, then re-checks its WHERE
-// against the committed row, whose version has moved on: exactly one wins.
+// Concurrency (D-011, optimistic locking): the reads take no row locks. The seat read must show
+// the versions the leader loaded, so the checks run on exactly the state the lock guards. The
+// guard itself is in the writes: each seat UPDATE has `WHERE seat_id = $1 AND version = $2` and
+// bumps the version, so if anyone changed either seat after this move read it, the UPDATE
+// matches 0 rows, the move returns CONFLICT and the whole transaction rolls back. When two moves
+// race for the same seat, both can read it at the loaded version and pass every check; Postgres
+// then makes the second UPDATE wait for the first transaction and re-checks its WHERE against
+// the committed row, whose version has moved on: exactly one wins.
 //
 // The source seat is updated before the target so the worker is never in two seats at once
 // (the partial unique index on app.seats.worker_id is checked row by row).
@@ -112,6 +117,7 @@ async function runMove(
       seatType: seats.seatType,
       status: seats.status,
       workerId: seats.workerId,
+      version: seats.version,
     })
     .from(seats)
     .where(inArray(seats.seatId, [input.fromSeatId, input.toSeatId]));
@@ -123,6 +129,15 @@ async function runMove(
   if (!from || !to) fail("FORBIDDEN", "That seat does not exist or you cannot edit it.");
   const permission = await requireEditSquads(leader, [from.squadId, to.squadId], tx);
   if (!permission.ok) fail("FORBIDDEN", "You do not have permission to edit both squads.");
+
+  // CONFLICT (early): the seats must be at the versions the leader loaded. Every check below
+  // reads these rows, and the UPDATEs only lock on the client's versions, so the two must agree:
+  // otherwise a forged version one ahead of the row could pass the checks on the old state and
+  // then match the UPDATE after a racing move bumps the version. A stale version therefore
+  // returns CONFLICT before WORKER_NOT_ACTIVE and the later checks.
+  if (from.version !== input.fromSeatVersion || to.version !== input.toSeatVersion) {
+    fail("CONFLICT", CONFLICT_MESSAGE);
+  }
 
   // WORKER_NOT_ACTIVE: Workday is the source of truth for status. A worker missing from Workday
   // isn't known to be active either.
@@ -163,8 +178,8 @@ async function runMove(
     );
   }
 
-  // CONFLICT: the version-checked writes (D-011). Source first, then target.
-  const conflict = "This seat changed since you loaded it. Refresh and try again.";
+  // CONFLICT: the version-checked writes (D-011). Source first, then target. A move that read
+  // the seats before a racing move committed passed the check above and fails here.
   const [fromAfter] = await tx
     .update(seats)
     .set({
@@ -176,7 +191,7 @@ async function runMove(
     })
     .where(and(eq(seats.seatId, input.fromSeatId), eq(seats.version, input.fromSeatVersion)))
     .returning({ version: seats.version });
-  if (!fromAfter) fail("CONFLICT", conflict);
+  if (!fromAfter) fail("CONFLICT", CONFLICT_MESSAGE);
 
   const [toAfter] = await tx
     .update(seats)
@@ -189,7 +204,7 @@ async function runMove(
     })
     .where(and(eq(seats.seatId, input.toSeatId), eq(seats.version, input.toSeatVersion)))
     .returning({ version: seats.version });
-  if (!toAfter) fail("CONFLICT", conflict);
+  if (!toAfter) fail("CONFLICT", CONFLICT_MESSAGE);
 
   // Audit (D-010): two append-only rows sharing one move_id, in the same transaction.
   const moveId = randomUUID();
