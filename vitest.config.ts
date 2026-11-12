@@ -21,6 +21,7 @@ export default defineConfig({
         test: {
           name: "db",
           include: ["tests/db/**/*.test.ts"],
+          globalSetup: ["tests/db/global-setup.ts"],
           setupFiles: ["tests/db/setup-env.ts"],
         },
       },

@@ -29,4 +29,9 @@ describe("local database", () => {
     expect(result.status).toBe(200);
     expect(result.body.db).toBe("ok");
   });
+
+  it("health check returns a real seat count once migrated (global setup migrates)", async () => {
+    const result = await checkDatabase();
+    expect(typeof result.body.seats).toBe("number");
+  });
 });
