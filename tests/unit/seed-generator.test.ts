@@ -67,6 +67,21 @@ describe("scripts/seed/README.md matches the code", () => {
     ]);
   });
 
+  it("keeps every manager in the 11-15 report at 3-15 direct reports", () => {
+    const [header, ...body] = parseCsv(report2);
+    const managerCol = header.indexOf("Manager_ID");
+    const counts = new Map<string, number>();
+    for (const cells of body) {
+      const manager = cells[managerCol].trim();
+      if (manager) counts.set(manager, (counts.get(manager) ?? 0) + 1);
+    }
+    expect(counts.size).toBeGreaterThan(100);
+    for (const [manager, n] of counts) {
+      expect(n, manager).toBeGreaterThanOrEqual(3);
+      expect(n, manager).toBeLessThanOrEqual(15);
+    }
+  });
+
   it("gives every new hire in 11-15 a new Position_ID", () => {
     const before = new Set(
       parseCsv(report1)

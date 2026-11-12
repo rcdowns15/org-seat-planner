@@ -21,15 +21,15 @@ export const SQUAD_WORDS = [
   "Amber",
   "Cedar",
   "Harbor",
-  "Summit",
-  "Falcon",
+  "Heron",
+  "Thistle",
   "Maple",
   "Granite",
   "Willow",
   "Copper",
   "Meadow",
   "Cobalt",
-  "Juniper",
+  "Basalt",
   "Lantern",
   "Prairie",
   "Quartz",
@@ -41,7 +41,7 @@ export const SQUAD_WORDS = [
   "Indigo",
   "Coral",
   "Aspen",
-  "Onyx",
+  "Fennel",
 ] as const;
 
 export const SQUAD_NOUNS = [
@@ -58,7 +58,7 @@ export const SQUAD_NOUNS = [
   "Tracker",
   "Exchange",
   "Atlas",
-  "Beacon",
+  "Spindle",
   "Relay",
 ] as const;
 

@@ -97,7 +97,10 @@ export function buildNextReportWorkers(
         org.squads[m.squadIndex!].groupIndex === group &&
         (reportCounts.get(m.workerId) ?? 0) <= 12,
     );
-    w.managerWorkerId = faker.helpers.arrayElement(candidates).workerId;
+    const newManager = faker.helpers.arrayElement(candidates).workerId;
+    reportCounts.set(w.managerWorkerId!, (reportCounts.get(w.managerWorkerId!) ?? 0) - 1);
+    reportCounts.set(newManager, (reportCounts.get(newManager) ?? 0) + 1);
+    w.managerWorkerId = newManager;
   }
   picked[9].status = "leave";
 

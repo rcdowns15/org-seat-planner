@@ -9,6 +9,7 @@ import { fromUsDate } from "../../scripts/seed/dates";
 import { REPORT_COLUMNS } from "../../scripts/seed/workday-reports";
 import { getPool } from "@/server/db";
 import { documentedFixtures } from "../support/seed-readme";
+import { localChildEnv } from "./local-db";
 
 const REPORT_1 = path.join("data", "workday", "worker_report_2026-11-01.csv");
 const REPORT_2 = path.join("data", "workday", "worker_report_2026-11-15.csv");
@@ -54,13 +55,17 @@ describe("determinism", () => {
   it("prints the same checksum from two runs of the real `db:seed` command", () => {
     const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
     const run = () =>
-      execFileSync(process.execPath, [tsx, "scripts/seed/index.ts"], { encoding: "utf8" });
+      execFileSync(process.execPath, [tsx, "scripts/seed/index.ts"], {
+        encoding: "utf8",
+        env: localChildEnv(url()),
+      });
     const line = (out: string) => /^seed checksum: ([0-9a-f]{64})$/m.exec(out)![1];
     const a = line(run());
     expect(a).toBe(first.checksum);
     expect(line(run())).toBe(a);
     const check = execFileSync(process.execPath, [tsx, "scripts/seed/index.ts", "--check"], {
       encoding: "utf8",
+      env: localChildEnv(url()),
     });
     expect(line(check)).toBe(a);
   }, 60_000);
@@ -144,6 +149,14 @@ describe("invariants", () => {
     expect(Number(s.offers)).toBeGreaterThan(0);
   });
 
+  it("has a Workday worker for every leader", async () => {
+    const missing = await rows(
+      `select l.leader_id from app.leaders l
+        where not exists (select 1 from workday.workers w where w.worker_id = l.worker_id)`,
+    );
+    expect(missing).toEqual([]);
+  });
+
   it("matches every seat's type to its worker's type", async () => {
     const mismatched = await rows(
       `select s.seat_id from app.seats s join workday.workers w using (worker_id)
@@ -196,13 +209,19 @@ describe("named demo fixtures (keys documented in scripts/seed/README.md)", () =
 
     const seatFixture = fixtures["out-of-scope-open-seat"];
     expect(seatFixture.key).toBe("app.seats.seat_id");
-    const seat = await one<{ status: string; group_id: number; division_id: number }>(
-      `select s.status, q.group_id, g.division_id
+    const seat = await one<{
+      status: string;
+      seat_type: string;
+      group_id: number;
+      division_id: number;
+    }>(
+      `select s.status, s.seat_type, q.group_id, g.division_id
          from app.seats s join app.squads q using (squad_id) join app.groups g using (group_id)
         where s.seat_id = $1`,
       [Number(seatFixture.value)],
     );
     expect(seat.status).toBe("open");
+    expect(seat.seat_type).toBe("employee");
     expect(seat.group_id).not.toBe(leader.group_id); // outside the group leader's scope
     expect(seat.division_id).toBe(leader.division_id); // inside the division leader's
     const divisionLeader = await one<{ division_id: number }>(
