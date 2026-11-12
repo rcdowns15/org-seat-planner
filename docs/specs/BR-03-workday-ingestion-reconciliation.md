@@ -34,10 +34,10 @@ client, other sources (TA, FP&A) and an exceptions UI (BR-07), dashboard (BR-08)
 - The dbt CI job is green; the manual dbt-on-Neon workflow is green; the SQL panel shows both marts on production.
 
 ## Little rocks
-Parallel: LR-03-01 and LR-03-02 together (different folders). LR-03-03 needs LR-03-02 and LR-03-04
+Parallel: LR-03-01 and LR-03-02 overlap once LR-03-01's migration is committed (LR-03-02 stacks on it; see its dependency note). LR-03-03 needs LR-03-02 and LR-03-04
 needs LR-03-01 and LR-03-03.
 
-### LR-03-01 · Workday report ingestion with validation · status: todo · depends: LR-01-07 · owner: agent · executor model: sonnet
+### LR-03-01 · Workday report ingestion with validation · status: ready · depends: LR-01-07 · owner: agent · executor model: sonnet
 `pnpm workday:ingest <file>` (code in `scripts/ingest/`, written as a reader interface with a CSV
 implementation, so an API reader can replace it later). Steps:
 1. Validate the whole file before loading anything: strip a leading UTF-8 BOM and accept CRLF;
@@ -60,7 +60,10 @@ Switch `pnpm db:seed` to load Workday through this script.
 - [ ] Seed checksum from LR-01-07 is unchanged after the switch
 Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
 
-### LR-03-02 · dbt project, sources and staging · status: todo · depends: LR-01-08 · owner: agent · executor model: sonnet
+### LR-03-02 · dbt project, sources and staging · status: todo · depends: LR-01-08, LR-03-01 (migration only) · owner: agent · executor model: sonnet
+Dependency note (navigator, 2026-11-12): `workday.raw_worker_report` and `workday.ingest_runs` don't
+exist until LR-03-01's migration, so this little rock's sources can't build before then. It branches
+from LR-03-01's branch once that migration is committed, and its PR merges after LR-03-01's (stacked).
 `analytics/` as a uv project (`pyproject.toml`, `uv.lock`, `.python-version`) with dbt-core and
 dbt-postgres pinned. `profiles.yml` reads `DBT_*` env vars. Custom schema naming (`analytics_staging`,
 `analytics_intermediate`, `analytics`). Sources for `workday.raw_worker_report`,

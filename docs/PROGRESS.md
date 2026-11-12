@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-09 done: secrets added, `db-deploy` reseeded Neon, production health shows 2202 seats (navigator)
-- **Milestone:** M1 — Foundations (BR-01), 10 of 10 little rocks done. Only the BR-01 big-rock review is left.
-- **In flight:** none
-- **Blocked:** none
-- **Waiting on Rob:** start a fresh navigator session for the BR-01 big-rock review brief and the Friday BR-02 + BR-03 parallel brief.
-- **Next:** BR-01 big-rock review (orchestrator, fresh session), then BR-02 (LR-02-01…) and BR-03 (LR-03-01, LR-03-02) in parallel.
+- **Last updated:** 2026-11-12 · combined brief written: BR-01 big-rock review, then LR-02-01, LR-02-02, LR-03-01 and LR-03-02 (stacked) dispatched early (navigator)
+- **Milestone:** M1 — Foundations (BR-01), 10 of 10 little rocks done; big-rock review handed off. M2/M3 starting a few hours ahead of the Friday plan.
+- **In flight:** none yet (brief handed to Rob)
+- **Blocked:** none. LR-03-02 waits on LR-03-01's migration commit (stacked, not blocked).
+- **Waiting on Rob:** paste the brief into a fresh `claude --agent orchestrator` session; review the four PRs as they open.
+- **Next:** orchestrator runs the BR-01 review → dispatches LR-02-01, LR-02-02, LR-03-01 → LR-03-02 once LR-03-01's migration lands → stops with four PRs open.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — Navigator: LR-02-01, LR-02-02 and LR-03-01 → `ready` (deps merged). Dependency fix: LR-03-02 now also depends on LR-03-01's migration (its sources `workday.raw_worker_report` and `workday.ingest_runs` don't exist yet), so it stacks on the LR-03-01 branch and merges after it. Combined brief (BR-01 big-rock review + four-LR dispatch) handed to Rob, starting the Friday work early.
 - 2026-11-12 — LR-01-09 done (Rob): five GitHub secrets added (`NEON_DATABASE_URL_UNPOOLED`, `DBT_*`); `db-deploy` with `reseed: true` green (run 43288883379); production `/api/health` → `{"ok":true,"db":"ok","seats":2202}`, matching local. BR-01 has all 10 little rocks done; the big-rock review is next.
 - 2026-11-12 — Master plan rollup: BR-01 `todo` → `in-progress` (9/10). LR-01-08 P3s noted for later: the CLI refusal test may need a longer Vitest timeout on slow runners; a repeated `?host=` in the URL could slip past the seed guard; no Playwright test touches the database until BR-02's board tests.
 - 2026-11-12 — LR-01-08 done: PR #6 merged (CI green, run 43286534662). LR-01-05 done with it (README production URL). LR-01-09 (Rob) is now unblocked.
