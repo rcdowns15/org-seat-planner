@@ -217,3 +217,16 @@ documented honestly. (3) It's a common Workday naming pattern for team orgs, and
 **Alternatives:** add a leadership cost center now (e.g. `CC-1000 Engineering Leadership`;
 reopens a merged seed on the critical path); name orgs after squads (wrong: D-031 keeps
 supervisory orgs separate from squads).
+
+### D-033 · 2026-11-12 · accepted (Rob, 2026-11-12) · No TA feed before the interview; LR-07-04 stays after the cut line
+**Decision:** the Talent Acquisition offers feed stays in LR-07-04 (BR-07, after the interview).
+Before the interview, hiring is covered by D-031's hiring-gap exception (`offer_accepted` seats vs.
+future-dated Workday hires, matched by group). The README roadmap (LR-04-02) and the pipeline
+explainer (LR-04-03) present the TA feed as the next step after that check.
+**Why:** a TA slice touches the seed, ingestion, staging and exceptions, and could only start after
+LR-03-04 on an already full Saturday. Pulling it above the protected cut line would push something
+else out (first candidate: LR-02-08's "Last save: SQL executed"). The hiring-gap check already
+tells the hiring story without a new source.
+**Alternatives:** pull in a thin TA slice (just the "TA start date passed, no Workday hire"
+exception) and drop "Last save: SQL executed" below the cut line; park TA entirely (not useful,
+since it's already specced).

@@ -3,7 +3,7 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-08 and LR-01-05 done (PR #6 merged) (orchestrator)
+- **Last updated:** 2026-11-12 · LR-01-08 and LR-01-05 done (PR #6 merged) (orchestrator); navigator checked the block, committed D-033, and set BR-01 to `in-progress` in the master plan
 - **Milestone:** M1 — Foundations (BR-01), 9 of 10 little rocks done (LR-01-01…08, LR-01-10). Only LR-01-09 (Rob) is left, then the BR-01 big-rock review.
 - **In flight:** none
 - **Blocked:** none
@@ -22,8 +22,10 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — Master plan rollup: BR-01 `todo` → `in-progress` (9/10). LR-01-08 P3s noted for later: the CLI refusal test may need a longer Vitest timeout on slow runners; a repeated `?host=` in the URL could slip past the seed guard; no Playwright test touches the database until BR-02's board tests.
 - 2026-11-12 — LR-01-08 done: PR #6 merged (CI green, run 43286534662). LR-01-05 done with it (README production URL). LR-01-09 (Rob) is now unblocked.
 - 2026-11-12 — LR-01-08 → `review`: PR #6 (Sonnet build + one fix round; review 1 two P2s fixed: LR-01-05 status, CLI-level refusal test; four P3s fixed, four noted; review 2 pass; CI green). The PR also closes LR-01-05 (README URL) and adds the D-032 seed README note (seed checksum unchanged).
+- 2026-11-12 — D-033 accepted: no TA feed before the interview; LR-07-04 stays after the cut line (cut line unchanged). The LR-04-02 roadmap and LR-04-03 explainer criteria now present the TA feed as the next step after the hiring-gap check. Resolves the "TA-slice decision pending" note from commit ba60871.
 - 2026-11-12 — D-032 accepted: PR #5 merge = layout sign-off (LR-01-07 criterion annotated); leaders keep group cost centers for now (parked; raise again after the interview); `<group> Team <n>` supervisory org names confirmed. LR-01-08 brief handed off, carrying the LR-01-05 README line and a seed README note.
 - 2026-11-12 — Criteria (navigator, from the LR-01-07 review notes): LR-03-01 ingest must not reuse the seed's CSV code; LR-03-04 pins the termination window (report date − 29 days through the report date, as the seed does); LR-01-07 spec wording now says the hand-written special-character names include given names.
 - 2026-11-12 — LR-01-07 done: PR #5 merged. LR-01-08 is ready (deps LR-01-03, LR-01-07 merged).

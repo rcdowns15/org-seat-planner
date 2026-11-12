@@ -47,7 +47,8 @@ SQL panel → reconciliation exceptions after the 11-15 report); a **production 
 **Built / Planned** column (CSV report → Workday RaaS/API; `pnpm pipeline` + GitHub Actions →
 Airflow; Postgres `analytics` → Snowflake; dbt Core → dbt Cloud; MetricFlow → dbt Cloud Semantic
 Layer; SQL panel and future dashboard → Tableau / Sheets; mock auth → SSO); a roadmap linking the
-BR-05…BR-08 specs; local quickstart.
+BR-05…BR-08 specs, which names the TA offers feed (LR-07-04) as the next step after today's
+hiring-gap check (D-033); local quickstart.
 - [ ] The orchestrator follows the quickstart in a fresh clone (clean directory) and reaches a working board and a green `pnpm pipeline`; the PR shows the commands and output
 - [ ] Every production-mapping row says Built or Planned, and every Built row links to code
 - [ ] The demo script names only seeded fixtures that exist (checked against `scripts/seed/README.md`)
@@ -61,7 +62,8 @@ Two docs written for Rob to learn from, each citing code as `path:line`:
   approvals, an outbox to push changes downstream).
 - `docs/explainers/pipeline.md`: the ingest contract (validate the whole file, then load; raw vs.
   current; idempotency by hash); each Workday transform in staging; every mart's grain; how the
-  reconciliation rules work and how they'd extend to TA and FP&A feeds; what moves to Workday API +
+  reconciliation rules work and how they'd extend to TA and FP&A feeds (starting from the hiring-gap
+  check, which works without a TA feed, D-033); what moves to Workday API +
   Airflow + Snowflake in production.
 Each ends with 10–12 likely interview questions and short answers. Add `pnpm docs:check`, a script
 that verifies every `path:line` reference in `README.md` and `docs/explainers/` points to an
