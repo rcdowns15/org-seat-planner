@@ -12,7 +12,7 @@ Newest first. Navigator updates "Where we stand" at each check-in.
   - LR-03-02 `lr/LR-03-02-dbt-staging` @b1f07bd, rebased onto LR-03-01 @664ef59: verified with seed-loaded data (lint/typecheck/test pass; dbt build PASS=119 ERROR=0). Next: rebase again onto LR-03-01's final tip after its fixes, re-run dbt build, review, PR with "Merge after LR-03-01 (#N)". Consider reviewer P3: a dbt test that staged latest report = `workday.workers`.
   - Verification worktrees `code/v0201`, `v0202`, `v0301`, `v0302`; per-LR local DBs `seatplanner_lr0201/0202/0301/0302`.
 - **Blocked:** none.
-- **Waiting on Rob:** OK on LR-03-01 spec deviations: (1) reject a report not newer than the latest loaded one (may matter for BR-05 backfill); (2) `workday.workers` upsert-only, so missing workers keep an older `as_of_report_date`; (3) extra required non-blank columns.
+- **Waiting on Rob:** nothing until the four PRs open (merge LR-03-01 before LR-03-02).
 - **Next:** fresh `claude --agent orchestrator` session continues from this block → four PRs (merge LR-03-01 before LR-03-02).
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
@@ -27,6 +27,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — Rob approved the three LR-03-01 deviations (newer-report-only, upsert-only workers, extra required columns); written into the LR-03-01 spec text. The fix round still documents them in `docs/data-model.md` (review P2-3).
 - 2026-11-12 — Rob approved the LR-02-02 change: `?group=` with Digital Channels as the default, acting-leader default moved to LR-02-04; squad header "approved" = seat count.
 - 2026-11-12 — Orchestrator handoff at the context budget: LR-02-01, LR-02-02, LR-03-01, LR-03-02 built (Sonnet) and verified; reviews done for 02-01 (2 P2, fixed), 02-02 (1 P2, fix running), 03-01 (3 P2, fix next); LR-03-02 rebased onto LR-03-01 and dbt build green on seeded data, review pending. No PRs yet.
 - 2026-11-12 — BR-01 big-rock review (orchestrator, Opus reviewer): pass, no P1; all four exit criteria met with evidence (local checks, CI run 43289446630, production health 2202 seats, checksum `8cb477f9…` identical on local/CI/Neon, ER diagram matches). BR-01 → `done`. P2-1 (parallel executors share one local DB) handled in briefs with one database per executor; P2-2 (no recorded checksum baseline) added as an LR-03-01 criterion. P3s listed in the orchestrator report. LR-02-02 criterion tightened: `?group=` with the demo group as the default; defaulting to the acting leader's scope moves to LR-02-04. LR-02-01, LR-02-02, LR-03-01 → `in-progress` (Sonnet).

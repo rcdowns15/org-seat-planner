@@ -52,6 +52,8 @@ implementation, so an API reader can replace it later). Steps:
 4. Record the run in `workday.ingest_runs` (file, hash, row count, status, rejection reasons).
 
 Switch `pnpm db:seed` to load Workday through this script.
+
+Rules approved by Rob (2026-11-12, from the LR-03-01 build): (a) a report whose date isn't newer than the latest loaded report is rejected (an identical re-run is still `skipped`); (b) `workday.workers` is upsert-only: a worker missing from a later report keeps their row with the older `as_of_report_date`, which is how the missing-worker exception surfaces; (c) `Worker_Name` (as `Last, First`), `Work_Email`, `Job_Title`, `Supervisory_Organization`, `Position_ID`, `Cost_Center` and `Location` must be non-blank.
 - [ ] DB test: ingesting 11-01 then 11-15 gives the expected row counts in raw (both reports) and current tables
 - [ ] DB test: re-ingesting the same file changes nothing and records a `skipped` run
 - [ ] Unit tests: a file with a duplicate ID, a missing column, a bad date, an unknown status, or a `Worker_ID` whose format contradicts its `Worker_Type` is rejected with a message naming the row and column; nothing is loaded
