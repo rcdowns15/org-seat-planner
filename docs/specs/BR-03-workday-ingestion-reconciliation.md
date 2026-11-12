@@ -62,7 +62,7 @@ Rules approved by Rob (2026-11-12, from the LR-03-01 build): (a) a report whose 
 - [ ] Seed checksum from LR-01-07 is unchanged after the switch: first commit pins `8cb477f9fde138983f8740eb86a026f5e77f39c229bae64a4dafab10f79af340` as a constant asserted in `tests/db/seed.test.ts` (and in `scripts/seed/README.md`), so the after-switch run is checked against a recorded baseline (BR-01 review P2-2)
 Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
 
-### LR-03-02 · dbt project, sources and staging · status: review (https://github.com/rcdowns15/org-seat-planner/pull/10; #9 merged, so it merges on its own now) · depends: LR-01-08, LR-03-01 (migration only) · owner: agent · executor model: sonnet
+### LR-03-02 · dbt project, sources and staging · status: done (PR #10 merged) · depends: LR-01-08, LR-03-01 (migration only) · owner: agent · executor model: sonnet
 Dependency note (navigator, 2026-11-12): `workday.raw_worker_report` and `workday.ingest_runs` don't
 exist until LR-03-01's migration, so this little rock's sources can't build before then. It branches
 from LR-03-01's branch once that migration is committed, and its PR merges after LR-03-01's (stacked).
@@ -81,7 +81,7 @@ service → migrate → seed → `uv run dbt build`.
 - [ ] No credentials in `profiles.yml` (env vars only)
 Likely files: `analytics/pyproject.toml`, `analytics/uv.lock`, `analytics/.python-version`, `analytics/dbt_project.yml`, `analytics/profiles.yml`, `analytics/macros/generate_schema_name.sql`, `analytics/models/staging/**`, `.github/workflows/ci.yml`.
 
-### LR-03-03 · Dimensions, squad headcount vs. plan, and custom tests · status: todo · depends: LR-03-02 · owner: agent · executor model: sonnet
+### LR-03-03 · Dimensions, squad headcount vs. plan, and custom tests · status: in-progress · depends: LR-03-02 · owner: agent · executor model: sonnet
 `dim_squads` (squad with group and division), `dim_people` (latest report per worker plus current
 seat). `rpt_squad_headcount` (grain: squad × report date): filled employee seats, filled contingent
 seats, open, backfill, offer accepted, approved plan for that quarter, variance, fill rate. Custom
@@ -124,7 +124,7 @@ task it would be in production (sensor on the report, ingest, dbt build, alert o
 - [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
 Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
 
-### LR-03-06 · Stop a position backfill from wedging ingestion · status: ready · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
+### LR-03-06 · Stop a position backfill from wedging ingestion · status: in-progress · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
 From the LR-03-01 round-2 review (P2, waived in that PR). `workday.workers` is upsert-only (approved), and the partial unique
 index `workers_position_id_active_key` (migration 0001, D-029) allows one non-terminated holder per `Position_ID`. If worker A
 drops out of the extract while still non-terminated and B is backfilled into A's position, every later report fails that

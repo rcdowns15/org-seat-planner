@@ -60,10 +60,10 @@ module. Don't touch the header layout (LR-02-01 owns it).
 - [ ] The board query is parameterized and lives in `src/server/queries/board.ts`
 Likely files: `src/app/board/page.tsx`, `src/components/board/*`, `src/server/queries/board.ts`, `tests/e2e/board.spec.ts`.
 
-### LR-02-03 · Move service: validation, transaction, locking, audit · status: todo · depends: LR-02-01 · owner: agent · executor model: opus
+### LR-02-03 · Move service: validation, transaction, locking, audit · status: in-progress · depends: LR-02-01 · owner: agent · executor model: opus
 `moveWorker(input, leader)` in `src/server/services/moves.ts`, called by a server action. Zod input:
 `workerId`, `fromSeatId`, `toSeatId`, `effectiveDate`, `fromSeatVersion`, `toSeatVersion`. In one
-transaction it checks, in order, and returns a typed failure code for each: `INVALID_INPUT`,
+transaction it checks, in order, and returns a typed failure code for each: `INVALID_INPUT`, `READ_ONLY` (no acting leader; added from the LR-02-03 review),
 `FORBIDDEN` (permission on both squads), `WORKER_NOT_ACTIVE` (Workday status must be `active`),
 `NOT_IN_SEAT` (worker isn't in `fromSeatId`, which also catches double-seating), `SEAT_NOT_AVAILABLE`
 (target must be `open` or `backfill`), `SEAT_TYPE_MISMATCH`, `INVALID_EFFECTIVE_DATE` (today to +90
