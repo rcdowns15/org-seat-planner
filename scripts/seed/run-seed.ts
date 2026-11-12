@@ -6,7 +6,8 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { AnyPgColumn, PgTable } from "drizzle-orm/pg-core";
 import { Pool } from "pg";
 import { divisions, groups, headcountPlan, leaders, seats, squads } from "../../db/schema/app";
-import { workers } from "../../db/schema/workday";
+import { ingestReport } from "../ingest/load";
+import { CsvFileReader } from "../ingest/reader";
 import { seedChecksum } from "./checksum";
 import { NEXT_REPORT_DATE, SEED_DATE } from "./config";
 import { generateSeedData, type SeedData } from "./generate";
@@ -75,23 +76,6 @@ function toRows(data: SeedData) {
       quarterStart: p.quarterStart,
       approvedSeats: p.approvedSeats,
     })),
-    workers: data.workers.map((w) => ({
-      workerId: w.workerId,
-      firstName: w.firstName,
-      lastName: w.lastName,
-      email: w.email,
-      workerType: w.workerType,
-      status: w.status,
-      hireDate: w.hireDate,
-      terminationDate: w.terminationDate,
-      managerWorkerId: w.managerWorkerId,
-      jobTitle: w.jobTitle,
-      supervisoryOrg: w.supervisoryOrg,
-      positionId: w.positionId,
-      costCenter: w.costCenter,
-      location: w.location,
-      asOfReportDate: SEED_DATE,
-    })),
   };
 }
 
@@ -111,7 +95,8 @@ export async function runSeed(
       await tx.execute(sql`SET LOCAL app.allow_seat_changes_reset = 'on'`);
       await tx.execute(sql`
         TRUNCATE app.seat_changes, app.seats, app.leaders, app.headcount_plan, app.squads,
-                 app.groups, app.divisions, workday.workers
+                 app.groups, app.divisions, workday.workers,
+                 workday.raw_worker_report, workday.ingest_runs
         RESTART IDENTITY
       `);
       await insertInOrder(tx, divisions, divisions.divisionId, rows.divisions);
@@ -120,12 +105,8 @@ export async function runSeed(
       await insertInOrder(tx, leaders, leaders.leaderId, rows.leaders);
       await insertInOrder(tx, seats, seats.seatId, rows.seats);
       for (const batch of chunk(rows.plan)) await tx.insert(headcountPlan).values(batch);
-      for (const batch of chunk(rows.workers)) await tx.insert(workers).values(batch);
     });
 
-    const checksum = await seedChecksum(db);
-
-    // Both files come from the same generated data, so the 11-01 file matches what was just seeded.
     await mkdir(reportDir, { recursive: true });
     const reports: SeedResult["reports"] = [];
     for (const [date, list] of [
@@ -138,6 +119,16 @@ export async function runSeed(
       reports.push({ file, sha256: createHash("sha256").update(csv).digest("hex") });
     }
 
+    // workday.workers is loaded the way production data would be: through the ingest script, from
+    // the 11-01 report. The 11-15 report is left for the demo's "simulate Workday refresh".
+    const first = reports[0];
+    const ingest = await ingestReport(pool, new CsvFileReader(first.file));
+    if (ingest.status !== "loaded") {
+      throw new Error(`Ingest of ${first.file} was ${ingest.status}: ${ingest.reasons.join("; ")}`);
+    }
+
+    const checksum = await seedChecksum(db);
+
     const counts = {
       divisions: rows.divisions.length,
       groups: rows.groups.length,
@@ -145,7 +136,7 @@ export async function runSeed(
       leaders: rows.leaders.length,
       seats: rows.seats.length,
       headcount_plan: rows.plan.length,
-      workers: rows.workers.length,
+      workers: data.workers.length,
     };
     return { checksum, counts, reports };
   } finally {

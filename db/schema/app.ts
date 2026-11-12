@@ -92,8 +92,8 @@ export const leaders = app.table(
 // One approved seat in a squad, filled or not. Seats are never deleted (a vacated seat becomes
 // `backfill`). Every update must be `... WHERE seat_id = $1 AND version = $2` and set
 // `version = version + 1` (D-011).
-// worker_id deliberately has no FK to workday.workers: ingest (BR-03) replaces workday rows from
-// each full report, and a worker who disappears from a report or is terminated while still seated
+// worker_id deliberately has no FK to workday.workers: ingest (BR-03) upserts workday rows from
+// each full report (never deletes), and a worker who disappears from a report or is terminated while still seated
 // is a reconciliation exception for dbt to flag, not something that should block ingest or crash
 // the board. No position column either (D-029): seats match Workday by worker_id only.
 export const seats = app.table(
