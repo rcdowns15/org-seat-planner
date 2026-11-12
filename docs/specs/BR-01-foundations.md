@@ -75,7 +75,7 @@ Node (cache the pnpm store), then `lint`, `typecheck`, `test`, `build`, and a Pl
 - [ ] Node and pnpm versions come from `.nvmrc` / `packageManager`, not hardcoded in the workflow
 Likely files: `.github/workflows/ci.yml`.
 
-### LR-01-04 · Local Postgres, DB client, health route · status: in-progress · depends: LR-01-02 · owner: agent · executor model: sonnet
+### LR-01-04 · Local Postgres, DB client, health route · status: review (https://github.com/rcdowns15/org-seat-planner/pull/3) · depends: LR-01-02 · owner: agent · executor model: sonnet
 `docker-compose.yml` with Postgres 16 (localhost-only defaults) and an init script creating the
 `app`, `workday` and `analytics` schemas. A server-only DB module using `pg` + Drizzle that reads
 `DATABASE_URL`. `GET /api/health` returns `{ ok, db, seats }` (`seats` is `null` until the schema
