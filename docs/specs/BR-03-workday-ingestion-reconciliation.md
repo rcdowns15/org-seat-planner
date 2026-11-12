@@ -1,6 +1,6 @@
 # BR-03 — Workday ingestion and reconciliation (thin pipeline slice)
 
-**Status:** todo · **Depends on:** BR-01 (can run in parallel with BR-02) · **Milestone:** M3 · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** yes
+**Status:** in-progress · **Depends on:** BR-01 (can run in parallel with BR-02) · **Milestone:** M3 · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** yes
 
 ## Goal
 A biweekly mock Workday custom report (CSV) is validated and ingested into a raw landing table and a
@@ -37,7 +37,7 @@ client, other sources (TA, FP&A) and an exceptions UI (BR-07), dashboard (BR-08)
 Parallel: LR-03-01 and LR-03-02 overlap once LR-03-01's migration is committed (LR-03-02 stacks on it; see its dependency note). LR-03-03 needs LR-03-02 and LR-03-04
 needs LR-03-01 and LR-03-03.
 
-### LR-03-01 · Workday report ingestion with validation · status: in-progress · depends: LR-01-07 · owner: agent · executor model: sonnet
+### LR-03-01 · Workday report ingestion with validation · status: review (https://github.com/rcdowns15/org-seat-planner/pull/9) · depends: LR-01-07 · owner: agent · executor model: sonnet
 `pnpm workday:ingest <file>` (code in `scripts/ingest/`, written as a reader interface with a CSV
 implementation, so an API reader can replace it later). Steps:
 1. Validate the whole file before loading anything: strip a leading UTF-8 BOM and accept CRLF;
