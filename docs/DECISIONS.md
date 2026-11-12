@@ -179,3 +179,13 @@ it's parked (see `PARKING_LOT.md`, back with BR-07). Until then, seats match Wor
 only, and the README says so.
 **Alternatives:** no new columns (less realistic report); full seat ↔ position link now (too much
 design and risk before the interview).
+
+### D-030 · 2026-11-12 · accepted (Rob, 2026-11-12, merging PR #4) · Leader scope stored as `division_id` / `group_id` with a CHECK, not a single `scope_id`
+**Why:** a single `scope_id` would have to point at either `app.divisions` or `app.groups`
+depending on `scope_type`, so it couldn't have a foreign key and the database couldn't stop a
+leader being scoped to a division or group that doesn't exist. With two nullable columns, each one
+gets a real foreign key, and a CHECK enforces that exactly the column matching `scope_type` is set.
+The permission rule in D-013 is unchanged. This came from the LR-01-06 executor, and the reviewer
+judged it sound.
+**Alternatives:** single `scope_id` as originally specced (no referential integrity); a separate
+`leader_scopes` table (more flexible, like multiple scopes per leader, but nothing in the plan needs it).

@@ -111,7 +111,9 @@ Define the data model in Drizzle and generate migrations (see D-010 and the "Dom
   unique among non-terminated workers and is **not** linked to `app.seats` (D-029): seats match
   Workday by `worker_id` only.
 - `app.divisions`, `app.groups`, `app.squads` (explicit three-level hierarchy)
-- `app.leaders` (leader_id, worker_id, display name, scope_type `division|group`, scope_id)
+- `app.leaders` (leader_id, worker_id, display name, scope_type `division|group`, division_id,
+  group_id; each a foreign key, with a CHECK that exactly the one matching `scope_type` is set. D-030
+  replaced the original single `scope_id`.)
 - `app.seats` (seat_id, squad_id, seat_type `employee|contingent`, status
   `filled|open|backfill|offer_accepted`, worker_id nullable, version int default 0, updated_at,
   updated_by_leader_id)

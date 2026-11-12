@@ -25,7 +25,9 @@ Out: a real Workday tenant (needs credentials; documented only).
 ## Little rocks
 
 ### LR-07-01 · Database roles: app runtime vs. ingest · status: todo · depends: LR-03-01 · owner: agent · executor model: opus
-Custom migration: role `seat_app` (read/write `app` except `UPDATE`/`DELETE` on `seat_changes`;
+Custom migration: role `seat_app` (read/write `app` except `UPDATE`/`DELETE`/`TRUNCATE` on
+`seat_changes`, so the app role can never use the seed's `SET LOCAL app.allow_seat_changes_reset`
+reset path, which stays with the seed and ingest roles (LR-01-06 reviewer P3);
 `SELECT` only on `workday` and `analytics`) and role `workday_ingest` (write `workday` only). The
 app connects as `seat_app`; ingest uses its own URL.
 - [ ] DB test as `seat_app`: `INSERT` into `workday.workers` and `UPDATE` on `app.seat_changes` both fail with permission denied
