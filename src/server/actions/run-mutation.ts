@@ -1,9 +1,11 @@
 import "server-only";
 import type { z } from "zod";
-import type { ActionResult } from "@/lib/acting-as";
+import type { ActionResult } from "@/lib/results";
 import { getActingLeader } from "@/server/auth/acting-leader";
 import type { Leader } from "@/server/services/permissions";
 
+// Never add "use server" to this file: it is a plain helper called by server actions, and a
+// marked export would become a public endpoint that accepts a caller-supplied schema and handler.
 // The shared front half of every mutation server action: (1) parse input with Zod, (2) derive
 // the acting leader from the server-side cookie, never from input. Zod objects drop unknown keys,
 // so a spoofed `leaderId` field in the input never reaches the handler. Permission checks

@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import type { ActionResult } from "@/lib/results";
 
 type Props = {
   // Server action, passed down from the layout (client components never import src/server).
-  setLeader: (input: { leaderId: string }) => Promise<{ ok: boolean; message?: string }>;
+  setLeader: (input: { leaderId: string }) => Promise<ActionResult>;
   options: { leaderId: number; label: string }[];
   currentLeaderId: number | null;
 };
@@ -19,7 +20,7 @@ export function LeaderSwitcher({ options, currentLeaderId, setLeader }: Props) {
     setError(null);
     startTransition(async () => {
       const result = await setLeader({ leaderId: value });
-      if (!result.ok) setError(result.message ?? "Could not switch leader.");
+      if (!result.ok) setError(result.message);
       router.refresh();
     });
   }

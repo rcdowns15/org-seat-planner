@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { getPool } from "@/server/db";
+import { getDb, getPool } from "@/server/db";
+import { squads } from "../../db/schema/app";
 import { ACTING_LEADER_COOKIE } from "@/lib/acting-as";
 
 // Stand-in for the request cookie jar; each test sets `cookieValue` before calling the code.
@@ -98,6 +99,40 @@ describe("canEditSquad: division and group scopes (D-013, D-030)", () => {
     expect(await canEditSquad(groupLeader, squadId)).toBe(false);
   });
 
+  it("an empty squad list is FORBIDDEN (fail closed)", async () => {
+    expect(await requireEditSquads(divisionLeader, [])).toMatchObject({
+      ok: false,
+      code: "FORBIDDEN",
+    });
+  });
+
+  it("checks run through a transaction handle when one is passed", async () => {
+    const inGroup = allSquads.find((s) => s.group_id === groupLeader.groupId)!;
+    const outside = allSquads.find((s) => s.group_id !== groupLeader.groupId)!;
+    await getDb()
+      .transaction(async (tx) => {
+        expect(await canEditSquad(groupLeader, inGroup.squad_id, tx)).toBe(true);
+        expect(await canEditSquad(groupLeader, outside.squad_id, tx)).toBe(false);
+        expect(await requireEditSquads(groupLeader, [inGroup.squad_id], tx)).toEqual({ ok: true });
+        expect(await requireEditSquads(groupLeader, [outside.squad_id], tx)).toMatchObject({
+          ok: false,
+          code: "FORBIDDEN",
+        });
+        // Proves it really used the tx: a squad inserted in this uncommitted tx is visible only
+        // through the tx handle, not through the global pool.
+        const [row] = await tx
+          .insert(squads)
+          .values({ groupId: groupLeader.groupId!, name: "tx-only squad" })
+          .returning({ squadId: squads.squadId });
+        expect(await canEditSquad(groupLeader, row.squadId, tx)).toBe(true);
+        expect(await canEditSquad(groupLeader, row.squadId)).toBe(false);
+        tx.rollback();
+      })
+      .catch((e: unknown) => {
+        if (!(e instanceof Error && e.message === "Rollback")) throw e;
+      });
+  });
+
   it("no leader and unknown squads are not editable", async () => {
     expect(await canEditSquad(null, allSquads[0].squad_id)).toBe(false);
     expect(await canEditSquad(divisionLeader, -1)).toBe(false);
@@ -136,6 +171,7 @@ describe("acting leader cookie", () => {
     ["leading zero", "01"],
     ["whitespace", " 1"],
     ["too large for integer", "99999999999999"],
+    ["10 digits, over Postgres int", "9999999999"],
     ["unknown id", "2000000000"],
     ["SQL-looking", "1 OR 1=1"],
   ])("%s cookie yields read-only mode (null leader)", async (_label, value) => {

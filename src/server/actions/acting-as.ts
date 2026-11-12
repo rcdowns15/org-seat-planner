@@ -1,13 +1,17 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { ACTING_LEADER_COOKIE, type ActionResult } from "@/lib/acting-as";
+import { ACTING_LEADER_COOKIE } from "@/lib/acting-as";
+import type { ActionResult } from "@/lib/results";
 import { setActingLeaderSchema } from "@/lib/schemas/acting-as";
 import { findLeader, parseLeaderId } from "@/server/auth/acting-leader";
 
+// The directive is function-level, not file-level: the boundary test requires `import "server-only"`
+// as the first line of every src/server file, and only functions marked "use server" become
+// client-callable endpoints (so helpers elsewhere in this folder never do).
 // Sets (or clears) the acting-as cookie. This is mock auth for the demo: the cookie only says
 // who the demo user is pretending to be, and every mutation re-reads and re-validates it.
 export async function setActingLeader(input: unknown): Promise<ActionResult> {
-  "use server"; // function-level directive keeps `import "server-only"` as the first line
+  "use server";
   const parsed = setActingLeaderSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, code: "INVALID_INPUT", message: "Invalid leader selection." };
