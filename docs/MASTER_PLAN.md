@@ -50,7 +50,7 @@ Executors write the code. Rob's time goes into `rob`-owned setup, reviewing and 
 
 | | Little rocks | PRs to review | Rob-hours (est.) |
 |---|---|---|---|
-| Cut line (BR-01…BR-04 minus the post-interview items) | 25 (4 owned by Rob) | 21 | ~19 h ≈ **~5 h/day for 4 days** |
+| Cut line (BR-01…BR-04 minus the post-interview items) | 26 (4 owned by Rob; +LR-03-06, D-034) | 22 | ~19.75 h ≈ **~5 h/day for 4 days** |
 | After the interview (rest of BR-02 and BR-04, BR-05…BR-08) | 19 | 18 | ~12 h |
 
 Estimates: ~25 min per PR review, ~2.5 h of `rob` setup tasks, ~3 h of orchestrator and navigator
@@ -65,13 +65,16 @@ write-back core (move, validation, locking, conflict) is never cut.
 3. LR-03-05's Neon workflow (run the pipeline locally and against Neon from Rob's machine instead)
 4. The `rpt_workday_changes` half of LR-03-04 (keep the exceptions report)
 
+**Tripwire (D-034):** at Sat 11/14 18:00, if LR-02-08 or LR-03-04 isn't merged, item 1 drops
+below the cut line automatically. This is the price of adding LR-03-06 with no swap.
+
 ### Day-by-day
 | Day | Agents | Rob |
 |---|---|---|
 | Wed 11/11 (tonight) | — | LR-01-10 (Docker, long paths, pnpm); LR-01-01 (GitHub repo); confirm decisions |
 | Thu 11/12 | BR-01: LR-01-02…04, 06…08 | LR-01-05 (Vercel + Neon), LR-01-09 (secrets, seed Neon); review ~6 PRs |
 | Fri 11/13 | Thin slice LR-02-01…04 **in parallel with** LR-03-01, LR-03-02 | Review ~6 PRs; try a move locally |
-| Sat 11/14 | LR-02-05, 06, 08; LR-03-03…05; LR-04-01 | Review ~7 PRs |
+| Sat 11/14 | LR-02-05, 06, 08; LR-03-03…06; LR-04-01 | Review ~8 PRs; **18:00 tripwire check (D-034)** |
 | Sun 11/15 | LR-04-02, LR-04-03 by 11:00. **Feature freeze at noon.** | LR-04-04 rehearsal; tag `v0.1-interview` |
 | Mon 11/16 | — | Interview |
 
@@ -79,7 +82,7 @@ write-back core (move, validation, locking, conflict) is never cut.
 **Before the interview (must):**
 - BR-01: all (LR-01-01…09)
 - BR-02: LR-02-01…06 and LR-02-08 (board, move, validation, locking, conflict demo, history, SQL panel)
-- BR-03: all (LR-03-01…05): ingestion, staging, headcount vs. plan, changes, exceptions, `pnpm pipeline`
+- BR-03: all (LR-03-01…06): ingestion, staging, headcount vs. plan, changes, exceptions, `pnpm pipeline`, position-backfill fix (D-034)
 - BR-04: LR-04-01…04 (demo reset, README, explainers, rehearsal)
 
 **After the interview:** LR-02-07 (undo), LR-02-09 (audit log page), LR-04-05 (prod smoke workflow),
@@ -91,7 +94,7 @@ reconciliation, exceptions UI, roles), BR-08 (dashboard).
 |---|---|---|---|---|---|
 | BR-01 | [Foundations](specs/BR-01-foundations.md) | — | App scaffold, CI, Postgres + migrations, deterministic seed + mock Workday reports, hello-world on Vercel + Neon | done (10/10 LRs; big-rock review 2026-11-12: pass, no P1) | Thu · cut line |
 | BR-02 | [Seat board and write-back](specs/BR-02-seat-board-write-back.md) | BR-01 | Board, drag-and-drop move, server validation, optimistic locking, conflict demo, history, read-only SQL panel | in-progress (2/7 cut-line LRs done) | Fri–Sat · cut line (undo and audit page after) |
-| BR-03 | [Workday ingestion and reconciliation](specs/BR-03-workday-ingestion-reconciliation.md) | BR-01 | Validated report ingest, dbt staging, headcount vs. plan, refresh changes, reconciliation exceptions, `pnpm pipeline` | in-progress (1/5 done, LR-03-02 in review; LR-03-06 pending a call) | Fri–Sat · cut line |
+| BR-03 | [Workday ingestion and reconciliation](specs/BR-03-workday-ingestion-reconciliation.md) | BR-01 | Validated report ingest, dbt staging, headcount vs. plan, refresh changes, reconciliation exceptions, `pnpm pipeline` | in-progress (1/6 done, LR-03-02 in review; LR-03-06 added by D-034) | Fri–Sat · cut line |
 | BR-04 | [Demo-ready: README, explainers, rehearsal](specs/BR-04-demo-ready.md) | BR-02, BR-03 | Demo reset, README case study, two explainers, rehearsed five-minute demo | todo | Sat–Sun · cut line (prod smoke after) |
 | BR-05 | [Pipeline depth: history, SCD2, daily headcount](specs/BR-05-pipeline-history.md) | BR-03 | 18 months of reports, SCD2 from extracts, daily seat and headcount facts | todo | After |
 | BR-06 | [Semantic layer](specs/BR-06-semantic-layer.md) | BR-05 | MetricFlow models, six metrics with point-in-time handling, CI validation | todo | After |

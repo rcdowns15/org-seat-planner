@@ -179,6 +179,9 @@ it's parked (see `PARKING_LOT.md`, back with BR-07). Until then, seats match Wor
 only, and the README says so.
 **Alternatives:** no new columns (less realistic report); full seat ↔ position link now (too much
 design and risk before the interview).
+**Amended by D-034 (2026-11-12):** the `workers_position_id_active_key` partial unique index is
+relaxed by LR-03-06; one-holder-per-position is checked on the latest report instead. The columns
+and the parked seat ↔ position link are unchanged.
 
 ### D-030 · 2026-11-12 · accepted (Rob, 2026-11-12, merging PR #4) · Leader scope stored as `division_id` / `group_id` with a CHECK, not a single `scope_id`
 **Why:** a single `scope_id` would have to point at either `app.divisions` or `app.groups`
@@ -230,3 +233,28 @@ tells the hiring story without a new source.
 **Alternatives:** pull in a thin TA slice (just the "TA start date passed, no Workday hire"
 exception) and drop "Last save: SQL executed" below the cut line; park TA entirely (not useful,
 since it's already specced).
+
+### D-034 · 2026-11-12 · accepted (Rob, 2026-11-12) · LR-03-06 goes above the cut line with no drop now; a Saturday 18:00 tripwire drops "Last save: SQL executed" if we're behind
+**Decision:** LR-03-06 (stop a position backfill from wedging ingestion) moves above the cut line,
+and nothing is dropped now. Tripwire: at **Sat 11/14 18:00**, if LR-02-08 or LR-03-04 isn't
+merged, the "Last save: SQL executed" part of LR-02-08 moves below the cut line with no further
+discussion (drop-order item 1). LR-03-06 relaxes the D-029 partial unique index
+`workers_position_id_active_key` in a new migration. "One current holder per position" moves from
+an ingest-time constraint to a check on the latest report (dbt test or reconciliation exception).
+**Why:** a real Workday extract can drop a worker who isn't terminated while their position is
+backfilled. Today that rejects every later report, which contradicts "a missing worker is an
+exception, not a blocker". Rob wants the pipeline correct for this case before the interview, not
+just documented. The cut line is protected, but we're about half a day ahead of plan, so the
+tripwire names the item that gives way without cutting it early. Cost: one PR, about 0.75 Rob-hours.
+**Alternatives:** fix after the interview and document the limitation (navigator's
+recommendation: no added load); drop "Last save: SQL executed" now; drop LR-02-06 seat history.
+
+### D-035 · 2026-11-12 · accepted (Rob, 2026-11-12) · dbt-core 1.10 and dbt-postgres 1.9 on Python 3.12
+**Decision:** `analytics/pyproject.toml` is the one place dbt versions are pinned (`dbt-core==1.10.*`,
+`dbt-postgres==1.9.*`, `requires-python >=3.12,<3.13`). `uv.lock` locks the exact versions, and
+`analytics/.python-version` matches. Chosen by the LR-03-02 executor (PR #10).
+**Why:** these were the current stable versions at build time. Since dbt 1.8 the adapter versions
+separately from core, so different minor versions are expected. Pinning to the minor version keeps
+local and CI identical. **To check at BR-06:** whether `dbt-metricflow` works with dbt-core 1.10;
+pin it to match.
+**Alternatives:** dbt Fusion (not Postgres-ready for this project; would need its own decision).
