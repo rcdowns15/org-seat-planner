@@ -2,38 +2,12 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import type { SeatStatus } from "@/lib/seat-status";
+import type { Board, BoardGroupOption, BoardSquad, WorkerStatus } from "@/lib/board";
 import type { SeatType } from "@/lib/seat-card";
 
 // The group the board opens on when the URL has no ?group= (LR-02-04 changes this to the acting
 // leader's scope). Looked up by name, never by row position.
 export const DEFAULT_GROUP_NAME = "Digital Channels";
-
-export type BoardGroupOption = { groupId: number; name: string; divisionName: string };
-
-export type BoardSeat = {
-  seatId: number;
-  seatType: SeatType;
-  status: SeatStatus;
-  version: number;
-  workerId: string | null;
-  workerName: string | null; // "First Last"
-  jobTitle: string | null;
-  workerStatus: string | null; // Workday status, so a terminated seated worker can be flagged
-};
-
-export type BoardSquad = {
-  squadId: number;
-  name: string;
-  seats: BoardSeat[];
-  filledCount: number;
-  approvedCount: number; // every seat in a squad is an approved seat (see db/schema/app.ts)
-};
-
-export type Board = {
-  group: BoardGroupOption;
-  groups: BoardGroupOption[];
-  squads: BoardSquad[];
-};
 
 type GroupRow = { group_id: number; name: string; division_name: string };
 type SeatRow = {
@@ -47,7 +21,7 @@ type SeatRow = {
   first_name: string | null;
   last_name: string | null;
   job_title: string | null;
-  worker_status: string | null;
+  worker_status: WorkerStatus | null;
 };
 
 const toOption = (r: GroupRow): BoardGroupOption => ({

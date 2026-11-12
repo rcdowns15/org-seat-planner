@@ -1,17 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SquadColumn } from "@/components/board/squad-column";
+import { parseGroupParam } from "@/lib/board";
 import { getBoard } from "@/server/queries/board";
 
 // Reads the database on every request.
 export const dynamic = "force-dynamic";
-
-// ?group=<id>: a positive integer, or absent. Anything else is not a board.
-function parseGroupParam(value: string | string[] | undefined): number | null | "invalid" {
-  if (value === undefined) return null;
-  if (typeof value !== "string" || !/^[1-9]\d{0,8}$/.test(value)) return "invalid";
-  return Number(value);
-}
 
 export default async function BoardPage({
   searchParams,

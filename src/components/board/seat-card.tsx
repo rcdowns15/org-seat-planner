@@ -7,9 +7,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cardState, cardStateLabel, type CardState } from "@/lib/seat-card";
-import type { BoardSeat } from "@/server/queries/board";
+import { workerStatusLabel, type BoardSeat } from "@/lib/board";
 
-// Type-only import above: the query module itself never reaches the client.
 const ICONS: Record<CardState, LucideIcon> = {
   filled_employee: UserRound,
   filled_contingent: HardHat,
@@ -42,7 +41,9 @@ export function SeatCard({ seat }: { seat: BoardSeat }) {
             {seat.jobTitle ?? "Title unknown"}
           </div>
           {seat.workerStatus && seat.workerStatus !== "active" ? (
-            <div className="mt-1 text-xs font-medium">Workday: {seat.workerStatus}</div>
+            <div className="mt-1 text-xs font-medium">
+              Workday: {workerStatusLabel(seat.workerStatus)}
+            </div>
           ) : null}
         </div>
       ) : (

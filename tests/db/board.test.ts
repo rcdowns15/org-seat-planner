@@ -28,8 +28,27 @@ describe("getBoard", () => {
     }
   });
 
-  it("returns null for an unknown group, and treats the id as a bound value", async () => {
+  it("returns null for an unknown group", async () => {
     expect(await getBoard(999999)).toBeNull();
+  });
+
+  it("squad header counts match SQL: filled seats and all seats per squad", async () => {
+    const board = await getBoard(null);
+    const { rows } = await getPool().query<{ squad_id: number; filled: number; approved: number }>(
+      `select s.squad_id, (count(*) filter (where s.status = 'filled'))::int filled,
+              count(*)::int approved
+       from app.seats s join app.squads q on q.squad_id = s.squad_id
+       where q.group_id = $1 group by s.squad_id`,
+      [board!.group.groupId],
+    );
+    const expected = new Map(rows.map((r) => [r.squad_id, r]));
+    expect(board!.squads.length).toBeGreaterThan(0);
+    for (const squad of board!.squads) {
+      const e = expected.get(squad.squadId);
+      expect(squad.filledCount).toBe(e?.filled ?? 0);
+      expect(squad.approvedCount).toBe(e?.approved ?? 0);
+    }
+    expect(board!.squads.reduce((n, s) => n + s.approvedCount, 0)).toBeGreaterThan(0);
   });
 
   it("still renders a terminated worker who holds a seat (reconciliation exception)", async () => {

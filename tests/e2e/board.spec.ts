@@ -1,19 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { config } from "dotenv";
 import { Client } from "pg";
-import { assertLocalUrl } from "../db/local-db";
+import { requireLocalDatabaseUrl } from "../db/local-db";
 import { CARD_STATES, cardStateLabel, type CardState } from "../../src/lib/seat-card";
-
-// Same precedence as the app: .env.local, then .env. The count below must hit the same database
-// the dev server reads, and only ever a local one.
-config({ path: [".env.local", ".env"], quiet: true });
-const DATABASE_URL =
-  process.env.DATABASE_URL ?? "postgres://seatplanner:seatplanner@localhost:5432/seatplanner";
 
 // Ground truth, straight from SQL: the demo group is the group of fixture demo-group-leader.
 async function sqlCounts() {
-  assertLocalUrl("DATABASE_URL", DATABASE_URL);
-  const client = new Client({ connectionString: DATABASE_URL });
+  const client = new Client({ connectionString: requireLocalDatabaseUrl() });
   await client.connect();
   try {
     const group = await client.query<{ group_id: number; name: string }>(
@@ -53,6 +45,7 @@ test("default board shows the demo group: squad count and per-state card counts 
 
   await expect(page.getByTestId("squad-column")).toHaveCount(expected.squads);
   for (const state of CARD_STATES) {
+    expect(expected.perState[state], `demo group has ${state} seats`).toBeGreaterThan(0);
     await expect(page.locator(`[data-testid="seat-card"][data-state="${state}"]`)).toHaveCount(
       expected.perState[state],
     );
@@ -85,4 +78,11 @@ test("?group= selects another group; an unknown group is a 404", async ({ page }
 
   const res = await page.goto("/board?group=999999");
   expect(res?.status()).toBe(404);
+});
+
+test("a malformed group id is a 404", async ({ page }) => {
+  for (const bad of ["abc", "0"]) {
+    const res = await page.goto(`/board?group=${bad}`);
+    expect(res?.status()).toBe(404);
+  }
 });

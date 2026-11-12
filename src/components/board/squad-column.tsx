@@ -1,4 +1,4 @@
-import type { BoardSquad } from "@/server/queries/board";
+import type { BoardSquad } from "@/lib/board";
 import { SeatCard } from "./seat-card";
 
 export function SquadColumn({ squad }: { squad: BoardSquad }) {
