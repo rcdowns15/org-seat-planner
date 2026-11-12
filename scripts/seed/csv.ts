@@ -1,20 +1,24 @@
-// Minimal CSV writer and parser (RFC 4180 quoting). Output always uses "\n" line endings so the
-// files are byte-stable on every OS.
+// Minimal CSV writer and parser (RFC 4180 quoting). The writer produces what a typical Workday
+// export looks like (D-031): a UTF-8 byte order mark, CRLF line endings, and quotes around any
+// field that contains a comma, quote or line break. The output is the same bytes on every OS.
+
+export const BOM = "﻿";
 
 function quote(field: string): string {
   return /[",\n\r]/.test(field) ? `"${field.replaceAll('"', '""')}"` : field;
 }
 
 export function formatCsv(header: readonly string[], rows: readonly string[][]): string {
-  return [header, ...rows].map((row) => row.map(quote).join(",")).join("\n") + "\n";
+  return BOM + [header, ...rows].map((row) => row.map(quote).join(",")).join("\r\n") + "\r\n";
 }
 
+// Accepts LF or CRLF line endings and skips a leading byte order mark.
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
   let inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
+  for (let i = text.startsWith(BOM) ? 1 : 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
       if (c === '"' && text[i + 1] === '"') {

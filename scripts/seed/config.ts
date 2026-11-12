@@ -30,3 +30,14 @@ export const OFFER_ACCEPTED_SEATS = 15;
 export const ON_LEAVE_WORKERS = 20;
 export const TERMINATED_SEATED_WORKERS = 3;
 export const TERMINATED_UNSEATED_WORKERS = 20;
+// Of those recent leavers, this many left early enough (before 2026-10-17) to age out of the
+// 11-15 report under the population rule below.
+export const AGED_OUT_LEAVERS = 3;
+// 11-15 report: regular hires (already started) and future-dated hires (start after the report).
+export const NEXT_REPORT_HIRES = 6;
+export const NEXT_REPORT_FUTURE_HIRES = 3;
+
+// Report population rule (D-031): a report holds every Active and On Leave worker, plus Terminated
+// workers whose termination date is within the 30 days up to and including the report date,
+// i.e. report date - 29 days through the report date.
+export const TERMINATED_WINDOW_DAYS = 30;

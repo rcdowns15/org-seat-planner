@@ -89,4 +89,26 @@ export const LOCATIONS = [
   "Remote",
 ] as const;
 
+// A few fictional, generic surnames and given names with an apostrophe, an accent or a hyphen, so
+// the report has names that need careful CSV handling (D-031). Swapped in for a fixed, small set
+// of person numbers (see PersonFactory); every other name comes from faker with the fixed seed.
+export const SPECIAL_SURNAMES = [
+  "O'Halloran",
+  "Nguyen-Park",
+  "Ibáñez",
+  "D'Angelo",
+  "Ferreira-Lund",
+  "Côté",
+] as const;
+
+export const SPECIAL_GIVEN_NAMES = [
+  "Seán",
+  "Zoë",
+  "Inés",
+  "Renée",
+  "José",
+  "Chloé",
+  "Anaïs",
+] as const;
+
 export const EMAIL_DOMAIN = "secondrepublicbank.example";
