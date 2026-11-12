@@ -1,0 +1,13 @@
+[project]
+name = "org-seat-planner-analytics"
+version = "0.1.0"
+description = "dbt project for Org Seat Planner: Workday staging, reconciliation and headcount marts"
+requires-python = ">=3.12,<3.13"
+# The one place dbt versions are pinned (exact pins are then locked in uv.lock).
+dependencies = [
+    "dbt-core==1.10.*",
+    "dbt-postgres==1.9.*",
+]
+
+[tool.uv]
+package = false

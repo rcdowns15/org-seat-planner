@@ -1,0 +1,24 @@
+name: org_seat_planner
+version: "0.1.0"
+config-version: 2
+profile: org_seat_planner
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+clean-targets: ["target", "dbt_packages"]
+
+# Layers (CLAUDE.md): staging -> snapshots -> intermediate -> marts.
+# The custom generate_schema_name macro uses these schema names as-is.
+models:
+  org_seat_planner:
+    staging:
+      +materialized: view
+      +schema: analytics_staging
+    intermediate:
+      +materialized: view
+      +schema: analytics_intermediate
+    marts:
+      +materialized: table
+      +schema: analytics

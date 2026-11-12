@@ -1,0 +1,124 @@
+version: 2
+
+models:
+  - name: stg_workday__worker_report
+    description: >
+      Cleaned Workday report rows, one row per raw row (every report, every worker). Names split
+      from `Last, First`, MM/DD/YYYY text parsed to dates, status and worker-type text mapped to
+      enums, IDs and email trimmed but not re-cased (same as the loader), the supervisory organization
+      split into org name and manager name. Whitespace is trimmed the way the loader does it, and blank cells become null. Values that don't map become null so tests catch them.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [report_date, worker_id]
+    columns:
+      - name: raw_id
+        description: Key of the raw row this row was cleaned from (1:1).
+        data_tests: [unique, not_null]
+      - name: report_date
+        description: Report date from the file name.
+        data_tests: [not_null]
+      - name: source_file
+        description: File the row came from.
+        data_tests: [not_null]
+      - name: file_sha256
+        description: Hash of the source file.
+        data_tests: [not_null]
+      - name: source_row
+        description: 1-based row position in the file, after the header.
+        data_tests: [not_null]
+      - name: loaded_at
+        description: When the row was loaded.
+        data_tests: [not_null]
+      - name: worker_id
+        description: Trimmed worker ID (six digits, or `C-` plus five digits for contingent workers).
+        data_tests: [not_null]
+      - name: last_name
+        description: Last name, from the part of `Last, First` before the first comma.
+        data_tests: [not_null]
+      - name: first_name
+        description: First name, from the part of `Last, First` after the first comma.
+        data_tests: [not_null]
+      - name: work_email
+        description: Trimmed work email.
+        data_tests: [not_null]
+      - name: worker_type
+        description: Worker type mapped from the report text.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: worker_status
+        description: Worker status mapped from the report text (`On Leave` becomes `leave`).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: hire_date
+        description: Hire date; can be after the report date for a future hire.
+        data_tests: [not_null]
+      - name: termination_date
+        description: Termination date; null unless the worker is terminated.
+      - name: contract_end_date
+        description: Contract end date; set for contingent workers only.
+      - name: manager_id
+        description: Manager's worker ID; null for the top of the org.
+      - name: job_title
+        description: Job title.
+      - name: supervisory_organization
+        description: Supervisory organization as written, trimmed (`Name (Manager Name)`).
+        data_tests: [not_null]
+      - name: supervisory_org_name
+        description: Organization name, the part before the parenthesised manager.
+        data_tests: [not_null]
+      - name: supervisory_org_manager_name
+        description: Manager name from inside the parentheses (`First Last`).
+        data_tests: [not_null]
+      - name: position_id
+        description: Workday position ID. Seats are not linked to positions (D-029).
+        data_tests: [not_null]
+      - name: cost_center
+        description: Cost center, code and name together.
+        data_tests: [not_null]
+      - name: location
+        description: Work location.
+      - name: is_future_hire
+        description: True when the hire date is after the report date.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+
+  - name: stg_workday__ingest_runs
+    description: Staged `workday.ingest_runs`, one row per ingest attempt.
+    columns:
+      - name: run_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: source_file
+        description: File the run tried to ingest.
+        data_tests: [not_null]
+      - name: file_sha256
+        description: Hash of the file.
+        data_tests: [not_null]
+      - name: report_date
+        description: Report date from the file name; null if the name has none (rejected).
+      - name: row_count
+        description: Rows in the file.
+        data_tests: [not_null]
+      - name: status
+        description: Outcome of the run.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["loaded", "skipped", "rejected"]
+      - name: rejection_reasons
+        description: JSON array of rejection messages; empty unless rejected.
+      - name: ran_at
+        description: When the run happened.
+        data_tests: [not_null]

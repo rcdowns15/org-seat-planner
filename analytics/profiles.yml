@@ -1,0 +1,17 @@
+# Credentials come from DBT_* environment variables only (see .env.example). Nothing is hardcoded.
+# dbt finds this file because the commands run from analytics/ (dbt checks the current directory).
+org_seat_planner:
+  target: default
+  outputs:
+    default:
+      type: postgres
+      host: "{{ env_var('DBT_HOST') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
+      user: "{{ env_var('DBT_USER') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME') }}"
+      # Default schema; every model sets its own via the generate_schema_name macro.
+      schema: analytics
+      threads: 4
+      # Neon requires TLS; local Docker Postgres accepts "prefer".
+      sslmode: "{{ env_var('DBT_SSLMODE', 'prefer') }}"

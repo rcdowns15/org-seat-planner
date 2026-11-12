@@ -1,0 +1,206 @@
+version: 2
+
+models:
+  - name: stg_app__divisions
+    description: Staged `app.divisions`, one row per division.
+    columns:
+      - name: division_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: division_name
+        description: Division name.
+        data_tests: [not_null]
+
+  - name: stg_app__groups
+    description: Staged `app.groups`, one row per group.
+    columns:
+      - name: group_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: division_id
+        description: The division the group belongs to.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__divisions')
+                field: division_id
+      - name: group_name
+        description: Group name.
+        data_tests: [not_null]
+
+  - name: stg_app__squads
+    description: Staged `app.squads`, one row per squad.
+    columns:
+      - name: squad_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: group_id
+        description: The group the squad belongs to.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__groups')
+                field: group_id
+      - name: squad_name
+        description: Squad name, unique within its group.
+        data_tests: [not_null]
+
+  - name: stg_app__leaders
+    description: Staged `app.leaders`, one row per leader and their edit scope.
+    columns:
+      - name: leader_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: worker_id
+        description: The leader's Workday worker ID.
+        data_tests: [unique, not_null]
+      - name: display_name
+        description: Name shown in the app.
+        data_tests: [not_null]
+      - name: scope_type
+        description: Whether the leader's scope is a whole division or one group.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["division", "group"]
+      - name: division_id
+        description: Scope division (set when scope_type is division).
+      - name: group_id
+        description: Scope group (set when scope_type is group).
+
+  - name: stg_app__seats
+    description: Staged `app.seats`, one row per approved seat, filled or not.
+    columns:
+      - name: seat_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: squad_id
+        description: The squad the seat belongs to.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__squads')
+                field: squad_id
+      - name: seat_type
+        description: Which kind of worker the seat is for.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: seat_status
+        description: Seat state.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["filled", "open", "backfill", "offer_accepted"]
+      - name: worker_id
+        description: Worker holding the seat; set exactly when the seat is filled. A worker holds at most one seat.
+        data_tests:
+          - unique
+      - name: version
+        description: Optimistic-lock version, incremented on every update.
+        data_tests: [not_null]
+      - name: updated_at
+        description: When the seat last changed.
+      - name: updated_by_leader_id
+        description: Leader who last changed the seat.
+
+  - name: stg_app__seat_changes
+    description: Staged `app.seat_changes`, the append-only audit log (one row per seat touched by a change).
+    columns:
+      - name: change_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: move_id
+        description: Shared by the two rows of a move.
+      - name: seat_id
+        description: The seat that changed.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__seats')
+                field: seat_id
+      - name: change_type
+        description: What kind of change this row records.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    "move_out",
+                    "move_in",
+                    "fill",
+                    "vacate",
+                    "reserve",
+                    "release",
+                    "undo",
+                    "demo_touch",
+                  ]
+      - name: worker_id
+        description: The worker the change is about.
+      - name: from_status
+        description: Seat status before the change.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["filled", "open", "backfill", "offer_accepted"]
+      - name: to_status
+        description: Seat status after the change.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["filled", "open", "backfill", "offer_accepted"]
+      - name: from_worker_id
+        description: Seat holder before the change.
+      - name: to_worker_id
+        description: Seat holder after the change.
+      - name: actor_leader_id
+        description: Leader who made the change.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__leaders')
+                field: leader_id
+      - name: effective_date
+        description: Date the change takes effect.
+        data_tests: [not_null]
+      - name: created_at
+        description: When the change was recorded.
+        data_tests: [not_null]
+      - name: reverses_change_id
+        description: For an undo row, the change it reverses.
+      - name: note
+        description: Free-text note.
+
+  - name: stg_app__headcount_plan
+    description: Staged `app.headcount_plan`, approved seats per squad per quarter.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [squad_id, quarter_start]
+    columns:
+      - name: squad_id
+        description: The squad the plan is for.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__squads')
+                field: squad_id
+      - name: quarter_start
+        description: First day of the quarter (Jan 1, Apr 1, Jul 1 or Oct 1).
+        data_tests: [not_null]
+      - name: approved_seats
+        description: Approved seats for the squad in that quarter.
+        data_tests: [not_null]

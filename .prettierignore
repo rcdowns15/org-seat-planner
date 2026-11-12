@@ -13,3 +13,5 @@ data/
 CLAUDE.md
 # drizzle-kit output: generated, committed, never hand-formatted
 db/migrations/
+analytics/package-lock.yml
+analytics/uv.lock

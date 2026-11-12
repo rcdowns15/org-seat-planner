@@ -1,0 +1,116 @@
+version: 2
+
+sources:
+  - name: workday
+    description: >
+      Mock HRIS (Workday). Read-only to the app; written only by the ingest script and the seed.
+      Report rows land untouched as text (D-028); cleaning happens in dbt staging.
+    schema: workday
+    tables:
+      - name: raw_worker_report
+        description: >
+          Every row of every accepted Workday custom report, exactly as the file had it (all text,
+          blank cell = empty string). One report file per report date; each is a full extract.
+        columns:
+          - name: raw_id
+            description: Surrogate key of the landed row.
+            data_tests:
+              - unique
+              - not_null
+          - name: report_date
+            description: Report date taken from the file name.
+            data_tests:
+              - not_null
+          - name: worker_id
+            description: Workday worker ID as written in the file (not yet trimmed).
+            data_tests:
+              - not_null
+          - name: worker_status
+            description: Status text as written (`Active`, `On Leave`, `Terminated`).
+            data_tests:
+              - not_null
+          - name: worker_type
+            description: Worker type text as written (`Employee`, `Contingent Worker`).
+            data_tests:
+              - not_null
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [report_date, worker_id]
+      - name: ingest_runs
+        description: One row per ingest attempt (loaded, skipped or rejected).
+        columns:
+          - name: run_id
+            description: Surrogate key of the run.
+            data_tests:
+              - unique
+              - not_null
+          - name: status
+            description: Outcome of the run.
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ["loaded", "skipped", "rejected"]
+      - name: workers
+        description: Typed current view of Workday, one row per worker from the latest report.
+        columns:
+          - name: worker_id
+            description: Workday worker ID.
+            data_tests:
+              - unique
+              - not_null
+
+  - name: app
+    description: Org Seat Planner's own tables (leaders' edits and plan). dbt only reads them.
+    schema: app
+    tables:
+      - name: divisions
+        description: Top level of the org hierarchy.
+        columns:
+          - name: division_id
+            description: Primary key.
+            data_tests: [unique, not_null]
+      - name: groups
+        description: Groups, each in one division.
+        columns:
+          - name: group_id
+            description: Primary key.
+            data_tests: [unique, not_null]
+      - name: squads
+        description: Squads, each in one group.
+        columns:
+          - name: squad_id
+            description: Primary key.
+            data_tests: [unique, not_null]
+      - name: leaders
+        description: Leaders who can edit a division or group scope.
+        columns:
+          - name: leader_id
+            description: Primary key.
+            data_tests: [unique, not_null]
+      - name: seats
+        description: Approved seats per squad, filled or not.
+        columns:
+          - name: seat_id
+            description: Primary key.
+            data_tests: [unique, not_null]
+      - name: seat_changes
+        description: Append-only audit log of seat changes.
+        columns:
+          - name: change_id
+            description: Primary key.
+            data_tests: [unique, not_null]
+      - name: headcount_plan
+        description: Approved seats per squad per quarter.
+        columns:
+          - name: squad_id
+            description: Part of the primary key.
+            data_tests: [not_null]
+          - name: quarter_start
+            description: Part of the primary key.
+            data_tests: [not_null]
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [squad_id, quarter_start]
