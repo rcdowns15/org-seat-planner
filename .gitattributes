@@ -9,3 +9,8 @@
 
 # Raw fixtures are hashed in their manifests: keep exact bytes, never convert line endings.
 tests/fixtures/raw/** -text
+
+# Generated Workday report CSVs (gitignored). They imitate a real export on purpose: UTF-8 BOM and
+# CRLF line endings (D-031). -text stops git from ever converting those bytes, so a file that is
+# force-added or copied into a fixture keeps the hash the seed printed.
+data/workday/*.csv -text

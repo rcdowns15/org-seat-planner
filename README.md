@@ -37,8 +37,10 @@ pnpm build
 docker compose up -d db             # Postgres 16 on 127.0.0.1:5432; schemas app/workday/analytics created
 cp .env.example .env.local          # DATABASE_URL points at the compose database
 pnpm db:migrate                     # apply db/migrations (uses DATABASE_URL_UNPOOLED, else DATABASE_URL)
+pnpm db:seed                        # wipe and reseed app + workday; writes data/workday/*.csv; prints a checksum
+pnpm db:seed:check                  # print the checksum of the seeded rows (see scripts/seed/README.md)
 pnpm test:db                        # migrates, then runs constraint and schema tests (local DB only)
-curl -i localhost:3000/api/health   # 200 {"ok":true,"db":"ok","seats":0}; 503 when the database is down
+curl -i localhost:3000/api/health   # 200 {"ok":true,"db":"ok","seats":N} (N = rows in app.seats: 0 before db:seed); 503 when the database is down
 ```
 
 Schema changes: edit `db/schema/*.ts`, run `pnpm db:generate`, commit the new file in

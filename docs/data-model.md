@@ -220,7 +220,7 @@ by `scripts/ingest/` and `scripts/seed/` (D-015). BR-03 adds the raw report land
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
-| `worker_id` | text | no | PK; Workday's worker id |
+| `worker_id` | text | no | PK; Workday's `Worker_ID`: six digits for employees (`104217`), `C-` plus five digits for contingent workers (`C-04512`) (D-031) |
 | `first_name` | text | no | |
 | `last_name` | text | no | |
 | `email` | text | no | |
@@ -230,7 +230,7 @@ by `scripts/ingest/` and `scripts/seed/` (D-015). BR-03 adds the raw report land
 | `termination_date` | date | yes | |
 | `manager_worker_id` | text | yes | the manager's `worker_id`; no FK (a manager can be missing from an extract) |
 | `job_title` | text | no | |
-| `supervisory_org` | text | no | Workday supervisory organization name |
+| `supervisory_org` | text | no | as in the report: `<org name> (<manager full name>)`; follows the manager tree, not squads (D-031) |
 | `position_id` | text | no | Workday position (D-029); unique among non-terminated workers; not linked to `app.seats` |
 | `cost_center` | text | no | D-029 |
 | `location` | text | no | D-029 |

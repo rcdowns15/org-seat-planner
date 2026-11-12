@@ -20,6 +20,8 @@ export default defineConfig({
         resolve: { alias },
         test: {
           name: "db",
+          // The seed test truncates and reloads the shared dev database, so files run one at a time.
+          fileParallelism: false,
           include: ["tests/db/**/*.test.ts"],
           globalSetup: ["tests/db/global-setup.ts"],
           setupFiles: ["tests/db/setup-env.ts"],
