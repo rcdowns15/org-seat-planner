@@ -9,3 +9,6 @@
 
 # Raw fixtures are hashed in their manifests: keep exact bytes, never convert line endings.
 tests/fixtures/raw/** -text
+
+# Generated Workday report CSVs (gitignored): always LF, so they are byte-stable on every OS.
+data/workday/*.csv text eol=lf
