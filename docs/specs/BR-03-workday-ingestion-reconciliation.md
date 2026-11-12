@@ -37,7 +37,7 @@ client, other sources (TA, FP&A) and an exceptions UI (BR-07), dashboard (BR-08)
 Parallel: LR-03-01 and LR-03-02 overlap once LR-03-01's migration is committed (LR-03-02 stacks on it; see its dependency note). LR-03-03 needs LR-03-02 and LR-03-04
 needs LR-03-01 and LR-03-03.
 
-### LR-03-01 · Workday report ingestion with validation · status: ready · depends: LR-01-07 · owner: agent · executor model: sonnet
+### LR-03-01 · Workday report ingestion with validation · status: in-progress · depends: LR-01-07 · owner: agent · executor model: sonnet
 `pnpm workday:ingest <file>` (code in `scripts/ingest/`, written as a reader interface with a CSV
 implementation, so an API reader can replace it later). Steps:
 1. Validate the whole file before loading anything: strip a leading UTF-8 BOM and accept CRLF;
@@ -57,7 +57,7 @@ Switch `pnpm db:seed` to load Workday through this script.
 - [ ] Unit tests: a file with a duplicate ID, a missing column, a bad date, an unknown status, or a `Worker_ID` whose format contradicts its `Worker_Type` is rejected with a message naming the row and column; nothing is loaded
 - [ ] Unit test: a BOM-prefixed, CRLF file with quoted `"O'Brien, Seán"`-style names parses, and the names come through byte-for-byte
 - [ ] The ingest CSV parsing doesn't reuse the seed's CSV writer or parser code, so a quoting bug in the seed can't hide behind a matching bug in ingest (from the LR-01-07 review)
-- [ ] Seed checksum from LR-01-07 is unchanged after the switch
+- [ ] Seed checksum from LR-01-07 is unchanged after the switch: first commit pins `8cb477f9fde138983f8740eb86a026f5e77f39c229bae64a4dafab10f79af340` as a constant asserted in `tests/db/seed.test.ts` (and in `scripts/seed/README.md`), so the after-switch run is checked against a recorded baseline (BR-01 review P2-2)
 Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
 
 ### LR-03-02 · dbt project, sources and staging · status: todo · depends: LR-01-08, LR-03-01 (migration only) · owner: agent · executor model: sonnet

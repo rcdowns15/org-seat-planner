@@ -39,7 +39,7 @@ Out: Workday ingestion and reconciliation (BR-03), dashboard (BR-08), real auth 
 Parallel: LR-02-01 and LR-02-02 together; LR-02-05, LR-02-06 and LR-02-08 together after LR-02-04
 (the orchestrator checks file overlap first).
 
-### LR-02-01 · Acting-as leader and permission service · status: ready · depends: LR-01-07 · owner: agent · executor model: sonnet
+### LR-02-01 · Acting-as leader and permission service · status: in-progress · depends: LR-01-07 · owner: agent · executor model: sonnet
 A header dropdown lists the seeded leaders; choosing one sets an `acting_leader_id` cookie through a
 server action. `getActingLeader()` (server-only) reads and validates the cookie against
 `app.leaders`. `canEditSquad(leader, squadId)` implements division and group scopes (D-013). No
@@ -49,8 +49,8 @@ leader selected means read-only mode.
 - [ ] Server actions never accept a leader ID in their input; a test shows a spoofed field is ignored
 Likely files: `src/server/auth/acting-leader.ts`, `src/server/services/permissions.ts`, `src/server/actions/acting-as.ts`, `src/components/leader-switcher.tsx`, `src/app/layout.tsx`, `tests/db/permissions.test.ts`.
 
-### LR-02-02 · Read-only org board · status: ready · depends: LR-01-07 · owner: agent · executor model: sonnet
-`/board`: pick a division and group (defaults to the acting leader's scope); each squad is a column
+### LR-02-02 · Read-only org board · status: in-progress · depends: LR-01-07 · owner: agent · executor model: sonnet
+`/board`: pick a division and group (`?group=<id>` in the URL; without it, the demo group Digital Channels. Defaulting to the acting leader's scope moves to LR-02-04, because LR-02-01's `getActingLeader()` isn't merged yet); each squad is a column
 of seat cards showing one of five states: filled (employee), filled (contingent), open, backfill,
 offer accepted. Each state has a label and icon (not color alone). Cards show name and title for
 filled seats. Squad header shows filled / approved seats. Data comes from one server-side query
@@ -85,6 +85,7 @@ filled card also has a "Move to…" menu (keyboard accessible) that opens the sa
 - [ ] Playwright smoke (in CI): as the demo division leader, drag a worker from squad A to an open seat in squad B, save; the worker shows in B, and a DB check finds 2 new `seat_changes` rows
 - [ ] Playwright: as the demo group leader, a move into a squad outside their group shows the `FORBIDDEN` message and the board is unchanged
 - [ ] Playwright: the "Move to…" path completes a move with the keyboard only
+- [ ] With no `?group=` in the URL, the board opens on the acting leader's scope (their group, or the first group of their division); with no leader selected, the demo group (moved here from LR-02-02)
 Likely files: `src/components/board/*`, `src/components/move-dialog.tsx`, `src/app/board/page.tsx`, `tests/e2e/move.spec.ts`.
 
 ### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet

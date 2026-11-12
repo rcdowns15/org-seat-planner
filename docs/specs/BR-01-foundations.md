@@ -1,6 +1,6 @@
 # BR-01 — Foundations
 
-**Status:** in-progress · **Depends on:** — · **Milestone:** M1 · **Target:** Thu 2026-11-12 · **Cut line:** yes
+**Status:** done · **Depends on:** — · **Milestone:** M1 · **Target:** Thu 2026-11-12 · **Cut line:** yes
 
 ## Goal
 A TypeScript Next.js app with CI, a local Docker Postgres, migrations for the `app` and `workday`
