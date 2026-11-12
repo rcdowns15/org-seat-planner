@@ -5,8 +5,8 @@ models:
     description: >
       Cleaned Workday report rows, one row per raw row (every report, every worker). Names split
       from `Last, First`, MM/DD/YYYY text parsed to dates, status and worker-type text mapped to
-      enums, IDs trimmed and upper-cased, the supervisory organization split into org name and
-      manager name. Blank cells become null. Values that don't map become null so tests catch them.
+      enums, IDs and email trimmed but not re-cased (same as the loader), the supervisory organization
+      split into org name and manager name. Whitespace is trimmed the way the loader does it, and blank cells become null. Values that don't map become null so tests catch them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -31,7 +31,7 @@ models:
         description: When the row was loaded.
         data_tests: [not_null]
       - name: worker_id
-        description: Trimmed, upper-cased worker ID (six digits, or `C-` plus five digits for contingent workers).
+        description: Trimmed worker ID (six digits, or `C-` plus five digits for contingent workers).
         data_tests: [not_null]
       - name: last_name
         description: Last name, from the part of `Last, First` before the first comma.
@@ -40,7 +40,7 @@ models:
         description: First name, from the part of `Last, First` after the first comma.
         data_tests: [not_null]
       - name: work_email
-        description: Lower-cased work email.
+        description: Trimmed work email.
         data_tests: [not_null]
       - name: worker_type
         description: Worker type mapped from the report text.
