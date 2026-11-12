@@ -75,7 +75,7 @@ Node (cache the pnpm store), then `lint`, `typecheck`, `test`, `build`, and a Pl
 - [ ] Node and pnpm versions come from `.nvmrc` / `packageManager`, not hardcoded in the workflow
 Likely files: `.github/workflows/ci.yml`.
 
-### LR-01-04 · Local Postgres, DB client, health route · status: review (https://github.com/rcdowns15/org-seat-planner/pull/3) · depends: LR-01-02 · owner: agent · executor model: sonnet
+### LR-01-04 · Local Postgres, DB client, health route · status: done (https://github.com/rcdowns15/org-seat-planner/pull/3) · depends: LR-01-02 · owner: agent · executor model: sonnet
 `docker-compose.yml` with Postgres 16 (localhost-only defaults) and an init script creating the
 `app`, `workday` and `analytics` schemas. A server-only DB module using `pg` + Drizzle that reads
 `DATABASE_URL`. `GET /api/health` returns `{ ok, db, seats }` (`seats` is `null` until the schema
@@ -101,7 +101,7 @@ on Neon (LR-01-09). Remaining: the health check once LR-01-04 is deployed.
 - [ ] No connection string committed anywhere (`git grep -n "neon.tech"` returns nothing)
 Likely files: `docs/PROGRESS.md`, `README.md`.
 
-### LR-01-06 · Drizzle schema and migrations for `app` and `workday` · status: todo · depends: LR-01-04 · owner: agent · executor model: opus
+### LR-01-06 · Drizzle schema and migrations for `app` and `workday` · status: in-progress · depends: LR-01-04 · owner: agent · executor model: opus
 Define the data model in Drizzle and generate migrations (see D-010 and the "Domain edge cases" in
 `CLAUDE.md`):
 - `workday.workers`: the typed, current view of Workday (worker_id, names, email, worker_type

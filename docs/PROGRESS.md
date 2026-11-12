@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-03 merged; LR-01-04 (PR #3) rebased onto `main` for CI (orchestrator)
-- **Milestone:** M1 — Foundations (BR-01), 4 of 10 little rocks done (LR-01-01, LR-01-02, LR-01-03, LR-01-10). LR-01-05 linking done (only the live `/api/health` check is left, after LR-01-04).
-- **In flight:** LR-01-04 in review: https://github.com/rcdowns15/org-seat-planner/pull/3 (rebased; CI running).
+- **Last updated:** 2026-11-12 · LR-01-04 merged; LR-01-06 dispatched (Opus executor) (orchestrator)
+- **Milestone:** M1 — Foundations (BR-01), 5 of 10 little rocks done (LR-01-01…04, LR-01-10). LR-01-05: linking done; the production `/api/health` check is now unblocked.
+- **In flight:** LR-01-06 (Drizzle schema + migrations, incl. D-029 Workday columns): Opus executor running, no PR yet.
 - **Blocked:** none
-- **Waiting on Rob:** merge PR #3 once CI is green; stop the leftover `next start` on port 3000 (PID 4076); LR-01-05 health check once PR #3 merges and deploys; LR-01-09 once LR-01-08 merges. Optional: a ruleset requiring the `checks` and `e2e` status checks on PRs.
-- **Next:** LR-01-06 (Opus executor) once PR #3 merges → LR-01-07 → LR-01-08 · owner: orchestrator
+- **Waiting on Rob:** LR-01-05 health check on the production URL (now unblocked) and record the URL; stop the leftover `next start` on port 3000 (PID 4076); LR-01-09 once LR-01-08 merges. Optional: a ruleset requiring the `checks` and `e2e` status checks on PRs.
+- **Next:** LR-01-06 PR → LR-01-07 (seed) → LR-01-08 (CI DB job + `db-deploy`) · owner: orchestrator
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-01-04 done: PR #3 merged (CI green). LR-01-05's production health check unblocked. LR-01-06 dispatched (Opus).
 - 2026-11-12 — LR-01-03 done: PR #2 merged; CI now runs on every PR and push to `main`.
 - 2026-11-12 — LR-01-04 → `review`: PR #3 (Sonnet; four reviewer P2s fixed: pool error listener, local-only test DB guard, `.env.example` unpooled URL, compose project name).
 - 2026-11-12 — LR-01-03 → `review`: PR #2 (Sonnet; reviewer P2 empty failure artifact fixed; CI green, failing-lint demo run 43127741879).
