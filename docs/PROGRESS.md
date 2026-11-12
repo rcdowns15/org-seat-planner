@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-11 (late) · LR-01-02 PR #1 open (orchestrator)
-- **Milestone:** M1 — Foundations (BR-01), 2 of 10 little rocks done (LR-01-01, LR-01-10). LR-01-05 linking done (only the live `/api/health` check is left, after LR-01-04). D-029 is on `main`.
-- **In flight:** LR-01-02 in review: https://github.com/rcdowns15/org-seat-planner/pull/1 (checks pass, Vercel preview green, reviewer P2 fixed).
-- **Blocked:** none. Everything else in BR-01 waits on PR #1 merging.
-- **Waiting on Rob:** review and merge PR #1; LR-01-05 health check after LR-01-04 deploys; LR-01-09 (GitHub secrets, `db-deploy` with `reseed: true`) once LR-01-08 merges.
-- **Next:** after PR #1 merges, the orchestrator runs LR-01-03 and LR-01-04 in parallel, then LR-01-06 → LR-01-07 → LR-01-08 · owner: orchestrator
+- **Last updated:** 2026-11-12 · LR-01-03 PR #2 open; LR-01-04 in its review-fix round (orchestrator)
+- **Milestone:** M1 — Foundations (BR-01), 3 of 10 little rocks done (LR-01-01, LR-01-02, LR-01-10). LR-01-05 linking done (only the live `/api/health` check is left, after LR-01-04).
+- **In flight:** LR-01-03 in review: https://github.com/rcdowns15/org-seat-planner/pull/2 (CI green; failing-lint demo shown). LR-01-04: executor fixing four reviewer P2s (retry 1 of 2).
+- **Blocked:** none
+- **Waiting on Rob:** review and merge PR #2; stop the leftover `next start` on port 3000 (PID 4076, from an LR-01-04 worktree); LR-01-05 health check after LR-01-04 merges and deploys; LR-01-09 once LR-01-08 merges. Optional after PR #2: a ruleset requiring the `checks` and `e2e` status checks on PRs.
+- **Next:** LR-01-04 PR; then LR-01-06 (Opus) once LR-01-04 merges → LR-01-07 → LR-01-08 (needs LR-01-03 and LR-01-07 merged) · owner: orchestrator
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-01-03 → `review`: PR #2 (Sonnet; reviewer P2 empty failure artifact fixed; CI green, failing-lint demo run 43127741879).
 - 2026-11-12 — LR-01-02 done: PR #1 merged. LR-01-03 and LR-01-04 dispatched in parallel.
 - 2026-11-11 — LR-01-02 → `review`: PR #1 opened (Sonnet executor; reviewer pass, P2 duplicate `cn` helper fixed; Vercel preview builds).
 - 2026-11-11 — D-029 accepted: the Workday report and `workday.workers` gain `Position_ID`, `Cost_Center` and `Location` (LR-01-06 and LR-01-07 criteria updated); the seat ↔ position link is parked until BR-07.
