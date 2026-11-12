@@ -1,13 +1,14 @@
 import { config } from "dotenv";
+import { hostOf, isLocalHost } from "../../scripts/db/local-host";
 
 const LOCAL_URL = "postgres://seatplanner:seatplanner@localhost:5432/seatplanner";
 
 // Throws unless the URL points at localhost. Pure, so a unit test can cover it.
 export function assertLocalUrl(name: string, url: string): void {
-  const { hostname } = new URL(url);
-  if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+  const hostname = hostOf(url);
+  if (!isLocalHost(hostname)) {
     throw new Error(
-      `pnpm test:db only runs against the local Docker database (${name} host is "${hostname}").`,
+      `pnpm test:db only runs against the local Docker database (${name} host is "${hostname ?? "unparseable"}").`,
     );
   }
 }

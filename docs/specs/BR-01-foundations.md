@@ -97,7 +97,7 @@ hand: the migrations create `app`, `workday` and `analytics` (LR-01-06), and `db
 on Neon (LR-01-09). Remaining: the health check once LR-01-04 is deployed.
 - [x] Vercel project linked to GitHub; Neon connected; `DEMO_MODE` set
 - [x] The production URL's `/api/health` returns `200` with `"db":"ok"` (2026-11-12: `curl.exe -i https://org-seat-planner.vercel.app/api/health` → `200 {"ok":true,"db":"ok","seats":null}`)
-- [ ] Production URL recorded in `docs/PROGRESS.md` (done) and the README (pending: next orchestrator brief)
+- [x] Production URL recorded in `docs/PROGRESS.md` and the README (README added in LR-01-08)
 - [x] No connection string committed anywhere: `git grep -nE "neon\.tech" -- ":!docs/specs"` returns nothing, and every `postgres://…@` match is the localhost Docker default (2026-11-12)
 Likely files: `docs/PROGRESS.md`, `README.md`.
 
@@ -198,10 +198,10 @@ against the seeded DB. Add `db-deploy.yml` (manual `workflow_dispatch` only): ru
 the seed against the database in the `NEON_DATABASE_URL_UNPOOLED` secret, with an input
 `reseed: true|false`. Extend `/api/health` to report the seat count.
 - [ ] CI DB job passes on this PR (link the run)
-- [ ] `db-deploy.yml` passes `actionlint` (or the GitHub workflow validator) and never echoes the secret
-- [ ] `/api/health` returns the seeded seat count locally (test)
-- [ ] `pnpm db:seed` refuses a non-local database (host not `localhost`/`127.0.0.1`) unless `--allow-remote` is passed, and prints the target host (never the connection string); `db-deploy.yml` passes `--allow-remote`. Test covers the refusal. (Added by orchestrator from the LR-01-07 review: after `vercel env pull`, a bare `pnpm db:seed` would truncate Neon.)
-- [ ] `db-deploy.yml` installs with plain `pnpm install --frozen-lockfile` (the seed needs dev dependency `@faker-js/faker`; no `--prod`)
+- [x] `db-deploy.yml` passes `actionlint` (or the GitHub workflow validator) and never echoes the secret
+- [x] `/api/health` returns the seeded seat count locally (test)
+- [x] `pnpm db:seed` refuses a non-local database (host not `localhost`/`127.0.0.1`) unless `--allow-remote` is passed, and prints the target host (never the connection string); `db-deploy.yml` passes `--allow-remote`. Test covers the refusal. (Added by orchestrator from the LR-01-07 review: after `vercel env pull`, a bare `pnpm db:seed` would truncate Neon.)
+- [x] `db-deploy.yml` installs with plain `pnpm install --frozen-lockfile` (the seed needs dev dependency `@faker-js/faker`; no `--prod`)
 Likely files: `.github/workflows/ci.yml`, `.github/workflows/db-deploy.yml`, `src/app/api/health/route.ts`, `tests/db/health.test.ts`.
 
 ### LR-01-09 · GitHub secrets and first Neon seed · status: todo · depends: LR-01-05, LR-01-08 · owner: rob · executor model: —
