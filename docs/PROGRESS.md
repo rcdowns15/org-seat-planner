@@ -3,12 +3,17 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · orchestrator mid-run (BR-01 review done; four LRs in flight, no PRs open yet)
-- **Milestone:** M1 done (BR-01 `done`, big-rock review pass). M2/M3 started: LR-02-01, LR-02-02, LR-03-01, LR-03-02 in progress.
-- **In flight:** LR-02-01 (`lr/LR-02-01-acting-as` 01ac47b; verified; review 1 two P2s → fix round 1 running). LR-02-02 (`lr/LR-02-02-board` 0246e40; verified; review 1 one P2 → fix round 1 running). LR-03-01 (`lr/LR-03-01-workday-ingest` 664ef59; verified, checksum pinned and unchanged; review 1 running). LR-03-02 (`lr/LR-03-02-dbt-staging`, stacked on LR-03-01 migration adc16ed; executor running; rebase onto LR-03-01's final tip before review). Verification worktrees: `code/v0201`, `v0202`, `v0301`; per-LR local DBs `seatplanner_lr0201/0202/0301/0302`.
+- **Last updated:** 2026-11-12 · orchestrator stopped at the context budget; handoff below. No PRs open yet.
+- **Milestone:** M1 done (BR-01 `done`). M2/M3: four LRs built and verified, in review/fix loops.
+- **In flight:**
+  - LR-02-01 `lr/LR-02-01-acting-as` @3a44051: fix round 1 (retry 1/2) committed (both P2s + six P3s fixed, new leader-switcher e2e). Next: verify (all Checks), re-review, PR.
+  - LR-02-02 `lr/LR-02-02-board` @0246e40+: fix round 1 (retry 1/2) executor was still running at handoff (P2 header-count test + P3s). Next: check branch for its commit, verify, re-review, PR.
+  - LR-03-01 `lr/LR-03-01-workday-ingest` @664ef59: verified; review 1 pass with 3 P2s, none touching migration 0003. Next: fix round 1 (retry 1/2): P2-1 validate `Position_ID` unique among non-terminated rows, and record a `rejected` run when the load throws; P2-2 advisory lock on one constant key (`hashtext('workday_ingest')`), not the file hash; P2-3 document upsert-only + newer-report-only in data-model.md and the schema comment. Cheap P3s: fatal UTF-8 decode, reject unknown/duplicate headers, consistent row numbering, `﻿` literal. Then verify, re-review, PR.
+  - LR-03-02 `lr/LR-03-02-dbt-staging` @b1f07bd, rebased onto LR-03-01 @664ef59: verified with seed-loaded data (lint/typecheck/test pass; dbt build PASS=119 ERROR=0). Next: rebase again onto LR-03-01's final tip after its fixes, re-run dbt build, review, PR with "Merge after LR-03-01 (#N)". Consider reviewer P3: a dbt test that staged latest report = `workday.workers`.
+  - Verification worktrees `code/v0201`, `v0202`, `v0301`, `v0302`; per-LR local DBs `seatplanner_lr0201/0202/0301/0302`.
 - **Blocked:** none.
-- **Waiting on Rob:** nothing yet; four PRs to review once opened (merge LR-03-01 before LR-03-02). OK needed on LR-03-01 deviations (e.g. reject a report not newer than the latest loaded) once reviewed.
-- **Next:** finish fix rounds and reviews → open four PRs → set each to `review`. Then LR-02-03 (Opus) after LR-02-01 merges; LR-03-03 after LR-03-02 merges.
+- **Waiting on Rob:** OK on LR-03-01 spec deviations: (1) reject a report not newer than the latest loaded one (may matter for BR-05 backfill); (2) `workday.workers` upsert-only, so missing workers keep an older `as_of_report_date`; (3) extra required non-blank columns. Also LR-02-02 squad header uses seat count as "approved" (reviewer: consistent with the data model).
+- **Next:** fresh `claude --agent orchestrator` session continues from this block → four PRs (merge LR-03-01 before LR-03-02).
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +27,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — Orchestrator handoff at the context budget: LR-02-01, LR-02-02, LR-03-01, LR-03-02 built (Sonnet) and verified; reviews done for 02-01 (2 P2, fixed), 02-02 (1 P2, fix running), 03-01 (3 P2, fix next); LR-03-02 rebased onto LR-03-01 and dbt build green on seeded data, review pending. No PRs yet.
 - 2026-11-12 — BR-01 big-rock review (orchestrator, Opus reviewer): pass, no P1; all four exit criteria met with evidence (local checks, CI run 43289446630, production health 2202 seats, checksum `8cb477f9…` identical on local/CI/Neon, ER diagram matches). BR-01 → `done`. P2-1 (parallel executors share one local DB) handled in briefs with one database per executor; P2-2 (no recorded checksum baseline) added as an LR-03-01 criterion. P3s listed in the orchestrator report. LR-02-02 criterion tightened: `?group=` with the demo group as the default; defaulting to the acting leader's scope moves to LR-02-04. LR-02-01, LR-02-02, LR-03-01 → `in-progress` (Sonnet).
 - 2026-11-12 — Navigator: LR-02-01, LR-02-02 and LR-03-01 → `ready` (deps merged). Dependency fix: LR-03-02 now also depends on LR-03-01's migration (its sources `workday.raw_worker_report` and `workday.ingest_runs` don't exist yet), so it stacks on the LR-03-01 branch and merges after it. Combined brief (BR-01 big-rock review + four-LR dispatch) handed to Rob, starting the Friday work early.
 - 2026-11-12 — LR-01-09 done (Rob): five GitHub secrets added (`NEON_DATABASE_URL_UNPOOLED`, `DBT_*`); `db-deploy` with `reseed: true` green (run 43288883379); production `/api/health` → `{"ok":true,"db":"ok","seats":2202}`, matching local. BR-01 has all 10 little rocks done; the big-rock review is next.
