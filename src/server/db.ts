@@ -17,7 +17,13 @@ function getHandle(): DbHandle {
       "DATABASE_URL is not set. Copy .env.example to .env.local (see README: Local database).",
     );
   }
-  const pool = new Pool({ connectionString, connectionTimeoutMillis: 2000 });
+  const pool = new Pool({
+    connectionString,
+    connectionTimeoutMillis: 5000, // fail fast, but allow for a Neon cold start (can exceed 2 s)
+    statement_timeout: 5000, // stop any single query running longer than 5 s
+  });
+  // Without a listener, a dropped idle connection (DB stopped, Neon suspend) crashes the process.
+  pool.on("error", (err) => console.error("pg pool idle client error:", err.message));
   globalForDb.__dbHandle = { pool, db: drizzle(pool) };
   return globalForDb.__dbHandle;
 }

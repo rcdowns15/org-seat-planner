@@ -29,7 +29,12 @@ export async function checkDatabase(
   try {
     const seats = await countSeats();
     return { status: 200, body: { ok: true, db: "ok", seats } };
-  } catch {
+  } catch (err) {
+    // Server-side log only: the error code or message, never a connection string.
+    console.error(
+      "health check failed:",
+      (err as { code?: string }).code ?? (err instanceof Error ? err.message : String(err)),
+    );
     return { status: 503, body: { ok: false, db: "down", seats: null } };
   }
 }

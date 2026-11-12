@@ -1,4 +1,7 @@
 # Local Postgres for development. Credentials are localhost-only defaults, not secrets.
+# One shared project name so every worktree and the main checkout use the same container and volume.
+name: org-seat-planner
+
 services:
   db:
     image: postgres:16

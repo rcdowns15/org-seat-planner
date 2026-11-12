@@ -3,7 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const srcDir = path.resolve(__dirname, "../../src");
-const forbidden = /from\s+["'](@\/server\/[^"']*|pg|drizzle-orm[^"']*|server-only)["']/;
+// Matches both `import x from "pg"` and the side-effect form `import "pg"`.
+const forbidden = /(?:from|import)\s+["'](@\/server\/[^"']*|pg|drizzle-orm[^"']*|server-only)["']/;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -22,8 +23,10 @@ describe("server/client boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("src/server/db.ts starts with import 'server-only'", () => {
-    const text = readFileSync(path.join(srcDir, "server/db.ts"), "utf8");
-    expect(text.trimStart().startsWith('import "server-only";')).toBe(true);
+  it("every .ts file under src/server starts with import 'server-only'", () => {
+    const missing = sourceFiles(path.join(srcDir, "server")).filter(
+      (file) => !readFileSync(file, "utf8").trimStart().startsWith('import "server-only";'),
+    );
+    expect(missing).toEqual([]);
   });
 });

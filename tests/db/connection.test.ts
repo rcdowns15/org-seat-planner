@@ -20,6 +20,10 @@ describe("local database", () => {
     expect(res.rows.map((r) => r.schema_name).sort()).toEqual(["analytics", "app", "workday"]);
   });
 
+  it("pool has an error listener so a dropped idle connection can't crash the process", () => {
+    expect(getPool().listenerCount("error")).toBeGreaterThan(0);
+  });
+
   it("health check reports ok", async () => {
     const result = await checkDatabase();
     expect(result.status).toBe(200);
