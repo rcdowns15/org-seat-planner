@@ -1,7 +1,8 @@
 # Seed generator
 
 `pnpm db:seed` wipes and reseeds the `app` and `workday` schemas from a fixed faker seed, and writes
-two mock Workday report CSVs to `data/workday/` (gitignored; regenerated every run).
+two mock Workday report CSVs to `data/workday/` (gitignored; regenerated every run). It prints the target host and refuses a database that
+isn't on `localhost` or `127.0.0.1` unless you pass `--allow-remote`.
 `pnpm db:seed:check` prints a SHA-256 checksum of the rows now in the database. Running the seed
 twice prints the same checksum, because nothing in the generator reads the clock or global
 randomness (D-014).
@@ -160,6 +161,14 @@ The seed runs one transaction: `SET LOCAL app.allow_seat_changes_reset = 'on'`, 
 `app` and `workday` table with `RESTART IDENTITY`, then batched inserts. The setting is the escape
 hatch in the `app.seat_changes` TRUNCATE guard (migration `0002`) and ends with the transaction.
 The checksum covers every seeded row except columns the database fills with the clock.
+
+## Known simplifications
+
+- **Leaders sit in a squad group's cost center** (D-032). The head of engineering and the division
+  VPs are charged to a group's cost center (for example `CC-1010 Digital Channels`). A real org
+  would give leaders a leadership cost center (for example `CC-1000 Engineering Leadership`).
+  Parked: changing it would change the seed checksum and both report hashes, so it's raised again
+  after the interview.
 
 ## Files
 

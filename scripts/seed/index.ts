@@ -1,9 +1,11 @@
 // `pnpm db:seed`: wipe and reseed app + workday from the fixed seed, write the two Workday report
 // CSVs to data/workday/, and print a checksum of the seeded rows.
+// It refuses a non-local host unless --allow-remote is passed, and prints the host only.
 // `pnpm db:seed:check`: print the checksum of what is in the database now.
 // Like db:migrate, it uses DATABASE_URL_UNPOOLED, falling back to DATABASE_URL, and never prints
 // the connection string.
 import { config } from "dotenv";
+import { decideSeedTarget } from "../db/local-host";
 import { checkSeed, runSeed } from "./run-seed";
 
 config({ path: [".env.local", ".env"], quiet: true });
@@ -16,6 +18,17 @@ async function main(): Promise<void> {
   if (!connectionString) {
     console.error(`${name}: set DATABASE_URL_UNPOOLED or DATABASE_URL (see .env.example).`);
     process.exit(1);
+  }
+
+  // The writing path wipes app + workday, so it refuses a remote host unless --allow-remote is
+  // passed (e.g. after `vercel env pull`). --check only reads, so it needs no guard.
+  if (!check) {
+    const decision = decideSeedTarget(connectionString, process.argv.includes("--allow-remote"));
+    if (!decision.allowed) {
+      console.error(`${name}: ${decision.message}`);
+      process.exit(1);
+    }
+    console.log(`db:seed: target host ${decision.host}`);
   }
 
   try {

@@ -1,5 +1,6 @@
 import "server-only";
-import { getPool } from "@/server/db";
+import { sql } from "drizzle-orm";
+import { getDb } from "@/server/db";
 
 export type HealthBody = {
   ok: boolean;
@@ -11,9 +12,8 @@ export type HealthResult = { status: 200 | 503; body: HealthBody };
 
 // Returns the seat count, or null when the schema doesn't exist yet. Rejects if the DB is down.
 async function querySeatCount(): Promise<number | null> {
-  const pool = getPool();
   try {
-    const res = await pool.query<{ n: string }>("select count(*) as n from app.seats");
+    const res = await getDb().execute<{ n: string }>(sql`select count(*) as n from app.seats`);
     return Number(res.rows[0].n);
   } catch (err) {
     // 42P01 = undefined_table: connected fine, the app schema just isn't migrated yet.
