@@ -27,6 +27,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-02-01 → `review`: PR #7 (Sonnet build + 1 fix round; review 1 two P2s fixed, review 2 pass; P3s noted).
+- 2026-11-12 — LR-02-02 → `review`: PR #8 (Sonnet build + 1 fix round; review 1 one P2 fixed, review 2 pass; P3s noted).
 - 2026-11-12 — Rob approved the three LR-03-01 deviations (newer-report-only, upsert-only workers, extra required columns); written into the LR-03-01 spec text. The fix round still documents them in `docs/data-model.md` (review P2-3).
 - 2026-11-12 — Rob approved the LR-02-02 change: `?group=` with Digital Channels as the default, acting-leader default moved to LR-02-04; squad header "approved" = seat count.
 - 2026-11-12 — Orchestrator handoff at the context budget: LR-02-01, LR-02-02, LR-03-01, LR-03-02 built (Sonnet) and verified; reviews done for 02-01 (2 P2, fixed), 02-02 (1 P2, fix running), 03-01 (3 P2, fix next); LR-03-02 rebased onto LR-03-01 and dbt build green on seeded data, review pending. No PRs yet.
