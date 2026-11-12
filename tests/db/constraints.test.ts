@@ -147,6 +147,17 @@ describe("app.seat_changes is append-only", () => {
       expect(err.message).toMatch(/append-only: TRUNCATE/);
       // The seed's reset path: SET LOCAL scopes the escape hatch to this (rolled-back) transaction.
       await client.query("set local app.allow_seat_changes_reset = 'on'");
+      // The reset setting must not loosen the row-level guard: UPDATE still raises.
+      const { squadId, leaderId } = await insertFixture(client);
+      const seatId = await insertSeat(client, squadId, "backfill", null);
+      const changeId = await insertChange(client, seatId, leaderId);
+      const updateErr = await expectSqlState(
+        client,
+        "P0001",
+        "update app.seat_changes set note = 'edited' where change_id = $1",
+        [changeId],
+      );
+      expect(updateErr.message).toMatch(/append-only: UPDATE/);
       await client.query("truncate app.seat_changes");
     });
   });
@@ -211,6 +222,40 @@ describe("other app constraints", () => {
         [`test-leader-2-${suffix}`],
       );
       expect(err.constraint).toBe("leaders_scope_matches_type_check");
+    });
+  });
+
+  it("rejects every leader scope_type and scope column mismatch, and accepts a valid group leader", async () => {
+    await withRollback(async (client) => {
+      const { suffix, squadId } = await insertFixture(client);
+      const ids = await client.query<{ division_id: number; group_id: number }>(
+        `select g.division_id, g.group_id from app.squads s
+         join app.groups g using (group_id) where s.squad_id = $1`,
+        [squadId],
+      );
+      const { division_id: divisionId, group_id: groupId } = ids.rows[0];
+      const insertLeader = (workerId: string, scopeType: string, div: unknown, grp: unknown) =>
+        expectSqlState(
+          client,
+          "23514",
+          `insert into app.leaders (worker_id, display_name, scope_type, division_id, group_id)
+           values ($1, 'Scope Test', $2, $3, $4)`,
+          [`${workerId}-${suffix}`, scopeType, div, grp],
+        );
+      const cases: [string, string, unknown, unknown][] = [
+        ["scope-a", "division", null, groupId],
+        ["scope-b", "group", divisionId, groupId],
+        ["scope-c", "division", divisionId, groupId],
+      ];
+      for (const [workerId, scopeType, div, grp] of cases) {
+        const err = await insertLeader(workerId, scopeType, div, grp);
+        expect(err.constraint).toBe("leaders_scope_matches_type_check");
+      }
+      await client.query(
+        `insert into app.leaders (worker_id, display_name, scope_type, division_id, group_id)
+         values ($1, 'Valid Group', 'group', null, $2)`,
+        [`scope-ok-${suffix}`, groupId],
+      );
     });
   });
 
