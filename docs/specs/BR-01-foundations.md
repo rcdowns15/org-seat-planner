@@ -87,7 +87,7 @@ exists). `.env.example` documents every variable with localhost or placeholder v
 - [ ] `src/server/db.ts` starts with `import "server-only"`; no client component imports it (lint rule or test)
 Likely files: `docker-compose.yml`, `db/init/01-schemas.sql`, `src/server/db.ts`, `src/app/api/health/route.ts`, `.env.example`, `vitest.config.ts`, `tests/db/connection.test.ts`.
 
-### LR-01-05 · Link Vercel and Neon · status: in-progress · depends: LR-01-04 (final check only) · owner: rob · executor model: —
+### LR-01-05 · Link Vercel and Neon · status: in-progress (README line pending) · depends: LR-01-04 (final check only) · owner: rob · executor model: —
 Linking done 2026-11-11 (ahead of LR-01-04): Vercel project `rob-c8e4/org-seat-planner`, connected
 to the GitHub repo (pushes to `main` deploy to production, PRs get previews). Neon resource
 `org-seat-planner-db` was provisioned through the Vercel Marketplace and connected, which set
@@ -96,9 +96,9 @@ environments. `DEMO_MODE=true` is set for production and preview. Schemas are **
 hand: the migrations create `app`, `workday` and `analytics` (LR-01-06), and `db-deploy` runs them
 on Neon (LR-01-09). Remaining: the health check once LR-01-04 is deployed.
 - [x] Vercel project linked to GitHub; Neon connected; `DEMO_MODE` set
-- [ ] The production URL's `/api/health` returns `200` with `"db":"ok"`
-- [ ] Production URL recorded in `docs/PROGRESS.md` and the README
-- [ ] No connection string committed anywhere (`git grep -n "neon.tech"` returns nothing)
+- [x] The production URL's `/api/health` returns `200` with `"db":"ok"` (2026-11-12: `curl.exe -i https://org-seat-planner.vercel.app/api/health` → `200 {"ok":true,"db":"ok","seats":null}`)
+- [ ] Production URL recorded in `docs/PROGRESS.md` (done) and the README (pending: next orchestrator brief)
+- [x] No connection string committed anywhere: `git grep -nE "neon\.tech" -- ":!docs/specs"` returns nothing, and every `postgres://…@` match is the localhost Docker default (2026-11-12)
 Likely files: `docs/PROGRESS.md`, `README.md`.
 
 ### LR-01-06 · Drizzle schema and migrations for `app` and `workday` · status: in-progress · depends: LR-01-04 · owner: agent · executor model: opus
