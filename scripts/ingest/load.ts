@@ -114,6 +114,16 @@ async function loadReport(
   }
 }
 
+// A readable message for a failed load. Drizzle wraps the driver error and its own message
+// repeats the SQL and the row values, so use the database error underneath when there is one
+// (constraint name plus detail). No connection details are included.
+function describeLoadError(err: unknown): string {
+  const cause = err instanceof Error && err.cause instanceof Error ? err.cause : err;
+  if (!(cause instanceof Error)) return "load failed: unknown error";
+  const detail = (cause as { detail?: unknown }).detail;
+  return `load failed, nothing was loaded: ${cause.message}${typeof detail === "string" ? ` (${detail})` : ""}`;
+}
+
 // Reads, validates and loads one report. A rejected file loads nothing and leaves the previous
 // report current; the same file twice is a no-op. Every attempt is recorded in ingest_runs.
 export async function ingestReport(pool: Pool, reader: ReportReader): Promise<IngestResult> {
@@ -125,52 +135,72 @@ export async function ingestReport(pool: Pool, reader: ReportReader): Promise<In
     ? { ok: false as const, reasons: [`file: ${source.parseError}`], rowCount: 0 }
     : validateReport(source.sourceFile, source.records);
 
-  return db.transaction(async (tx) => {
-    // Two ingests of the same file at once wait for each other, so the second one sees the first.
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${source.fileSha256}))`);
+  const insertRun = (
+    tx: NodePgDatabase,
+    status: IngestResult["status"],
+    reportDate: string | null,
+    rowCount: number,
+    reasons: string[],
+  ): Promise<unknown> =>
+    tx.insert(ingestRuns).values({
+      ...base,
+      reportDate,
+      rowCount,
+      status,
+      rejectionReasons: reasons,
+    });
 
-    const record = async (
-      status: IngestResult["status"],
-      reportDate: string | null,
-      rowCount: number,
-      reasons: string[],
-    ): Promise<IngestResult> => {
-      await tx.insert(ingestRuns).values({
-        ...base,
-        reportDate,
-        rowCount,
-        status,
-        rejectionReasons: reasons,
-      });
-      return { status, ...base, reportDate, rowCount, reasons };
-    };
+  try {
+    return await db.transaction(async (tx) => {
+      // One lock key for every ingest, so two different files can't both pass the "newer
+      // report" check at once: the second waits for the first and then sees its run.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('workday_ingest'))`);
 
-    if (!validation.ok) return record("rejected", null, validation.rowCount, validation.reasons);
-    const { report } = validation;
-    const rowCount = report.rows.length;
+      const record = async (
+        status: IngestResult["status"],
+        reportDate: string | null,
+        rowCount: number,
+        reasons: string[],
+      ): Promise<IngestResult> => {
+        await insertRun(tx, status, reportDate, rowCount, reasons);
+        return { status, ...base, reportDate, rowCount, reasons };
+      };
 
-    const [alreadyLoaded] = await tx
-      .select({ runId: ingestRuns.runId })
-      .from(ingestRuns)
-      .where(and(eq(ingestRuns.fileSha256, source.fileSha256), eq(ingestRuns.status, "loaded")))
-      .limit(1);
-    if (alreadyLoaded) return record("skipped", report.reportDate, rowCount, []);
+      if (!validation.ok) return record("rejected", null, validation.rowCount, validation.reasons);
+      const { report } = validation;
+      const rowCount = report.rows.length;
 
-    // Each report is a full extract that replaces the current view, so an older (or same-dated,
-    // different) file must not overwrite a newer one.
-    const [latest] = await tx
-      .select({ reportDate: ingestRuns.reportDate })
-      .from(ingestRuns)
-      .where(eq(ingestRuns.status, "loaded"))
-      .orderBy(desc(ingestRuns.reportDate))
-      .limit(1);
-    if (latest?.reportDate && latest.reportDate >= report.reportDate) {
-      return record("rejected", report.reportDate, rowCount, [
-        `report date ${report.reportDate}: not newer than the loaded report ${latest.reportDate}; the previous report stays current`,
-      ]);
-    }
+      const [alreadyLoaded] = await tx
+        .select({ runId: ingestRuns.runId })
+        .from(ingestRuns)
+        .where(and(eq(ingestRuns.fileSha256, source.fileSha256), eq(ingestRuns.status, "loaded")))
+        .limit(1);
+      if (alreadyLoaded) return record("skipped", report.reportDate, rowCount, []);
 
-    await loadReport(tx, report, base.sourceFile, base.fileSha256);
-    return record("loaded", report.reportDate, rowCount, []);
-  });
+      // Each report is a full extract that replaces the current view, so an older (or
+      // same-dated, different) file must not overwrite a newer one.
+      const [latest] = await tx
+        .select({ reportDate: ingestRuns.reportDate })
+        .from(ingestRuns)
+        .where(eq(ingestRuns.status, "loaded"))
+        .orderBy(desc(ingestRuns.reportDate))
+        .limit(1);
+      if (latest?.reportDate && latest.reportDate >= report.reportDate) {
+        return record("rejected", report.reportDate, rowCount, [
+          `report date ${report.reportDate}: not newer than the loaded report ${latest.reportDate}; the previous report stays current`,
+        ]);
+      }
+
+      await loadReport(tx, report, base.sourceFile, base.fileSha256);
+      return record("loaded", report.reportDate, rowCount, []);
+    });
+  } catch (err) {
+    // The load transaction rolled back, so nothing was loaded and no run was recorded. Record
+    // the rejection in a fresh transaction instead of crashing.
+    const reasons = [describeLoadError(err)];
+    const reportDate = validation.ok ? validation.report.reportDate : null;
+    const rowCount = validation.ok ? validation.report.rows.length : validation.rowCount;
+    await db.transaction((tx) => insertRun(tx, "rejected", reportDate, rowCount, reasons));
+    return { status: "rejected", ...base, reportDate, rowCount, reasons };
+  }
 }

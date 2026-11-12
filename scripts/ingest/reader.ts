@@ -24,13 +24,16 @@ export class CsvFileReader implements ReportReader {
     const bytes = await readFile(this.file);
     const fileSha256 = createHash("sha256").update(bytes).digest("hex");
     const sourceFile = path.basename(this.file);
+    let text: string;
     try {
-      return {
-        sourceFile,
-        fileSha256,
-        records: parseReportCsv(bytes.toString("utf8")),
-        parseError: null,
-      };
+      // fatal: invalid UTF-8 is an error, not a silent U+FFFD. ignoreBOM keeps a leading BOM in
+      // the text; the CSV parser strips it.
+      text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+    } catch {
+      return { sourceFile, fileSha256, records: [], parseError: "the file is not valid UTF-8" };
+    }
+    try {
+      return { sourceFile, fileSha256, records: parseReportCsv(text), parseError: null };
     } catch (err) {
       if (!(err instanceof CsvSyntaxError)) throw err;
       return { sourceFile, fileSha256, records: [], parseError: err.message };

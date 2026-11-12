@@ -21,8 +21,10 @@ export const WORKER_TYPES = ["employee", "contingent"] as const;
 export const WORKER_STATUSES = ["active", "leave", "terminated"] as const;
 export const INGEST_RUN_STATUSES = ["loaded", "skipped", "rejected"] as const;
 
-// The typed, current view of Workday: one row per worker from the latest accepted report.
-// The HRIS is the source of truth, so beyond types and enums this table doesn't reject facts
+// The typed, current view of Workday: one row per worker ever seen in an accepted report. It is
+// upsert-only: each newer report updates the workers it lists and never deletes the rest, so a
+// worker missing from the latest report keeps an older as_of_report_date (a reconciliation
+// exception for dbt). The HRIS is the source of truth, so beyond types and enums this table doesn't reject facts
 // (e.g. a terminated worker who still holds a seat); dbt flags those as reconciliation exceptions.
 export const workers = workday.table(
   "workers",

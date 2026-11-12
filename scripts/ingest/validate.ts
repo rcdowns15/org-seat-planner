@@ -85,14 +85,28 @@ export function validateReport(fileName: string, records: string[][]): Validatio
     return { ok: false, reasons: [...reasons, "file: it is empty (no header row)"], rowCount: 0 };
   }
   const index = new Map<string, number>();
-  header.forEach((name, i) => index.set(name.trim(), i));
+  const known = REPORT_COLUMNS as readonly string[];
+  header.forEach((rawName, i) => {
+    const name = rawName.trim();
+    if (!known.includes(name)) {
+      reasons.push(`header: unknown column "${name}"`);
+    } else if (index.has(name)) {
+      reasons.push(`header: column ${name} appears more than once`);
+    } else {
+      index.set(name, i);
+    }
+  });
   const missing = REPORT_COLUMNS.filter((c) => !index.has(c));
   for (const column of missing) reasons.push(`header: required column ${column} is missing`);
-  if (missing.length > 0) return { ok: false, reasons, rowCount: body.length };
+  // A bad header means the cells can't be read by column name, so stop before the rows.
+  if (reasons.length > 0) return { ok: false, reasons, rowCount: body.length };
   if (body.length === 0) reasons.push("file: it has a header but no data rows");
 
   const rows: RawRow[] = [];
   const firstSeen = new Map<string, number>();
+  // Position_ID among rows that aren't Terminated: the database allows one such worker per
+  // position (workers_position_id_active_key), so catch a clash here with a readable message.
+  const positionFirstSeen = new Map<string, number>();
   body.forEach((cells, i) => {
     const n = i + 1;
     if (cells.length !== header.length) {
@@ -124,6 +138,13 @@ export function validateReport(fileName: string, records: string[][]): Validatio
     const status = row.Worker_Status.trim();
     if (!(WORKER_STATUS_TEXT as readonly string[]).includes(status)) {
       fail("Worker_Status", `must be one of ${WORKER_STATUS_TEXT.join(", ")}`);
+    }
+
+    const position = row.Position_ID.trim();
+    if (position !== "" && status !== "Terminated") {
+      const first = positionFirstSeen.get(position);
+      if (first === undefined) positionFirstSeen.set(position, n);
+      else fail("Position_ID", `is already held by non-terminated row ${first}`);
     }
 
     for (const column of REQUIRED_TEXT) {

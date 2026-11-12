@@ -22,11 +22,13 @@ function row(overrides: Partial<Record<(typeof REPORT_COLUMNS)[number], string>>
     Manager_ID: "100001",
     Job_Title: "Software Engineer",
     Supervisory_Organization: "Payments (Rui Chen)",
-    Position_ID: "P-0001",
+    Position_ID: "",
     Cost_Center: "CC-1010",
     Location: "Remote",
     ...overrides,
   };
+  // Each worker gets their own position unless a test sets one.
+  if (overrides.Position_ID === undefined) base.Position_ID = `P-${base.Worker_ID}`;
   return REPORT_COLUMNS.map((c) => base[c]);
 }
 
@@ -66,7 +68,7 @@ describe("validateReport accepts", () => {
 
 describe("validateReport rejects the whole file, naming row and column", () => {
   it("a duplicate Worker_ID", () => {
-    const reasons = reasonsOf(validate(row(), row()));
+    const reasons = reasonsOf(validate(row(), row({ Position_ID: "P-9999" })));
     expect(reasons).toEqual([expect.stringMatching(/row 2, column Worker_ID: duplicates row 1/)]);
   });
 
@@ -126,6 +128,37 @@ describe("validateReport rejects the whole file, naming row and column", () => {
     expect(reasonsOf(validate())[0]).toMatch(/no data rows/);
   });
 
+  it("a Position_ID shared by two non-terminated rows, but not by a terminated one", () => {
+    const shared = { Position_ID: "P-0001" };
+    const reasons = reasonsOf(validate(row(shared), row({ Worker_ID: "104218", ...shared })));
+    expect(reasons).toEqual([
+      expect.stringMatching(/row 2, column Position_ID: is already held by non-terminated row 1/),
+    ]);
+    const ok = validate(
+      row(shared),
+      row({
+        Worker_ID: "104218",
+        Worker_Status: "Terminated",
+        Termination_Date: "11/01/2026",
+        ...shared,
+      }),
+    );
+    expect(ok.ok).toBe(true);
+  });
+
+  it("an unknown or duplicate header column", () => {
+    const withExtra = validateReport(FILE, [
+      [...header, "Salary"],
+      [...row(), "1"],
+    ]);
+    expect(reasonsOf(withExtra)).toEqual(['header: unknown column "Salary"']);
+    const doubled = validateReport(FILE, [
+      [...header, "Hire_Date"],
+      [...row(), "03/15/2022"],
+    ]);
+    expect(reasonsOf(doubled)).toEqual(["header: column Hire_Date appears more than once"]);
+  });
+
   it("collects every problem, not just the first", () => {
     const reasons = reasonsOf(
       validate(row({ Worker_Status: "x" }), row({ Worker_ID: "104218", Hire_Date: "bad" })),
@@ -145,7 +178,7 @@ describe("reportDateFromFileName", () => {
 describe("parseReportCsv", () => {
   it("parses a BOM-prefixed, CRLF file with quoted names byte for byte", () => {
     const text =
-      "﻿Worker_ID,Worker_Name,Job_Title\r\n" +
+      "\uFEFFWorker_ID,Worker_Name,Job_Title\r\n" +
       '104217,"O\'Brien, Seán",Engineer\r\n' +
       '104218,"Müller, ""Jo"" Anne"," padded  "\r\n' +
       "104219,Plain, \r\n";
@@ -169,5 +202,10 @@ describe("parseReportCsv", () => {
     expect(() => parseReportCsv('a,b\n"open,1')).toThrow(CsvSyntaxError);
     expect(() => parseReportCsv('a,b\n"x"y,1')).toThrow(CsvSyntaxError);
     expect(() => parseReportCsv('a,b\nx"y,1')).toThrow(CsvSyntaxError);
+  });
+
+  it("numbers rows in parse errors like validation does: first data row is row 1", () => {
+    expect(() => parseReportCsv('a,b\n1,2\n"x"y,1')).toThrow(/^row 2: text after a closing quote/);
+    expect(() => parseReportCsv('a"b"c,d\n1,2')).toThrow(/^header: quote inside/);
   });
 });

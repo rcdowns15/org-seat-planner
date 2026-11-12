@@ -28,7 +28,7 @@ exist. Change the schema and this file in the same little rock.
 | `app.seats` | One approved seat in a squad, filled or not; the row the board shows, with an optimistic-lock `version`. |
 | `app.seat_changes` | Append-only audit log: one row per seat change; a move is two rows sharing `move_id`. |
 | `app.headcount_plan` | Approved seat count per squad per quarter (the plan the HRIS is reconciled against). |
-| `workday.workers` | Current typed view of Workday: one row per worker from the latest accepted report. |
+| `workday.workers` | Current typed view of Workday: one row per worker ever seen in an accepted report (upsert-only). |
 | `workday.raw_worker_report` | Every row of every accepted Workday report, as text, exactly as the file had it. |
 | `workday.ingest_runs` | One row per ingest attempt: loaded, skipped (same file hash) or rejected. |
 
@@ -251,8 +251,14 @@ Approved seats per squad per quarter.
 | `approved_seats` | integer | no | never negative |
 
 ### `workday.workers`
-The current, typed view of Workday: one row per worker from the latest accepted report. Written only
+The current, typed view of Workday: one row per worker ever seen in an accepted report. Written only
 by `scripts/ingest/` and `scripts/seed/` (D-015).
+
+**Upsert-only.** Each accepted report inserts new workers and updates the ones it lists; it never
+deletes. A worker missing from a later report keeps their row with an older `as_of_report_date`,
+which dbt treats as a reconciliation exception, not a deletion. Because rows persist, a worker
+missing from a report can still hold a position that a listed worker now claims; the partial unique
+index on `position_id` then makes the load fail, and the run is recorded as `rejected`.
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
@@ -306,6 +312,21 @@ in dbt staging. Written only by `scripts/ingest/`.
 ### `workday.ingest_runs`
 
 One row per ingest attempt. A rejected run loads nothing and leaves the previous report current.
+
+Rules (approved by Rob):
+
+- **Only a report newer than the latest loaded one is accepted.** An older or same-dated file with
+  a different hash is `rejected` ("not newer than the loaded report"). The same file twice is
+  `skipped`. All ingests take one advisory lock, so concurrent files are checked one at a time.
+- **Required columns.** The header must hold exactly the 14 report columns: a missing, unknown or
+  duplicate column rejects the file. `Worker_Name` (`Last, First`), `Work_Email`, `Job_Title`,
+  `Supervisory_Organization`, `Position_ID`, `Cost_Center` and `Location` must be non-empty on every
+  row, because the typed table needs them. `Position_ID` must be unique among non-`Terminated` rows.
+- **Invalid UTF-8 rejects the file**, as does CSV syntax the parser can't read.
+- **A load failure is a rejection too.** If the database refuses the load (for example a position
+  clash with a worker the report omits), the load rolls back and a `rejected` run is recorded with
+  the database's message.
+- Row numbers in messages count the first data row as row 1 (the header is "header").
 
 | Column              | Type        | Null | Notes                                                              |
 | ------------------- | ----------- | ---- | ------------------------------------------------------------------ |

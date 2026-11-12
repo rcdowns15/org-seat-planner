@@ -8,10 +8,12 @@
 
 export class CsvSyntaxError extends Error {}
 
-const BOM = "﻿";
+const BOM = "\uFEFF";
 
 // Splits one logical record into fields. `record` has no line break outside quotes.
-function splitRecord(record: string, recordNumber: number): string[] {
+// `where` names the record in errors: "header" or "row N". The first data row is row 1, the same
+// numbering validation uses.
+function splitRecord(record: string, where: string): string[] {
   const fields: string[] = [];
   let pos = 0;
   for (;;) {
@@ -21,7 +23,7 @@ function splitRecord(record: string, recordNumber: number): string[] {
       pos++;
       for (;;) {
         const next = record.indexOf('"', pos);
-        if (next === -1) throw new CsvSyntaxError(`record ${recordNumber}: unclosed quote`);
+        if (next === -1) throw new CsvSyntaxError(`${where}: unclosed quote`);
         value += record.slice(pos, next);
         if (record[next + 1] === '"') {
           value += '"';
@@ -32,7 +34,7 @@ function splitRecord(record: string, recordNumber: number): string[] {
         }
       }
       if (pos < record.length && record[pos] !== ",") {
-        throw new CsvSyntaxError(`record ${recordNumber}: text after a closing quote`);
+        throw new CsvSyntaxError(`${where}: text after a closing quote`);
       }
       fields.push(value);
     } else {
@@ -40,7 +42,7 @@ function splitRecord(record: string, recordNumber: number): string[] {
       const end = comma === -1 ? record.length : comma;
       const value = record.slice(pos, end);
       if (value.includes('"')) {
-        throw new CsvSyntaxError(`record ${recordNumber}: quote inside an unquoted field`);
+        throw new CsvSyntaxError(`${where}: quote inside an unquoted field`);
       }
       fields.push(value);
       pos = end;
@@ -74,7 +76,7 @@ export function parseReportCsv(text: string): string[][] {
     pending = null;
     const record = joined.endsWith("\r") ? joined.slice(0, -1) : joined;
     if (record === "") continue;
-    records.push(splitRecord(record, records.length + 1));
+    records.push(splitRecord(record, records.length === 0 ? "header" : `row ${records.length}`));
   }
   if (pending !== null) throw new CsvSyntaxError("the file ends inside a quoted field");
   return records;
