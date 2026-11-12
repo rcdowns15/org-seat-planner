@@ -75,7 +75,7 @@ export const leaders = app.table(
     leaderId: integer("leader_id").primaryKey().generatedAlwaysAsIdentity(),
     workerId: text("worker_id").notNull().unique(),
     displayName: text("display_name").notNull(),
-    scopeType: text("scope_type").notNull(),
+    scopeType: text("scope_type").$type<(typeof LEADER_SCOPE_TYPES)[number]>().notNull(),
     divisionId: integer("division_id").references(() => divisions.divisionId),
     groupId: integer("group_id").references(() => groups.groupId),
   },
