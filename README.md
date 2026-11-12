@@ -31,6 +31,15 @@ pnpm test:e2e     # Playwright (first run: pnpm exec playwright install chromium
 pnpm build
 ```
 
+## Local database
+
+```
+docker compose up -d db             # Postgres 16 on 127.0.0.1:5432; schemas app/workday/analytics created
+cp .env.example .env.local          # DATABASE_URL points at the compose database
+pnpm test:db                        # connection test against the local database
+curl -i localhost:3000/api/health   # 200 {"ok":true,"db":"ok",...}; 503 when the database is down
+```
+
 ## Working in this repo with Claude Code
 
 - Talk through progress and ideas: `claude --agent navigator`
