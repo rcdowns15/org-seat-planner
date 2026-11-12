@@ -29,6 +29,8 @@ exist. Change the schema and this file in the same little rock.
 | `app.seat_changes` | Append-only audit log: one row per seat change; a move is two rows sharing `move_id`. |
 | `app.headcount_plan` | Approved seat count per squad per quarter (the plan the HRIS is reconciled against). |
 | `workday.workers` | Current typed view of Workday: one row per worker from the latest accepted report. |
+| `workday.raw_worker_report` | Every row of every accepted Workday report, as text, exactly as the file had it. |
+| `workday.ingest_runs` | One row per ingest attempt: loaded, skipped (same file hash) or rejected. |
 
 ## ER diagram
 
@@ -46,6 +48,8 @@ erDiagram
     seat_changes |o--o| seat_changes : "reverses"
     workers |o..o| seats : "worker_id (no FK)"
     workers |o..o| leaders : "worker_id (no FK)"
+    ingest_runs ||..o{ raw_worker_report : "file_sha256 (no FK)"
+    raw_worker_report }o..o{ workers : "worker_id (no FK)"
 
     divisions {
         int division_id PK
@@ -117,6 +121,38 @@ erDiagram
         text location
         date as_of_report_date
         timestamptz updated_at
+    }
+    raw_worker_report {
+        int raw_id PK
+        date report_date
+        text source_file
+        text file_sha256
+        int source_row
+        timestamptz loaded_at
+        text worker_id
+        text worker_name
+        text work_email
+        text worker_type
+        text worker_status
+        text hire_date
+        text termination_date
+        text contract_end_date
+        text manager_id
+        text job_title
+        text supervisory_organization
+        text position_id
+        text cost_center
+        text location
+    }
+    ingest_runs {
+        int run_id PK
+        text source_file
+        text file_sha256
+        date report_date
+        int row_count
+        text status
+        jsonb rejection_reasons
+        timestamptz ran_at
     }
 ```
 
@@ -216,7 +252,7 @@ Approved seats per squad per quarter.
 
 ### `workday.workers`
 The current, typed view of Workday: one row per worker from the latest accepted report. Written only
-by `scripts/ingest/` and `scripts/seed/` (D-015). BR-03 adds the raw report landing tables.
+by `scripts/ingest/` and `scripts/seed/` (D-015).
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
@@ -236,6 +272,51 @@ by `scripts/ingest/` and `scripts/seed/` (D-015). BR-03 adds the raw report land
 | `location` | text | no | D-029 |
 | `as_of_report_date` | date | no | date of the report this row came from |
 | `updated_at` | timestamptz | no | default `now()`; when this row was loaded |
+
+### `workday.raw_worker_report`
+
+Every row of every accepted report, exactly as the file had it (D-028): all text, nothing trimmed,
+cast or renamed beyond the header becoming snake_case. A blank cell is an empty string, not null.
+Kept for every report, so it is the history; `workday.workers` is the current view. Cleaning happens
+in dbt staging. Written only by `scripts/ingest/`.
+
+| Column                     | Type        | Null | Notes                                                           |
+| -------------------------- | ----------- | ---- | --------------------------------------------------------------- |
+| `raw_id`                   | integer     | no   | PK; identity                                                    |
+| `report_date`              | date        | no   | taken from the file name (`worker_report_YYYY-MM-DD.csv`)       |
+| `source_file`              | text        | no   | file name                                                       |
+| `file_sha256`              | text        | no   | SHA-256 of the file's bytes; with `source_row` it is unique     |
+| `source_row`               | integer     | no   | 1-based row number after the header                             |
+| `loaded_at`                | timestamptz | no   | default `now()`                                                 |
+| `worker_id`                | text        | no   | report column `Worker_ID`                                       |
+| `worker_name`              | text        | no   | `Worker_Name`, `Last, First`                                    |
+| `work_email`               | text        | no   | `Work_Email`                                                    |
+| `worker_type`              | text        | no   | `Worker_Type` text (`Employee`, `Contingent Worker`)            |
+| `worker_status`            | text        | no   | `Worker_Status` text (`Active`, `On Leave`, `Terminated`)       |
+| `hire_date`                | text        | no   | `Hire_Date`, `MM/DD/YYYY`                                       |
+| `termination_date`         | text        | no   | `Termination_Date`; empty string when blank                     |
+| `contract_end_date`        | text        | no   | `Contract_End_Date`; empty string when blank                    |
+| `manager_id`               | text        | no   | `Manager_ID`; empty string when blank                           |
+| `job_title`                | text        | no   | `Job_Title`, possibly with stray whitespace                     |
+| `supervisory_organization` | text        | no   | `Supervisory_Organization`                                      |
+| `position_id`              | text        | no   | `Position_ID`                                                   |
+| `cost_center`              | text        | no   | `Cost_Center`                                                   |
+| `location`                 | text        | no   | `Location`, possibly with stray whitespace                      |
+
+### `workday.ingest_runs`
+
+One row per ingest attempt. A rejected run loads nothing and leaves the previous report current.
+
+| Column              | Type        | Null | Notes                                                              |
+| ------------------- | ----------- | ---- | ------------------------------------------------------------------ |
+| `run_id`            | integer     | no   | PK; identity                                                       |
+| `source_file`       | text        | no   | file name                                                          |
+| `file_sha256`       | text        | no   | SHA-256 of the file's bytes                                        |
+| `report_date`       | date        | yes  | from the file name; null if the name has no date (rejected)        |
+| `row_count`         | integer     | no   | data rows in the file (0 if the file couldn't be parsed)           |
+| `status`            | text        | no   | `loaded` \| `skipped` \| `rejected`                                |
+| `rejection_reasons` | jsonb       | no   | JSON array of messages naming row and column; `[]` unless rejected |
+| `ran_at`            | timestamptz | no   | default `now()`                                                    |
 
 ## Design choices
 
