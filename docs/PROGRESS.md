@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · orchestrator stopped (usage limit) with all four PRs done or open
-- **Milestone:** M1 done. M2: LR-02-01, LR-02-02 done (#7, #8). M3: LR-03-01 and LR-03-02 in review.
-- **In flight:** PR #9 LR-03-01 (CI green), then PR for LR-03-02 (https://github.com/rcdowns15/org-seat-planner/pull/10), stacked: merge #9 first.
-- **Blocked:** none.
-- **Waiting on Rob:** review and merge #9, then the LR-03-02 PR. Navigator: a DECISIONS entry for the dbt 1.10 pin; a D-029 call for LR-03-06.
-- **Next:** LR-02-03 (Opus) is ready now. LR-03-03 after LR-03-02 merges. Clean up the worktrees `code/v0201`, `v0202`, `v0301`, `v0302` and the local DBs `seatplanner_lr0*` after the merges.
+- **Last updated:** 2026-11-12 · orchestrator report processed: LR-03-01 done (#9 merged); BR-02 and BR-03 rolled up to in-progress (navigator)
+- **Milestone:** M1 done. M2 (BR-02): 2 of 7 cut-line LRs done (LR-02-01, LR-02-02). M3 (BR-03): 1 of 5 done (LR-03-01); LR-03-02 in review.
+- **In flight:** PR #10 LR-03-02 (https://github.com/rcdowns15/org-seat-planner/pull/10). CI not checked yet; the last one-line fix was verified by the orchestrator, not re-reviewed.
+- **Blocked:** none. LR-03-06 is waiting on a navigator/Rob decision (touches D-029).
+- **Waiting on Rob:** decide on LR-03-06 (before or after the cut line); confirm the dbt 1.10 pin entry; check CI on #10 and merge it.
+- **Next:** dispatch LR-02-03 (Opus) now; LR-03-03 after #10 merges. After #10 merges, remove the worktrees `code/v0201`, `v0202`, `v0301`, `v0302` and the local DBs `seatplanner_lr0201/_lr0202/_lr0301/_lr0302`.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — Navigator, from the orchestrator report (it stopped at the usage limit): LR-03-01 done (PR #9 merged). BR-01 big-rock review passed and BR-01 is done. Master plan rollup: BR-02 and BR-03 → `in-progress`. PR #10 (LR-03-02) no longer stacks now that #9 is merged; its CI still needs checking.
 - 2026-11-12 — LR-03-02 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/10 (Sonnet build + 2 fix rounds; review 1 P2 fixed, review 2 P2 fixed and checked by the orchestrator; dbt build 121 pass). Stacked on #9.
 - 2026-11-12 — LR-03-01 → `review`: PR #9 (Sonnet build + 2 fix rounds; review 1 three P2s fixed, review 2 one P2 fixed and one waived → LR-03-06, review 3 pass). Rebased onto main after #7/#8; checksum unchanged.
 - 2026-11-12 — LR-02-01 done (PR #7 merged) and LR-02-02 done (PR #8 merged). LR-02-03 (Opus) is now ready: deps LR-02-01 merged.
