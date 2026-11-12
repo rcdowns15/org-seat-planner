@@ -169,6 +169,7 @@ describe("a file that passes validation but violates a database constraint", () 
     expect(result.status).toBe("rejected");
     expect(result.reasons[0]).toMatch(/nothing was loaded.*workers_position_id_active_key/);
     expect(result.reasons[0]).not.toMatch(/postgres:\/\//);
+    expect(result.reasons[0]).not.toMatch(/Failing row/);
     expect(await count("workday.raw_worker_report")).toBe(rawBefore);
     expect(await rows("select * from workday.workers order by worker_id")).toEqual(workersBefore);
     expect(await count("workday.ingest_runs")).toBe(runsBefore + 1);

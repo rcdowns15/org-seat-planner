@@ -120,8 +120,11 @@ async function loadReport(
 function describeLoadError(err: unknown): string {
   const cause = err instanceof Error && err.cause instanceof Error ? err.cause : err;
   if (!(cause instanceof Error)) return "load failed: unknown error";
-  const detail = (cause as { detail?: unknown }).detail;
-  return `load failed, nothing was loaded: ${cause.message}${typeof detail === "string" ? ` (${detail})` : ""}`;
+  const { code, detail } = cause as { code?: unknown; detail?: unknown };
+  // Only a unique violation's detail ("Key (...)=(...) already exists") is safe to show; other
+  // errors' details can be "Failing row contains (...)", which would store whole rows.
+  const shown = code === "23505" && typeof detail === "string" ? ` (${detail})` : "";
+  return `load failed, nothing was loaded: ${cause.message}${shown}`;
 }
 
 // Reads, validates and loads one report. A rejected file loads nothing and leaves the previous
@@ -177,8 +180,8 @@ export async function ingestReport(pool: Pool, reader: ReportReader): Promise<In
         .limit(1);
       if (alreadyLoaded) return record("skipped", report.reportDate, rowCount, []);
 
-      // Each report is a full extract that replaces the current view, so an older (or
-      // same-dated, different) file must not overwrite a newer one.
+      // An older (or same-dated, different) report must not overwrite newer facts, so only a
+      // newer report is accepted.
       const [latest] = await tx
         .select({ reportDate: ingestRuns.reportDate })
         .from(ingestRuns)
@@ -195,6 +198,17 @@ export async function ingestReport(pool: Pool, reader: ReportReader): Promise<In
       return record("loaded", report.reportDate, rowCount, []);
     });
   } catch (err) {
+    // Only database errors from the load become rejections; anything else is a bug or an
+    // environment problem and is rethrown. pg DatabaseErrors carry a 5-character SQLSTATE code.
+    const dbError = err instanceof Error && err.cause instanceof Error ? err.cause : err;
+    const sqlState = (dbError as { code?: unknown } | null)?.code;
+    if (
+      !(dbError instanceof Error) ||
+      typeof sqlState !== "string" ||
+      !/^[0-9A-Z]{5}$/.test(sqlState)
+    ) {
+      throw err;
+    }
     // The load transaction rolled back, so nothing was loaded and no run was recorded. Record
     // the rejection in a fresh transaction instead of crashing.
     const reasons = [describeLoadError(err)];

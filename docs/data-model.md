@@ -260,6 +260,10 @@ which dbt treats as a reconciliation exception, not a deletion. Because rows per
 missing from a report can still hold a position that a listed worker now claims; the partial unique
 index on `position_id` then makes the load fail, and the run is recorded as `rejected`.
 
+Known limit: a backfill into the position of a worker who dropped out of the extract while still
+non-terminated would hit `workers_position_id_active_key` and reject every later report; tracked as
+a follow-up little rock (LR-03-06).
+
 | Column | Type | Null | Notes |
 |---|---|---|---|
 | `worker_id` | text | no | PK; Workday's `Worker_ID`: six digits for employees (`104217`), `C-` plus five digits for contingent workers (`C-04512`) (D-031) |
@@ -313,17 +317,20 @@ in dbt staging. Written only by `scripts/ingest/`.
 
 One row per ingest attempt. A rejected run loads nothing and leaves the previous report current.
 
-Rules (approved by Rob):
+Rules:
 
-- **Only a report newer than the latest loaded one is accepted.** An older or same-dated file with
+- **Only a report newer than the latest loaded one is accepted** (approved by Rob, 2026-11-12). An older or same-dated file with
   a different hash is `rejected` ("not newer than the loaded report"). The same file twice is
   `skipped`. All ingests take one advisory lock, so concurrent files are checked one at a time.
-- **Required columns.** The header must hold exactly the 14 report columns: a missing, unknown or
-  duplicate column rejects the file. `Worker_Name` (`Last, First`), `Work_Email`, `Job_Title`,
+- **Workers are upsert-only** (approved by Rob, 2026-11-12): see `workday.workers` above.
+- **Exact header** (added in review). The header must hold exactly the 14 report columns: a
+  missing, unknown or duplicate column rejects the file.
+- **Required non-blank columns** (approved by Rob, 2026-11-12). `Worker_Name` (`Last, First`), `Work_Email`, `Job_Title`,
   `Supervisory_Organization`, `Position_ID`, `Cost_Center` and `Location` must be non-empty on every
-  row, because the typed table needs them. `Position_ID` must be unique among non-`Terminated` rows.
-- **Invalid UTF-8 rejects the file**, as does CSV syntax the parser can't read.
-- **A load failure is a rejection too.** If the database refuses the load (for example a position
+  row, because the typed table needs them.
+- **Unique positions** (added in review). `Position_ID` must be unique among non-`Terminated` rows.
+- **Invalid UTF-8 rejects the file** (added in review), as does CSV syntax the parser can't read.
+- **A load failure is a rejection too** (added in review). If the database refuses the load (for example a position
   clash with a worker the report omits), the load rolls back and a `rejected` run is recorded with
   the database's message.
 - Row numbers in messages count the first data row as row 1 (the header is "header").
@@ -348,8 +355,8 @@ Rules (approved by Rob):
 - **Integer identity keys** (`GENERATED ALWAYS AS IDENTITY`) on `app` tables. Worker ids are text
   because they come from Workday.
 - **No foreign keys from `app` to `workday`.** `app.seats.worker_id`, `app.seat_changes.*worker_id`
-  and `app.leaders.worker_id` are plain text. Ingest (BR-03) replaces `workday` rows from each full
-  report, a worker can vanish from a report or be terminated while still seated, and those are
+  and `app.leaders.worker_id` are plain text. Ingest (BR-03) upserts `workday` rows from each full
+  report (never deletes), a worker can vanish from a report or be terminated while still seated, and those are
   reconciliation exceptions for dbt to flag. An FK would make ingest fail (or cascade into the
   plan) instead, and would couple two systems that are separate in production (D-008).
 - **Leader scope as two FK columns.** The spec's polymorphic `scope_id` can't carry a foreign key,
