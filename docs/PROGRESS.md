@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · combined brief written: BR-01 big-rock review, then LR-02-01, LR-02-02, LR-03-01 and LR-03-02 (stacked) dispatched early (navigator)
-- **Milestone:** M1 — Foundations (BR-01), 10 of 10 little rocks done; big-rock review handed off. M2/M3 starting a few hours ahead of the Friday plan.
-- **In flight:** none yet (brief handed to Rob)
-- **Blocked:** none. LR-03-02 waits on LR-03-01's migration commit (stacked, not blocked).
-- **Waiting on Rob:** paste the brief into a fresh `claude --agent orchestrator` session; review the four PRs as they open.
-- **Next:** orchestrator runs the BR-01 review → dispatches LR-02-01, LR-02-02, LR-03-01 → LR-03-02 once LR-03-01's migration lands → stops with four PRs open.
+- **Last updated:** 2026-11-12 · orchestrator mid-run (BR-01 review done; four LRs in flight, no PRs open yet)
+- **Milestone:** M1 done (BR-01 `done`, big-rock review pass). M2/M3 started: LR-02-01, LR-02-02, LR-03-01, LR-03-02 in progress.
+- **In flight:** LR-02-01 (`lr/LR-02-01-acting-as` 01ac47b; verified; review 1 two P2s → fix round 1 running). LR-02-02 (`lr/LR-02-02-board` 0246e40; verified; review 1 one P2 → fix round 1 running). LR-03-01 (`lr/LR-03-01-workday-ingest` 664ef59; verified, checksum pinned and unchanged; review 1 running). LR-03-02 (`lr/LR-03-02-dbt-staging`, stacked on LR-03-01 migration adc16ed; executor running; rebase onto LR-03-01's final tip before review). Verification worktrees: `code/v0201`, `v0202`, `v0301`; per-LR local DBs `seatplanner_lr0201/0202/0301/0302`.
+- **Blocked:** none.
+- **Waiting on Rob:** nothing yet; four PRs to review once opened (merge LR-03-01 before LR-03-02). OK needed on LR-03-01 deviations (e.g. reject a report not newer than the latest loaded) once reviewed.
+- **Next:** finish fix rounds and reviews → open four PRs → set each to `review`. Then LR-02-03 (Opus) after LR-02-01 merges; LR-03-03 after LR-03-02 merges.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
