@@ -40,9 +40,12 @@ needs LR-03-01 and LR-03-03.
 ### LR-03-01 · Workday report ingestion with validation · status: todo · depends: LR-01-07 · owner: agent · executor model: sonnet
 `pnpm workday:ingest <file>` (code in `scripts/ingest/`, written as a reader interface with a CSV
 implementation, so an API reader can replace it later). Steps:
-1. Validate the whole file before loading anything: required columns present, `Employee_ID`
-   unique and non-empty, dates parse, status and worker-type values in the known set, the report
-   date taken from the file name. Any failure rejects the whole file with a readable report and loads nothing.
+1. Validate the whole file before loading anything: strip a leading UTF-8 BOM and accept CRLF;
+   required columns present, `Worker_ID` unique and non-empty, dates parse (blank
+   `Contract_End_Date` allowed), status and worker-type values in the known set, `Worker_ID`
+   format agrees with `Worker_Type` (six digits for `Employee`, `C-` plus five digits for
+   `Contingent Worker`), the report date taken from the file name. Future-dated `Hire_Date`s are
+   valid; termination dates after the report date are not. Any failure rejects the whole file with a readable report and loads nothing.
 2. Load every row as text into `workday.raw_worker_report` (plus `report_date`, `source_file`,
    `file_sha256`, `loaded_at`). Loading the same file twice is a no-op (by hash).
 3. Upsert the typed `workday.workers` current table from the report.
@@ -51,7 +54,8 @@ implementation, so an API reader can replace it later). Steps:
 Switch `pnpm db:seed` to load Workday through this script.
 - [ ] DB test: ingesting 11-01 then 11-15 gives the expected row counts in raw (both reports) and current tables
 - [ ] DB test: re-ingesting the same file changes nothing and records a `skipped` run
-- [ ] Unit tests: a file with a duplicate ID, a missing column, a bad date, or an unknown status is rejected with a message naming the row and column; nothing is loaded
+- [ ] Unit tests: a file with a duplicate ID, a missing column, a bad date, an unknown status, or a `Worker_ID` whose format contradicts its `Worker_Type` is rejected with a message naming the row and column; nothing is loaded
+- [ ] Unit test: a BOM-prefixed, CRLF file with quoted `"O'Brien, Seán"`-style names parses, and the names come through byte-for-byte
 - [ ] Seed checksum from LR-01-07 is unchanged after the switch
 Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `scripts/ingest/validate.ts`, `db/schema/workday.ts`, `db/migrations/*`, `scripts/seed/index.ts`, `tests/unit/ingest-validate.test.ts`, `tests/db/ingest.test.ts`, `tests/fixtures/workday/*.csv`.
 
@@ -60,8 +64,10 @@ Likely files: `scripts/ingest/index.ts`, `scripts/ingest/csv-reader.ts`, `script
 dbt-postgres pinned. `profiles.yml` reads `DBT_*` env vars. Custom schema naming (`analytics_staging`,
 `analytics_intermediate`, `analytics`). Sources for `workday.raw_worker_report`,
 `workday.ingest_runs` and the `app` tables, with key tests. Staging: `stg_workday__worker_report`
-does the Workday report transforms (split `Last, First`, parse `MM/DD/YYYY`, map status and worker
-type text to enums, trim and normalize IDs), one `stg_app__*` model per app table. CI job: Postgres
+does the Workday report transforms (split `Last, First`, parse `MM/DD/YYYY` including
+`Contract_End_Date`, map status and worker type text to enums, trim and normalize IDs, split
+`Supervisory_Organization` into org name and manager name, and add `is_future_hire` when
+`hire_date` > report date), one `stg_app__*` model per app table. CI job: Postgres
 service → migrate → seed → `uv run dbt build`.
 - [ ] `cd analytics && uv run dbt build` passes locally and in CI
 - [ ] Every staging model has a description and key tests; every enum has `accepted_values`
@@ -81,13 +87,20 @@ Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_sq
 
 ### LR-03-04 · Refresh changes and reconciliation exceptions · status: todo · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
 `rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
-(hire, termination, manager change, worker-type change, leave start/end). `rpt_reconciliation_exceptions`
-(grain: exception type × worker), comparing the latest report with the seat plan: terminated in
-Workday but still seated; seated but missing from the report; worker type doesn't match seat type;
-on leave and seated (info severity). Each row has a severity and a suggested action.
+(hire, future-dated hire, termination, manager change, worker-type change, leave start/end, and
+`aged_out`: a terminated worker who drops off under the report's 30-day termination window, which is
+not an exception). `rpt_reconciliation_exceptions` (grain: exception type × subject, where the
+subject is a worker, or a group for the hiring check), comparing the latest report with the seat
+plan: terminated in Workday but still seated; seated but missing from the report (always an
+exception, even if they aged out); in the previous report as `Active`/`On Leave` but missing now
+with no termination; worker type doesn't match seat type; on leave and seated (info severity);
+**hiring gap**: a group's `offer_accepted` seats outnumber its future-dated Workday hires (info
+severity, matched at group level through `Cost_Center` because seats aren't linked to positions,
+D-029). Each row has a severity and a suggested action.
 - [ ] After both reports: `rpt_workday_changes` matches the change list documented in `scripts/seed/README.md` exactly (singular test)
 - [ ] `rpt_reconciliation_exceptions` contains each seeded exception exactly once (singular test), and nothing else on the seed
 - [ ] Error-level test: every seated worker whose latest status is `terminated` appears in the exceptions report
+- [ ] Singular test: the documented aged-out worker appears in `rpt_workday_changes` as `aged_out` and **not** in the exceptions; the documented missing-without-termination worker **does** appear
 - [ ] Every model has a description; grain tests on both reports
 Likely files: `analytics/models/intermediate/int_worker_report_versions.sql`, `analytics/models/marts/rpt_workday_changes.sql`, `analytics/models/marts/rpt_reconciliation_exceptions.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
 

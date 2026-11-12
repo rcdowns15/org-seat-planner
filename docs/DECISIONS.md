@@ -189,3 +189,17 @@ The permission rule in D-013 is unchanged. This came from the LR-01-06 executor,
 judged it sound.
 **Alternatives:** single `scope_id` as originally specced (no referential integrity); a separate
 `leader_scopes` table (more flexible, like multiple scopes per leader, but nothing in the plan needs it).
+
+### D-031 · 2026-11-12 · accepted (Rob, 2026-11-12) · Mock Workday reports model real report behavior, not just formats
+**Why:** a review of the planned report found the formats realistic but the behavior thin, and the
+behavior is what reconciliation logic depends on. Adopted: (1) a population rule (active, on leave,
+plus terminated within 30 days), so a worker dropping off can be legitimate (`aged_out`) or an
+exception (missing with no termination); (2) future-dated hires, which give a group-level hiring
+check against `offer_accepted` seats without a TA feed; (3) supervisory orgs shown as
+`Name (Manager)` and kept separate from squads; (4) separate employee and contingent `Worker_ID`
+schemes plus a `Contract_End_Date` column (CSV only for now); (5) BOM, CRLF, quoted names with
+accents and apostrophes. These are seed, validation, staging and exceptions changes inside
+LR-01-07, LR-03-01, LR-03-02 and LR-03-04. No new little rock, and the cut line is unchanged.
+Rehires, FTE, leave types, job profile detail, and event-based change feeds are parked.
+**Alternatives:** formats only (reconciliation results would be naive about filtered reports);
+the full set including parked items (too much for the timeline).

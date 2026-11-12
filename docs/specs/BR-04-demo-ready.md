@@ -39,7 +39,9 @@ Rewrite `README.md`: what it is and why (one paragraph, fictional-company notice
 architecture diagram (Mermaid: Workday report → ingest → `workday` raw/current → dbt staging →
 marts; browser → server actions → `app` seats + audit; marts compare `app` with `workday`); data
 model summary linking `docs/data-model.md`; "How write-back stays correct"; "How the pipeline stays
-correct" (file validation, idempotent loads, tests); what's tested and how to run it; a
+correct" (file validation, idempotent loads, tests, and the Workday report's population rule:
+active, on leave, and terminated within 30 days); a sentence on why squads live in the app, not in
+Workday (supervisory orgs follow the manager tree); what's tested and how to run it; a
 **five-minute demo script** using seeded fixtures (move → forbidden move → conflict → history →
 SQL panel → reconciliation exceptions after the 11-15 report); a **production mapping** table with a
 **Built / Planned** column (CSV report → Workday RaaS/API; `pnpm pipeline` + GitHub Actions →

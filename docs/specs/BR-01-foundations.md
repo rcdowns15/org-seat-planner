@@ -156,12 +156,38 @@ report gets a new one), `Cost_Center` (one per group, shown Workday-style as
 of office cities plus `Remote`; no company or building names). In this little
 rock the seed writes `workday.workers` directly; LR-03-01 switches it to load through the ingest
 script.
+
+**Workday report realism (added 2026-11-12, Rob; applies before the LR-01-07 PR opens):**
+1. **Report population.** Like a real filtered worker report, each report contains every `Active`
+   and `On Leave` worker, plus `Terminated` workers whose termination date falls within the 30 days
+   up to and including the report date. Workers terminated earlier than that are left out. The
+   layout doc states this rule. The 11-15 report includes at least one worker who was `Terminated`
+   in 11-01 and has now aged out (dropped legitimately), plus one `Active` worker from 11-01 who is
+   missing with no termination (the real "missing" exception). The "terminated but still seated"
+   fixture has a termination date inside the 11-15 window.
+2. **Future-dated hires.** The 11-15 report includes 2–3 hires with a `Hire_Date` 1–60 days after
+   the report date (status `Active`). Each one sits in a group that has a seeded `offer_accepted`
+   seat. At least one group has more `offer_accepted` seats than future-dated hires, so the gap
+   shows up. Future-dated hires hold no seat in `app.seats`.
+3. **Supervisory org is not the squad.** `Supervisory_Organization` is shown Workday-style as
+   `<org name> (<manager full name>)`, e.g. `Platform Engineering (Dana Lee)`. It follows the
+   manager tree, not the app's squads. The layout doc says squads exist only in the app.
+4. **Worker IDs and contract end dates.** One `Worker_ID` column with two ID schemes: employees are
+   six digits (`104217`), contingent workers are `C-` plus five digits (`C-04512`).
+   `Contract_End_Date` (`MM/DD/YYYY`) is filled for contingent workers and blank for employees. It
+   lives in the CSV only: no `workday.workers` column yet, and staging parses it.
+5. **Real CSV properties.** UTF-8 with a BOM; at least a few names with an apostrophe, an accented
+   character, or a hyphen (e.g. `"O'Brien, Seán"`, `"Nguyen-Park, Zoë"`); every field containing a
+   comma is quoted; CRLF line endings, like a typical export. Names still come from faker with the
+   fixed seed. Pick a seeded locale mix or a small hand-written list of fictional surnames for the
+   special characters.
 - [ ] Running `pnpm db:seed` twice prints the same checksum (test)
 - [ ] Invariants test: no double-seating, 1,900–2,100 workers, contingent share 8–12%, open+backfill seats 170–230, every seat's type matches its worker's type, every squad has at least one plan row per quarter
 - [ ] Every named demo fixture exists (test looks each one up by its documented key)
 - [ ] Both report CSVs are written, byte-identical across runs (hash test); the 11-15 report's differences from 11-01 match the documented change list in `scripts/seed/README.md`
 - [ ] `scripts/seed/README.md` documents the worker report layout, modeled on a typical Workday worker custom report: one row per column with column name, format and example value, plus one full sample row. A test asserts that the generated CSV header matches the documented column list exactly, in order. Rob approves the layout during PR review.
-- [ ] Plausibility test over the seeded workers: every manager has 3–15 direct reports; following `manager_worker_id` from any worker reaches the top without a cycle; every `hire_date` is before the report date; every `termination_date` is on or after its `hire_date`; only `terminated` workers have a `termination_date`; every worker has a non-empty `position_id`, `cost_center` and `location`; no two non-terminated workers share a `position_id`; every worker's `cost_center` is the one assigned to their seat's group (workers without a seat are exempt)
+- [ ] Plausibility test over the seeded workers: every manager has 3–15 direct reports; following `manager_worker_id` from any worker reaches the top without a cycle; every `hire_date` is on or before the report date, except the documented future-dated hires (1–60 days after); every `termination_date` is on or after its `hire_date`; only `terminated` workers have a `termination_date`; every worker has a non-empty `position_id`, `cost_center` and `location`; no two non-terminated workers share a `position_id`; every worker's `cost_center` is the one assigned to their seat's group (workers without a seat are exempt)
+- [ ] Report realism test over both CSVs: the file starts with a UTF-8 BOM and uses CRLF; every terminated row's termination date is within 30 days of the report date; the documented aged-out and missing-without-termination workers behave as described; 2–3 future-dated hires appear in 11-15, each in a group with an `offer_accepted` seat; every `Supervisory_Organization` matches `^.+ \(.+\)$`; every `Worker_ID` matches `^\d{6}$` for employees and `^C-\d{5}$` for contingent workers; `Contract_End_Date` is set exactly for contingent rows; at least 3 names contain an apostrophe, accent or hyphen and round-trip through a CSV parser unchanged
 - [ ] `git grep -niE "inc\.|llc|corp"` over `scripts/seed` finds no company-like names other than Second Republic Bank
 - [ ] `git grep -ni "first republic"` matches only `docs/DECISIONS.md` (D-001) and the `CLAUDE.md` rule, never seed data, UI, fixtures or the README
 Likely files: `scripts/seed/index.ts`, `scripts/seed/org.ts`, `scripts/seed/workers.ts`, `scripts/seed/seats.ts`, `scripts/seed/names.ts`, `scripts/seed/workday-reports.ts`, `scripts/seed/README.md`, `tests/db/seed.test.ts`, `package.json`.

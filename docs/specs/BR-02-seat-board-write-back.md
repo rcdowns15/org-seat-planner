@@ -122,6 +122,12 @@ queries only** (D-026). Each query shows its SQL text and its result table:
 - the latest 10 `seat_changes` rows
 - the selected worker's Workday record (status, type, manager)
 - open and backfill seats per squad vs. the approved plan for the current quarter
+- **Impact of last move** (added 2026-11-12, Rob): for the two squads touched by the most recent
+  move (one squad for a within-squad move), a before/after table with filled employee, filled
+  contingent, open, backfill and offer-accepted seats, the current quarter's approved plan, and
+  variance. "After" is the live `app.seats` state. "Before" is rebuilt by reversing that move's
+  two `seat_changes` rows (share one `move_id`), not stored separately. Shows an empty state if
+  there's no move yet.
 
 It also shows **"Last save: SQL executed"**, the parameterized statements from the most recent move or
 undo (from LR-02-03's ring buffer), with their bound values, so a viewer sees the
@@ -129,6 +135,8 @@ undo (from LR-02-03's ring buffer), with their bound values, so a viewer sees th
 parameters and run in a `READ ONLY` transaction with a 2-second `statement_timeout` and a 200-row
 limit.
 - [ ] e2e: make a move, open the panel: the seat row shows the incremented `version` and the latest `seat_changes` row is the move
+- [ ] e2e: after moving a worker from squad A to an open seat in squad B, "Impact of last move" shows A's filled count down by 1 and backfill up by 1, and B's filled up by 1 and open down by 1, with variance recomputed against the plan
+- [ ] DB test: the "before" numbers equal a snapshot of both squads' counts taken just before the move
 - [ ] e2e: "Last save" shows an `UPDATE` containing `version =` and two `INSERT INTO app.seat_changes` statements
 - [ ] DB test: the panel's query runner rejects a write (run inside the `READ ONLY` transaction) and stops a slow query at the timeout
 - [ ] No free-text SQL input exists anywhere in the UI or the server actions (reviewer check)
