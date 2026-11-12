@@ -101,7 +101,7 @@ on Neon (LR-01-09). Remaining: the health check once LR-01-04 is deployed.
 - [x] No connection string committed anywhere: `git grep -nE "neon\.tech" -- ":!docs/specs"` returns nothing, and every `postgres://…@` match is the localhost Docker default (2026-11-12)
 Likely files: `docs/PROGRESS.md`, `README.md`.
 
-### LR-01-06 · Drizzle schema and migrations for `app` and `workday` · status: review (https://github.com/rcdowns15/org-seat-planner/pull/4) · depends: LR-01-04 · owner: agent · executor model: opus
+### LR-01-06 · Drizzle schema and migrations for `app` and `workday` · status: done (PR #4) · depends: LR-01-04 · owner: agent · executor model: opus
 Define the data model in Drizzle and generate migrations (see D-010 and the "Domain edge cases" in
 `CLAUDE.md`):
 - `workday.workers`: the typed, current view of Workday (worker_id, names, email, worker_type
@@ -131,7 +131,7 @@ a Mermaid ER diagram and one line per table.
 - [ ] `docs/data-model.md` lists every table and column created by the migrations
 Likely files: `db/schema/app.ts`, `db/schema/workday.ts`, `db/migrations/*`, `drizzle.config.ts`, `tests/db/constraints.test.ts`, `docs/data-model.md`.
 
-### LR-01-07 · Deterministic seed generator (current state) · status: todo · depends: LR-01-06 · owner: agent · executor model: sonnet
+### LR-01-07 · Deterministic seed generator (current state) · status: in-progress · depends: LR-01-06 · owner: agent · executor model: sonnet
 `pnpm db:seed` truncates and reseeds `app` and `workday` from a fixed faker seed (D-014): 4
 divisions, 12 groups, about 180 squads, about 2,000 workers (~10% contingent), about 200
 open/backfill seats, some `offer_accepted`, leaders for each division and group, and an approved headcount plan
