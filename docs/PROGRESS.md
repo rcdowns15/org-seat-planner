@@ -7,8 +7,7 @@ Newest first. Navigator updates "Where we stand" at each check-in.
 - **Milestone:** M1 — Foundations (BR-01), 6 of 10 little rocks done (LR-01-01…04, LR-01-06, LR-01-10). LR-01-05: all criteria met except the README line (orchestrator add-on).
 - **In flight:** LR-01-07 (seed generator, Sonnet executor) on `lr/LR-01-07-seed`.
 - **Blocked:** none
-- **Waiting on Rob:** LR-01-07 PR review incl. sign-off on the Workday report layout (when opened); LR-01-09 once LR-01-08 merges. Navigator: Rob **approved** the LR-01-06 `division_id`/`group_id` + CHECK spec deviation (2026-11-12); update the LR-01-06 spec line (and add a DECISIONS entry if wanted).
-- **Next:** LR-01-07 review + PR → LR-01-08 (CI DB job, `db-deploy`) · owner: orchestrator. Navigator: BR-07 LR-07-01 should withhold TRUNCATE on `app.seat_changes` from `seat_app` (reviewer P3).
+- **Waiting on Rob:** LR-01-07 PR review incl. sign-off on the Workday report layout (when opened); LR-01-09 once LR-01-08 merges.- **Next:** LR-01-07 review + PR → LR-01-08 (CI DB job, `db-deploy`) · owner: orchestrator.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +21,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — D-030 accepted (leader scope as `division_id`/`group_id` + CHECK); LR-01-06 spec text updated to match. LR-07-01 now also withholds `TRUNCATE` on `app.seat_changes` from `seat_app`, with a test (LR-01-06 reviewer P3).
 - 2026-11-12 — Rob approved the LR-01-06 spec deviation: `app.leaders` uses `division_id`/`group_id` + CHECK instead of `scope_id`. Spec/DECISIONS update handed to the navigator.
 - 2026-11-12 — LR-01-06 done: PR #4 merged. LR-01-07 dispatched (Sonnet).
 - 2026-11-12 — LR-01-06 → `review`: PR #4 (Opus; reviewer pass, P2 leader-scope CHECK test gap fixed; spec deviation `division_id`/`group_id` awaits Rob's OK).

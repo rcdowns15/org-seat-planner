@@ -30,7 +30,7 @@ Custom migration: role `seat_app` (read/write `app` except `UPDATE`/`DELETE`/`TR
 reset path, which stays with the seed and ingest roles (LR-01-06 reviewer P3);
 `SELECT` only on `workday` and `analytics`) and role `workday_ingest` (write `workday` only). The
 app connects as `seat_app`; ingest uses its own URL.
-- [ ] DB test as `seat_app`: `INSERT` into `workday.workers` and `UPDATE` on `app.seat_changes` both fail with permission denied
+- [ ] DB test as `seat_app`: `INSERT` into `workday.workers`, and `UPDATE` or `TRUNCATE` on `app.seat_changes`, all fail with permission denied
 - [ ] All BR-02 tests pass while connected as `seat_app`
 Likely files: `db/migrations/*`, `db/init/02-roles.sql`, `src/server/db.ts`, `.env.example`, `tests/db/roles.test.ts`.
 
