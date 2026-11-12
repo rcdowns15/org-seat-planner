@@ -17,6 +17,12 @@ describe("seed target guard", () => {
     expect(d.message).not.toContain(remote);
   });
 
+  it("refuses a ?host= override that points at a remote host", () => {
+    expect(decideSeedTarget("postgres://u:p@localhost/db?host=ep-x.neon.tech", false).allowed).toBe(
+      false,
+    );
+  });
+
   it("allows a remote host with --allow-remote", () => {
     expect(decideSeedTarget(remote, true)).toEqual({ allowed: true, host: "ep-example.neon.tech" });
   });

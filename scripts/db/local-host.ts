@@ -4,9 +4,11 @@
 const LOCAL_HOSTS = ["localhost", "127.0.0.1"];
 
 // The host of a connection string, or null if it can't be parsed. Never returns the string itself.
+// pg lets a `?host=` query parameter override the URL hostname, so that parameter wins here too.
 export function hostOf(url: string): string | null {
   try {
-    return new URL(url).hostname;
+    const parsed = new URL(url);
+    return parsed.searchParams.get("host") ?? parsed.hostname;
   } catch {
     return null;
   }

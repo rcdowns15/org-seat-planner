@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { generateSeedData } from "../../scripts/seed/generate";
 import { runSeed } from "../../scripts/seed/run-seed";
 import { getPool } from "@/server/db";
@@ -8,6 +8,8 @@ describe("health check against the seeded database", () => {
   beforeAll(async () => {
     await runSeed(process.env.DATABASE_URL!);
   });
+
+  afterAll(() => getPool().end());
 
   it("reports the same seat count as app.seats and as the seed generator", async () => {
     const { rows } = await getPool().query<{ n: string }>("select count(*) as n from app.seats");

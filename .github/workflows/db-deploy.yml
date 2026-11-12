@@ -12,16 +12,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: db-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15 # stop a hung job instead of waiting for the 6-hour default
-    env:
-      # The secret reaches scripts only through the environment: never echoed, never an argument.
-      DATABASE_URL_UNPOOLED: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
-      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
     steps:
+      # The secret reaches scripts only through the environment of the steps that need it:
+      # never echoed, never an argument.
       - name: Fail if the secret is missing
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
         run: |
           if [ -z "$DATABASE_URL_UNPOOLED" ]; then
             echo "::error::Secret NEON_DATABASE_URL_UNPOOLED is not set (repo Settings > Secrets and variables > Actions)."
@@ -35,7 +39,14 @@ jobs:
           cache: pnpm
       # Plain install: the seed needs the dev dependency @faker-js/faker.
       - run: pnpm install --frozen-lockfile
-      - run: pnpm db:migrate
+      - name: Migrate
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
+        run: pnpm db:migrate
       - name: Reseed
         if: ${{ inputs.reseed }}
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
         run: pnpm db:seed --allow-remote
