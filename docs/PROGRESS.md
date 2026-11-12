@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · LR-01-04 merged; LR-01-06 dispatched (Opus executor) (orchestrator)
-- **Milestone:** M1 — Foundations (BR-01), 5 of 10 little rocks done (LR-01-01…04, LR-01-10). LR-01-05: linking done; the production `/api/health` check is now unblocked.
-- **In flight:** LR-01-06 (Drizzle schema + migrations, incl. D-029 Workday columns): Opus executor running, no PR yet.
+- **Last updated:** 2026-11-12 · BR-01 orchestrator session stopped at its context budget; LR-01-06 verified, not yet reviewed (orchestrator)
+- **Milestone:** M1 — Foundations (BR-01), 5 of 10 little rocks done (LR-01-01…04, LR-01-10). LR-01-05: linking done; production `/api/health` check unblocked.
+- **In flight:** LR-01-06 on branch `lr/LR-01-06-drizzle-schema` (`a205c60`, pushed, **no PR yet**). Opus executor done; orchestrator verified lint, typecheck, test (7), test:db (25), build, `drizzle-kit check`. Next session: reviewer (little-rock mode) → fixes (0 of 2 retries used) → PR. Reviewer should check: leader scope uses `division_id`/`group_id` + CHECK instead of the spec's single `scope_id` (spec deviation); hand-edited `meta/0000_snapshot.json` so drizzle-kit doesn't re-create schemas; TRUNCATE guard via `SET LOCAL app.allow_seat_changes_reset`; no FKs from `app` to `workday`; new `pnpm-workspace.yaml` (`allowBuilds: esbuild`).
 - **Blocked:** none
-- **Waiting on Rob:** LR-01-05 health check on the production URL (now unblocked) and record the URL; stop the leftover `next start` on port 3000 (PID 4076); LR-01-09 once LR-01-08 merges. Optional: a ruleset requiring the `checks` and `e2e` status checks on PRs.
-- **Next:** LR-01-06 PR → LR-01-07 (seed) → LR-01-08 (CI DB job + `db-deploy`) · owner: orchestrator
+- **Waiting on Rob:** start a fresh orchestrator session (same BR-01 brief) to finish LR-01-06 and run LR-01-07, LR-01-08; LR-01-05 health check on the production URL and record the URL; stop the leftover `next start` on port 3000 (PID 4076); LR-01-09 once LR-01-08 merges.
+- **Next:** LR-01-06 review + PR → LR-01-07 (seed; must reset `seat_changes` with the `SET LOCAL` setting) → LR-01-08 (CI DB job: migrate, seed, test:db, Playwright; `db-deploy`) · owner: orchestrator
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-01-06 implemented (Opus executor) and verified by the orchestrator; branch pushed, review and PR pending in the next orchestrator session (context budget reached).
 - 2026-11-12 — LR-01-04 done: PR #3 merged (CI green). LR-01-05's production health check unblocked. LR-01-06 dispatched (Opus).
 - 2026-11-12 — LR-01-03 done: PR #2 merged; CI now runs on every PR and push to `main`.
 - 2026-11-12 — LR-01-04 → `review`: PR #3 (Sonnet; four reviewer P2s fixed: pool error listener, local-only test DB guard, `.env.example` unpooled URL, compose project name).
