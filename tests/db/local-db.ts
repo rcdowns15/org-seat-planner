@@ -8,7 +8,7 @@ export function assertLocalUrl(name: string, url: string): void {
   const hostname = hostOf(url);
   if (!isLocalHost(hostname)) {
     throw new Error(
-      `pnpm test:db only runs against the local Docker database (${name} host is "${hostname ?? "unparseable"}").`,
+      `Tests (test:db, test:e2e) only run against the local Docker database (${name} host is "${hostname ?? "unparseable"}").`,
     );
   }
 }
