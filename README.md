@@ -36,9 +36,15 @@ pnpm build
 ```
 docker compose up -d db             # Postgres 16 on 127.0.0.1:5432; schemas app/workday/analytics created
 cp .env.example .env.local          # DATABASE_URL points at the compose database
-pnpm test:db                        # connection test against the local database
-curl -i localhost:3000/api/health   # 200 {"ok":true,"db":"ok",...}; 503 when the database is down
+pnpm db:migrate                     # apply db/migrations (uses DATABASE_URL_UNPOOLED, else DATABASE_URL)
+pnpm test:db                        # migrates, then runs constraint and schema tests (local DB only)
+curl -i localhost:3000/api/health   # 200 {"ok":true,"db":"ok","seats":0}; 503 when the database is down
 ```
+
+Schema changes: edit `db/schema/*.ts`, run `pnpm db:generate`, commit the new file in
+`db/migrations/`, and update `docs/data-model.md` (a test checks it against the database).
+Hand-written SQL (triggers, grants) goes in `pnpm db:generate --custom --name=<what>`.
+Seats match Workday workers by `worker_id` only; they aren't linked to Workday positions yet (D-029).
 
 ## Working in this repo with Claude Code
 

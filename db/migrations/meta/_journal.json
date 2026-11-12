@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794444985919,
+      "tag": "0000_create_schemas",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794445038941,
+      "tag": "0001_initial_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794445045036,
+      "tag": "0002_seat_changes_append_only",
+      "breakpoints": true
+    }
+  ]
+}
