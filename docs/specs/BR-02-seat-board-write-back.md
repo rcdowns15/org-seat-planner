@@ -101,6 +101,7 @@ filled card also has a "Move to…" menu (keyboard accessible) that opens the sa
 - [ ] Playwright: as the demo group leader, a move into a squad outside their group shows the `FORBIDDEN` message and the board is unchanged
 - [ ] Playwright: the "Move to…" path completes a move with the keyboard only
 - [ ] With no `?group=` in the URL, the board opens on the acting leader's scope (their group, or the first group of their division); with no leader selected, the demo group (moved here from LR-02-02)
+- [ ] The dialog shows the result's `message` for any failure code, with no per-code text in the UI, so LR-02-10's `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` shows without a UI change (reviewer check; added 2026-11-13 from the LR-02-10 review)
 Likely files: `src/components/board/*`, `src/components/move-dialog.tsx`, `src/app/board/page.tsx`, `tests/e2e/move.spec.ts`.
 
 ### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet
