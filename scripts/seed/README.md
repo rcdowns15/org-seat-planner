@@ -35,13 +35,14 @@ match the 11-01 report exactly (every column except `Contract_End_Date`, which i
 Tests and the demo script rely on these. Each is looked up by its key; `tests/db/seed.test.ts`
 checks them against the database, and checks this table against the generated data.
 
-| Fixture                    | Key                         | Value    | Notes                                                                                                                                                |
-| -------------------------- | --------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `demo-division-leader`     | `app.leaders.worker_id`     | `100002` | Savion Kshlerin, leads the division Retail Banking Technology.                                                                                       |
-| `demo-group-leader`        | `app.leaders.worker_id`     | `100006` | Anissa Predovic, leads the group Digital Channels (same division).                                                                                   |
-| `out-of-scope-open-seat`   | `app.seats.seat_id`         | `206`    | An `open` employee seat in squad Saffron Scheduler, in the group Accounts and Cards: inside the division leader's scope, outside the group leader's. |
-| `worker-on-leave`          | `workday.workers.worker_id` | `100042` | Adelle Rohan, status `leave`, keeps their seat (seat 28, squad Harbor Bridge).                                                                       |
-| `terminated-seated-worker` | `workday.workers.worker_id` | `100052` | King Konopelski, status `terminated` (2026-10-28, inside both report windows), still holds seat 39 in squad Valley Portal.                           |
+| Fixture                    | Key                         | Value    | Notes                                                                                                                                                                      |
+| -------------------------- | --------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `demo-division-leader`     | `app.leaders.worker_id`     | `100002` | Savion Kshlerin, leads the division Retail Banking Technology.                                                                                                             |
+| `demo-group-leader`        | `app.leaders.worker_id`     | `100006` | Anissa Predovic, leads the group Digital Channels (same division).                                                                                                         |
+| `out-of-scope-open-seat`   | `app.seats.seat_id`         | `206`    | An `open` employee seat in squad Saffron Scheduler, in the group Accounts and Cards: inside the division leader's scope, outside the group leader's.                       |
+| `another-leader`           | `app.leaders.worker_id`     | `100003` | Dillan Haley-Rau, leads the division Lending Technology (not either demo leader). Recorded as the actor of "simulate another leader's edit" (`demo_touch` rows, LR-02-05). |
+| `worker-on-leave`          | `workday.workers.worker_id` | `100042` | Adelle Rohan, status `leave`, keeps their seat (seat 28, squad Harbor Bridge).                                                                                             |
+| `terminated-seated-worker` | `workday.workers.worker_id` | `100052` | King Konopelski, status `terminated` (2026-10-28, inside both report windows), still holds seat 39 in squad Valley Portal.                                                 |
 
 ## Report population
 

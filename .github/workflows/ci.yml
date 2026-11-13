@@ -67,7 +67,10 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       # Build as its own step so a build failure is a named failing step, not a webServer timeout.
       - run: pnpm build
+      # The conflict spec uses the demo-only "simulate another leader's edit" (D-023).
       - run: pnpm test:e2e
+        env:
+          DEMO_MODE: "true"
       - uses: actions/upload-artifact@v4
         if: failure() # only upload when something failed
         with:

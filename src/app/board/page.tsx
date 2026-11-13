@@ -5,10 +5,13 @@ import { defaultGroupIdForLeader, parseGroupParam } from "@/lib/board";
 import { SqlPanel } from "@/components/sql-panel";
 import { parseSeatParam } from "@/lib/schemas/sql-panel";
 import { getUnderTheHood } from "@/server/queries/under-the-hood";
+import { DemoToolbar } from "@/components/demo-toolbar";
+import { simulateAnotherLeaderEditAction } from "@/server/actions/demo";
 import { moveWorkerFromBoard } from "@/server/actions/board-move";
+import { isDemoMode } from "@/server/demo-mode";
 import { getActingLeader } from "@/server/auth/acting-leader";
 import { getBoard, listGroups } from "@/server/queries/board";
-import { scopeAllows } from "@/server/services/permissions";
+import { canEditAnyGroup, scopeAllows } from "@/server/services/permissions";
 
 // Reads the database on every request.
 export const dynamic = "force-dynamic";
@@ -32,6 +35,10 @@ export default async function BoardPage({
   const editable =
     leader !== null &&
     scopeAllows(leader, { groupId: board.group.groupId, divisionId: board.group.divisionId });
+
+  // "Move to…" is offered only to a leader who can edit something; the server still checks.
+  const canMoveTo = canEditAnyGroup(leader, board.groups);
+  const demoMode = isDemoMode();
 
   const underTheHood = await getUnderTheHood({
     seatId: selectedSeatId,
@@ -79,10 +86,14 @@ export default async function BoardPage({
       <BoardView
         squads={board.squads}
         editable={editable}
-        canMoveTo={leader !== null}
+        canMoveTo={canMoveTo}
         move={moveWorkerFromBoard}
         selectedSeatId={selectedSeatId}
+        simulate={demoMode ? simulateAnotherLeaderEditAction : undefined}
       />
+      {demoMode ? (
+        <DemoToolbar selectedSeatId={selectedSeatId} simulate={simulateAnotherLeaderEditAction} />
+      ) : null}
 
       <SqlPanel data={underTheHood} />
       <p className="mt-2 text-sm">

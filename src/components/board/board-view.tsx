@@ -11,6 +11,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { BoardSquad } from "@/lib/board";
+import type { SimulateEditResult } from "@/lib/schemas/demo";
 import type { MoveResult } from "@/lib/schemas/move";
 import { MoveDialog, type SeatRef } from "./move-dialog";
 import { parseSeatDndId } from "./seat-card";
@@ -26,12 +27,26 @@ type Props = {
   // The board-level selected seat (?seat=<id> in the URL), or null. Other panels (SQL panel,
   // seat history) read the same URL parameter on the server.
   selectedSeatId: number | null;
+  // Set only when DEMO_MODE=true: simulate another leader's edit (LR-02-05).
+  simulate?: (input: unknown) => Promise<SimulateEditResult>;
 };
 
-type DialogState = { fromSeatId: number; toSeatId: number | null };
+// `workerId` is who the dialog is moving, so a refresh can tell whether the selection is still valid.
+type DialogState = { fromSeatId: number; toSeatId: number | null; workerId: string };
 
-export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId }: Props) {
+// Seat id to version, for every seat on the board.
+function versionsOf(squads: BoardSquad[]): Map<number, number> {
+  const map = new Map<number, number>();
+  for (const squad of squads) for (const seat of squad.seats) map.set(seat.seatId, seat.version);
+  return map;
+}
+
+export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, simulate }: Props) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  // The board as it was when the dialog opened (or was last refreshed): the seat versions a save
+  // sends. The live `squads` prop can be newer, e.g. after another save revalidated the page.
+  // `refreshing` stays true from a Refresh click until a new `squads` arrives.
+  const [loaded, setLoaded] = useState({ squads, refreshing: false });
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,6 +63,35 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId }:
 
   // A distance threshold means a plain click (e.g. on "Move to…") never starts a drag.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  // Refresh finished (a new board arrived): take its versions, and keep the dialog's selection
+  // only where it is still valid. This is React's "adjust state when a prop changes" pattern.
+  if (loaded.refreshing && loaded.squads !== squads) {
+    setLoaded({ squads, refreshing: false });
+    if (dialog) {
+      const allSeats = squads.flatMap((q) => q.seats);
+      const fromNow = allSeats.find((s) => s.seatId === dialog.fromSeatId);
+      const toNow =
+        dialog.toSeatId === null ? undefined : allSeats.find((s) => s.seatId === dialog.toSeatId);
+      if (!fromNow || fromNow.status !== "filled" || fromNow.workerId !== dialog.workerId) {
+        setDialog(null); // the worker is no longer in that seat: nothing left to move
+      } else if (toNow && toNow.status !== "open" && toNow.status !== "backfill") {
+        setDialog({ ...dialog, toSeatId: null }); // the target is taken: pick again
+      }
+    }
+  }
+
+  function openDialog(next: DialogState) {
+    setLoaded({ squads, refreshing: false });
+    setDialog(next);
+  }
+
+  function refresh() {
+    setLoaded((l) => ({ ...l, refreshing: true }));
+    router.refresh();
+  }
+
+  const loadedVersions = useMemo(() => versionsOf(loaded.squads), [loaded.squads]);
 
   const refs = useMemo(() => {
     const map = new Map<number, SeatRef>();
@@ -67,7 +111,10 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId }:
     if (!event.over) return;
     const fromSeatId = parseSeatDndId(event.active.id);
     const toSeatId = parseSeatDndId(event.over.id);
-    if (refs.has(fromSeatId) && refs.has(toSeatId)) setDialog({ fromSeatId, toSeatId });
+    const fromSeat = refs.get(fromSeatId)?.seat;
+    if (fromSeat?.workerId && refs.has(toSeatId)) {
+      openDialog({ fromSeatId, toSeatId, workerId: fromSeat.workerId });
+    }
   }
 
   const from = dialog ? refs.get(dialog.fromSeatId) : undefined;
@@ -82,7 +129,10 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId }:
             squad={squad}
             editable={editable}
             canMoveTo={canMoveTo}
-            onMoveTo={(seatId) => setDialog({ fromSeatId: seatId, toSeatId: null })}
+            onMoveTo={(seatId) => {
+              const workerId = refs.get(seatId)?.seat.workerId;
+              if (workerId) openDialog({ fromSeatId: seatId, toSeatId: null, workerId });
+            }}
             selectedSeatId={selectedSeatId}
             onSelectSeat={selectSeat}
           />
@@ -96,6 +146,10 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId }:
           to={to}
           targets={targets.filter((t) => t.seat.seatType === from.seat.seatType)}
           move={move}
+          loadedVersions={loadedVersions}
+          onRefresh={refresh}
+          refreshing={loaded.refreshing}
+          simulate={simulate}
           onClose={() => setDialog(null)}
           onMoved={() => {
             // The save action revalidates /board, so the board refreshes itself.

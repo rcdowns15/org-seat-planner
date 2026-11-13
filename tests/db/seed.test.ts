@@ -235,6 +235,18 @@ describe("named demo fixtures (keys documented in scripts/seed/README.md)", () =
     expect(divisionLeader.division_id).toBe(seat.division_id);
   });
 
+  it("has 'Another leader', a division leader other than the two demo leaders", async () => {
+    const f = fixtures["another-leader"];
+    expect(f.key).toBe("app.leaders.worker_id");
+    const leader = await one<{ scope_type: string; display_name: string }>(
+      "select scope_type, display_name from app.leaders where worker_id = $1",
+      [f.value],
+    );
+    expect(leader.scope_type).toBe("division");
+    expect(f.value).not.toBe(fixtures["demo-division-leader"].value);
+    expect(f.value).not.toBe(fixtures["demo-group-leader"].value);
+  });
+
   it("has a worker on leave who keeps their seat", async () => {
     const f = fixtures["worker-on-leave"];
     expect(f.key).toBe("workday.workers.worker_id");
