@@ -270,9 +270,49 @@ test.describe("Under the hood panel", () => {
     await page.goto("/sql");
     await expect(page.getByRole("heading", { name: "Under the hood" })).toBeVisible();
     await expect(page.locator("main input, main textarea")).toHaveCount(0);
-    for (const key of ["seat", "recent_changes", "worker", "plan_gaps", "last_move_impact"]) {
+    for (const key of [
+      "seat",
+      "recent_changes",
+      "worker",
+      "plan_gaps",
+      "last_move_impact",
+      "reconciliation_exceptions",
+      "workday_changes",
+      "squad_headcount_vs_plan",
+    ]) {
       await expect(page.getByTestId(`sql-${key}`)).toBeVisible();
     }
+  });
+
+  // Needs the seed, the 11-15 report ingested and `dbt build` run (pnpm run pipeline): the preset
+  // reads the analytics mart. The rows are the named fixtures in scripts/seed/README.md.
+  test("reconciliation preset shows the seeded exceptions", async ({ page }) => {
+    await page.goto("/sql");
+    const rows = await tableRows(page, "sql-reconciliation_exceptions");
+    const find = (type: string, subject: string) =>
+      rows.find((r) => r.exception_type === type && r.subject_id === subject);
+
+    // terminated-seated-worker: terminated in Workday, still holds seat 39.
+    expect(find("terminated_seated", "100052")).toMatchObject({ severity: "error", seat_id: "39" });
+    // Active on 11-01, missing from the 11-15 report with no termination, still in seat 955.
+    expect(find("seated_missing_from_report", "100878")).toMatchObject({
+      severity: "error",
+      seat_id: "955",
+    });
+    // worker-on-leave keeps seat 28: informational.
+    expect(find("on_leave_seated", "100042")).toMatchObject({ severity: "info", seat_id: "28" });
+    // A hiring gap is about a group, not a worker.
+    expect(rows.some((r) => r.exception_type === "hiring_gap" && r.subject_type === "group")).toBe(
+      true,
+    );
+    // Errors sort before warnings and info.
+    const firstInfo = rows.findIndex((r) => r.severity === "info");
+    const lastError = rows.map((r) => r.severity).lastIndexOf("error");
+    expect(lastError).toBeLessThan(firstInfo);
+    // The panel shows the SQL it ran.
+    await expect(page.getByTestId("sql-reconciliation_exceptions").locator("pre")).toContainText(
+      "analytics.rpt_reconciliation_exceptions",
+    );
   });
 
   test("selecting a seat works from the keyboard and is shown with text, not color alone", async ({

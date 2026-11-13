@@ -137,6 +137,18 @@ describe("getUnderTheHood", () => {
     expect(rowsOf(section(sections, "recent_changes"))).toHaveLength(0);
   });
 
+  it("analytics presets run read-only and never surface a database error, built or not", async () => {
+    const { sections } = await getUnderTheHood({ seatId: null, groupId: null });
+    for (const key of ["reconciliation_exceptions", "workday_changes", "squad_headcount_vs_plan"]) {
+      const s = section(sections, key);
+      // Either the mart's rows (or its empty message), or the "not built yet" message: whichever
+      // state the analytics schema is in, the section is not an error.
+      expect(s.result === null || s.result.ok, `${key} must not be an error`).toBe(true);
+      expect(s.sql).toMatch(/^select /);
+      expect(s.sql).not.toMatch(/\b(insert|update|delete|drop)\b/i);
+    }
+  });
+
   it("selected seat and worker presets bind the seat id and show version and Workday record", async () => {
     const [seat] = await query<{ seat_id: number; version: number; squad_id: number }>(
       "select seat_id, version, squad_id from app.seats where worker_id = $1",

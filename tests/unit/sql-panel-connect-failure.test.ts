@@ -14,7 +14,7 @@ describe("getUnderTheHood when the database is unreachable", () => {
   it("returns a generic failure in every section and logs the detail server-side", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const { sections } = await getUnderTheHood({ seatId: null, groupId: null });
-    expect(sections).toHaveLength(5);
+    expect(sections).toHaveLength(8);
     for (const s of sections) {
       expect(s.result).toMatchObject({
         ok: false,

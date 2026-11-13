@@ -64,6 +64,24 @@ jobs:
       - run: pnpm db:migrate
       - run: pnpm db:seed
       - run: pnpm test:db
+      # The SQL panel's analytics presets (sql-panel.spec.ts) read the dbt marts, so build them:
+      # `pnpm run pipeline` ingests both reports, runs dbt build and prints the summary (LR-03-05).
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: analytics/.python-version
+      - run: uv sync --frozen
+        working-directory: analytics
+      - run: uv run dbt deps
+        working-directory: analytics
+      - run: pnpm run pipeline
+        env:
+          # The localhost Docker Compose defaults (same as .env.example): not secrets.
+          DBT_HOST: localhost
+          DBT_PORT: "5432"
+          DBT_USER: seatplanner
+          DBT_PASSWORD: seatplanner
+          DBT_DBNAME: seatplanner
       - run: pnpm exec playwright install --with-deps chromium
       # Build as its own step so a build failure is a named failing step, not a webServer timeout.
       - run: pnpm build

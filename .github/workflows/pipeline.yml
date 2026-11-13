@@ -1,0 +1,65 @@
+name: pipeline
+
+# Manual only (stands in for the Airflow DAG in docs/orchestration.md): ingests the mock Workday
+# reports into Neon, then runs `dbt build` against it. It does not migrate and never reseeds, so
+# a leader's live edits in the app tables survive. Run db-deploy first if the schema is new.
+on:
+  workflow_dispatch:
+  # TEMPORARY (LR-03-05): lets the branch run before the workflow exists on main. Removed before merge.
+  push:
+    branches: [lr/LR-03-05-pipeline]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20 # stop a hung job instead of waiting for the 6-hour default
+    env:
+      # Secrets reach the scripts only through the environment: never echoed, never an argument.
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
+      DATABASE_URL_UNPOOLED: ${{ secrets.NEON_DATABASE_URL_UNPOOLED }}
+      DBT_HOST: ${{ secrets.DBT_HOST }}
+      DBT_USER: ${{ secrets.DBT_USER }}
+      DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+      DBT_DBNAME: ${{ secrets.DBT_DBNAME }}
+      DBT_PORT: "5432"
+      DBT_SSLMODE: require # Neon requires TLS
+    steps:
+      - name: Fail if a secret is missing
+        run: |
+          missing=0
+          for name in DATABASE_URL_UNPOOLED DBT_HOST DBT_USER DBT_PASSWORD DBT_DBNAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret for $name is not set (repo Settings > Secrets and variables > Actions)."
+              missing=1
+            fi
+          done
+          exit $missing
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: analytics/.python-version
+      - run: uv sync --frozen
+        working-directory: analytics
+      - run: uv run dbt deps
+        working-directory: analytics
+      # The report CSVs are gitignored. This writes them from the seed generator without touching
+      # any database (the same bytes db:seed writes, so ingest stays idempotent by file hash).
+      - name: Generate the mock Workday reports
+        run: pnpm run workday:reports
+      # ingest both reports in date order -> dbt build -> summary; exits non-zero at the first failure.
+      - name: Pipeline
+        run: pnpm run pipeline
