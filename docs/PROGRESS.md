@@ -27,6 +27,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13 — LR-02-08 review 1: pass, no P1; 2 P2s (missing tests) + 3 P3s in fix round 1 (Sonnet, `lr/LR-02-08-fix1`); 2 seat-card P3s routed to LR-02-06 and 1 undo note to LR-02-07 as criteria.
 - 2026-11-13 — LR-02-08 built (Sonnet, `lr/LR-02-08-sql-panel` @ 73df902; orchestrator re-ran all checks: unit 93, db 141, e2e 19/19); in review. LR-02-05 → `in-progress` (Sonnet), stacked on 73df902.
 - 2026-11-13 — LR-02-08 → `in-progress` (Sonnet). Criteria (orchestrator, from the brief): LR-02-05 gains "Move to… hidden or disabled when the leader can edit no squad" (LR-02-04 P3) and a D-038 reviewer check; LR-02-06 gains a `seat_changes(seat_id)` index migration (LR-02-10 P3). Board LRs run in sequence (08 → 05 → 06) because they share `board-view.tsx`/`seat-card.tsx` and port 3000.
 - 2026-11-13: D-038 accepted. No `seat_changes` row may be dated earlier than the latest change on its seat or worker, for every writer. This widens D-037 part 1, which is now marked superseded. No timeline impact: the LR-02-05 and LR-02-07 criteria already implement it. The project rule is pending in `CLAUDE.md` (step 0 of the next brief).

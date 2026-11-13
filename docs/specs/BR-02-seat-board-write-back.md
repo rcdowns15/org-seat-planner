@@ -124,6 +124,8 @@ who did it, when it was saved, the effective date.
 - [ ] DB test: history query returns rows newest first and only for that seat
 - [ ] e2e: after a move, both seats' history panels show it
 - [ ] A new migration (via `pnpm db:generate`) adds an index on `app.seat_changes (seat_id)`, used by the history query. Added 2026-11-13 from the LR-02-10 review (P3)
+- [ ] Dropping a dragged seat card does not also select/deselect the source seat (ignore the click that follows a drag), with a test. From the LR-02-08 review (P3)
+- [ ] The seat card's Select button has an accessible name that matches its visible text and describes the seat (not "Select seat 206"). From the LR-02-08 review (P3)
 Likely files: `src/server/queries/history.ts`, `src/components/seat-history-panel.tsx`, `tests/db/history.test.ts`, `tests/e2e/history.spec.ts`.
 
 ### LR-02-07 · Undo a move (after the interview) · status: todo · depends: LR-02-03, LR-02-06 · owner: agent · executor model: sonnet
@@ -135,6 +137,7 @@ two reversing rows with `reverses_change_id`. Nothing is updated in or deleted f
 - [ ] DB test: undoing twice returns `ALREADY_UNDONE`; undo after another change to either seat returns `CONFLICT`
 - [ ] e2e: undo from the history panel puts the worker back on the board
 - [ ] The reversing rows' `effective_date` is no earlier than the latest `effective_date` already on either seat or the worker (the reversed move's date if it's still pending), so dbt's as-of seat state (D-036) stays correct (DB test). Added 2026-11-13 from the LR-03-03 review
+- Note from the LR-02-08 review (P3): the SQL panel's "Impact of last move" (`under-the-hood.ts`) only looks at `move_out`/`move_in` rows; after an undo it would show the undone move with before = after. Make it skip undone moves (or show the undo) in this little rock.
 Likely files: `src/server/services/undo.ts`, `src/server/actions/undo.ts`, `src/components/seat-history-panel.tsx`, `tests/db/undo.test.ts`, `tests/e2e/undo.spec.ts`.
 
 ### LR-02-08 · "Under the hood" read-only SQL panel · status: in-progress · depends: LR-02-04 · owner: agent · executor model: sonnet
