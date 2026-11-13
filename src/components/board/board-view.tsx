@@ -8,7 +8,6 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { BoardSquad } from "@/lib/board";
 import type { MoveResult } from "@/lib/schemas/move";
@@ -28,7 +27,6 @@ type Props = {
 type DialogState = { fromSeatId: number; toSeatId: number | null };
 
 export function BoardView({ squads, editable, canMoveTo, move }: Props) {
-  const router = useRouter();
   const [dialog, setDialog] = useState<DialogState | null>(null);
 
   // A distance threshold means a plain click (e.g. on "Move to…") never starts a drag.
@@ -81,8 +79,8 @@ export function BoardView({ squads, editable, canMoveTo, move }: Props) {
           move={move}
           onClose={() => setDialog(null)}
           onMoved={() => {
+            // The save action revalidates /board, so the board refreshes itself.
             setDialog(null);
-            router.refresh();
           }}
         />
       ) : null}

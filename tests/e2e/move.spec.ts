@@ -69,12 +69,29 @@ async function pickMove(client: Client, groupId: number): Promise<Pick | null> {
   return null;
 }
 
-async function groupIdByName(client: Client, name: string): Promise<number> {
-  const r = await client.query<{ group_id: number }>(
-    "select group_id from app.groups where name = $1",
-    [name],
-  );
-  return r.rows[0].group_id;
+// The mutating tests work in the first non-demo group of the division leader's division that has
+// a movable worker: never the demo group or the out-of-scope group, which board.spec.ts and the
+// FORBIDDEN test read counts from, and no other spec file touches it. The tests in this file run
+// one after another in one worker, and each picks its seats by query at run time, so reruns on the
+// same database keep working.
+async function pickInOwnGroup(): Promise<Pick> {
+  const picks = await withDb(async (c) => {
+    const groups = await c.query<{ group_id: number }>(
+      `select g.group_id from app.groups g
+       join app.leaders l on l.division_id = g.division_id
+       where l.worker_id = $1 and g.name not in ('Digital Channels', 'Accounts and Cards')
+       order by g.name`,
+      [DIVISION_LEADER],
+    );
+    const found: Pick[] = [];
+    for (const g of groups.rows) {
+      const p = await pickMove(c, g.group_id);
+      if (p) found.push(p);
+    }
+    return found;
+  });
+  expect(picks.length, "a non-demo group with a movable worker").toBeGreaterThan(0);
+  return picks[0];
 }
 
 async function actAs(context: BrowserContext, baseURL: string, workerId: string) {
@@ -122,10 +139,7 @@ test.describe("drag-and-drop move", () => {
     context,
     baseURL,
   }) => {
-    const pick = (await withDb(async (c) =>
-      pickMove(c, await groupIdByName(c, "Digital Channels")),
-    ))!;
-    expect(pick).not.toBeNull();
+    const pick = await pickInOwnGroup();
     const seatIds = [pick.from.seatId, pick.to.seatId];
     const before = await changeCount(seatIds);
 
@@ -155,9 +169,7 @@ test.describe("drag-and-drop move", () => {
   });
 
   test("Cancel closes the dialog and changes nothing", async ({ page, context, baseURL }) => {
-    const pick = (await withDb(async (c) =>
-      pickMove(c, await groupIdByName(c, "Digital Channels")),
-    ))!;
+    const pick = await pickInOwnGroup();
     const seatIds = [pick.from.seatId, pick.to.seatId];
     const before = await changeCount(seatIds);
     await actAs(context, baseURL!, DIVISION_LEADER);
@@ -170,22 +182,7 @@ test.describe("drag-and-drop move", () => {
 });
 
 test("Move to… completes a move with the keyboard only", async ({ page, context, baseURL }) => {
-  // A third group in the division leader's division, apart from the groups the other tests use.
-  const pick = (await withDb(async (c) => {
-    const groups = await c.query<{ group_id: number }>(
-      `select g.group_id from app.groups g
-       join app.leaders l on l.division_id = g.division_id
-       where l.worker_id = $1 and g.name not in ('Digital Channels', 'Accounts and Cards')
-       order by g.name`,
-      [DIVISION_LEADER],
-    );
-    for (const g of groups.rows) {
-      const p = await pickMove(c, g.group_id);
-      if (p) return p;
-    }
-    return null;
-  }))!;
-  expect(pick).not.toBeNull();
+  const pick = await pickInOwnGroup();
   const seatIds = [pick.from.seatId, pick.to.seatId];
   const before = await changeCount(seatIds);
 

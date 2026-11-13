@@ -17,7 +17,8 @@ vi.mock("next/headers", () => ({
 import { getPool } from "@/server/db";
 import { findLeader } from "@/server/auth/acting-leader";
 import type { Leader } from "@/server/services/permissions";
-import { addUtcDays, moveWorker, utcDate } from "@/server/services/moves";
+import { addUtcDays, utcToday } from "@/lib/dates";
+import { moveWorker } from "@/server/services/moves";
 import { moveWorkerAction } from "@/server/actions/move";
 import { clearSqlLog, lastSave } from "@/server/sql-log";
 
@@ -90,7 +91,7 @@ async function expectNothingWritten(
   return result;
 }
 
-const today = () => utcDate(new Date());
+const today = () => utcToday();
 
 let divisionLeader: Leader;
 let groupLeader: Leader;

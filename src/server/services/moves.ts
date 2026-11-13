@@ -9,6 +9,7 @@ import {
   type MoveInput,
   type MoveResult,
 } from "@/lib/schemas/move";
+import { addUtcDays, utcToday } from "@/lib/dates";
 import type { ActionFailure } from "@/lib/results";
 import { getPool } from "@/server/db";
 import { requireEditSquads, type Leader } from "@/server/services/permissions";
@@ -31,16 +32,6 @@ class MoveAborted extends Error {
 
 function fail(code: MoveFailureCode, message: string): never {
   throw new MoveAborted({ ok: false, code, message });
-}
-
-// Calendar dates in UTC as `YYYY-MM-DD`, which compare correctly as strings.
-export function utcDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-export function addUtcDays(isoDate: string, days: number): string {
-  const d = new Date(`${isoDate}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return utcDate(d);
 }
 
 export type MoveOptions = {
@@ -77,7 +68,7 @@ export async function moveWorker(
     return { ok: false, code: "READ_ONLY", message: "Choose a leader to act as before editing." };
   }
   const input = parsed.data;
-  const today = utcDate(options.now ?? new Date());
+  const today = utcToday(options.now);
 
   // A Drizzle handle just for this call, whose logger records every statement it sends (with
   // bound values) for the SQL panel. It shares the app's connection pool.

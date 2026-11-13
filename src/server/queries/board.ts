@@ -37,12 +37,7 @@ const toOption = (r: GroupRow): BoardGroupOption => ({
 export async function getBoard(groupId: number | null): Promise<Board | null> {
   const db = getDb();
 
-  const groupRows = await db.execute<GroupRow>(sql`
-    select g.group_id, g.name, d.division_id, d.name as division_name
-    from app.groups g
-    join app.divisions d on d.division_id = g.division_id
-    order by d.name, g.name`);
-  const groups = groupRows.rows.map(toOption);
+  const groups = await listGroups();
   const group =
     groupId === null
       ? groups.find((g) => g.name === DEFAULT_GROUP_NAME)
