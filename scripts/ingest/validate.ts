@@ -104,8 +104,9 @@ export function validateReport(fileName: string, records: string[][]): Validatio
 
   const rows: RawRow[] = [];
   const firstSeen = new Map<string, number>();
-  // Position_ID among rows that aren't Terminated: the database allows one such worker per
-  // position (workers_position_id_active_key), so catch a clash here with a readable message.
+  // Position_ID among rows that aren't Terminated: one current holder per position in a file.
+  // The database doesn't enforce it (D-034), so reject a clash here with a readable message;
+  // dbt's assert_one_current_holder_per_position checks the same on the latest report.
   const positionFirstSeen = new Map<string, number>();
   body.forEach((cells, i) => {
     const n = i + 1;

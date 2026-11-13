@@ -1,0 +1,1 @@
+DROP INDEX "workday"."workers_position_id_active_key";

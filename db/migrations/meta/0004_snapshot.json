@@ -1,0 +1,1088 @@
+{
+  "id": "e545232b-39d6-42bd-b2c9-30f029234ea4",
+  "prevId": "307d2463-b853-4ced-81c9-b0a0f55d070c",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "app.divisions": {
+      "name": "divisions",
+      "schema": "app",
+      "columns": {
+        "division_id": {
+          "name": "division_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "divisions_division_id_seq",
+            "schema": "app",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "divisions_name_unique": {
+          "name": "divisions_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "app.groups": {
+      "name": "groups",
+      "schema": "app",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "groups_group_id_seq",
+            "schema": "app",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "division_id": {
+          "name": "division_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "groups_division_id_divisions_division_id_fk": {
+          "name": "groups_division_id_divisions_division_id_fk",
+          "tableFrom": "groups",
+          "tableTo": "divisions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "division_id"
+          ],
+          "columnsTo": [
+            "division_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "groups_name_unique": {
+          "name": "groups_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "app.headcount_plan": {
+      "name": "headcount_plan",
+      "schema": "app",
+      "columns": {
+        "squad_id": {
+          "name": "squad_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quarter_start": {
+          "name": "quarter_start",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approved_seats": {
+          "name": "approved_seats",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "headcount_plan_squad_id_squads_squad_id_fk": {
+          "name": "headcount_plan_squad_id_squads_squad_id_fk",
+          "tableFrom": "headcount_plan",
+          "tableTo": "squads",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "squad_id"
+          ],
+          "columnsTo": [
+            "squad_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "headcount_plan_pkey": {
+          "name": "headcount_plan_pkey",
+          "columns": [
+            "squad_id",
+            "quarter_start"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "headcount_plan_approved_seats_check": {
+          "name": "headcount_plan_approved_seats_check",
+          "value": "\"app\".\"headcount_plan\".\"approved_seats\" >= 0"
+        },
+        "headcount_plan_quarter_start_check": {
+          "name": "headcount_plan_quarter_start_check",
+          "value": "\"app\".\"headcount_plan\".\"quarter_start\" = date_trunc('quarter', \"app\".\"headcount_plan\".\"quarter_start\")::date"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.leaders": {
+      "name": "leaders",
+      "schema": "app",
+      "columns": {
+        "leader_id": {
+          "name": "leader_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "leaders_leader_id_seq",
+            "schema": "app",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope_type": {
+          "name": "scope_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "division_id": {
+          "name": "division_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "leaders_division_id_divisions_division_id_fk": {
+          "name": "leaders_division_id_divisions_division_id_fk",
+          "tableFrom": "leaders",
+          "tableTo": "divisions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "division_id"
+          ],
+          "columnsTo": [
+            "division_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "leaders_group_id_groups_group_id_fk": {
+          "name": "leaders_group_id_groups_group_id_fk",
+          "tableFrom": "leaders",
+          "tableTo": "groups",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "group_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "leaders_worker_id_unique": {
+          "name": "leaders_worker_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "worker_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "leaders_scope_type_check": {
+          "name": "leaders_scope_type_check",
+          "value": "\"app\".\"leaders\".\"scope_type\" in ('division', 'group')"
+        },
+        "leaders_scope_matches_type_check": {
+          "name": "leaders_scope_matches_type_check",
+          "value": "(\"app\".\"leaders\".\"scope_type\" = 'division' and \"app\".\"leaders\".\"division_id\" is not null and \"app\".\"leaders\".\"group_id\" is null)\n       or (\"app\".\"leaders\".\"scope_type\" = 'group' and \"app\".\"leaders\".\"group_id\" is not null and \"app\".\"leaders\".\"division_id\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.seat_changes": {
+      "name": "seat_changes",
+      "schema": "app",
+      "columns": {
+        "change_id": {
+          "name": "change_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "seat_changes_change_id_seq",
+            "schema": "app",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "move_id": {
+          "name": "move_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seat_id": {
+          "name": "seat_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "change_type": {
+          "name": "change_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_worker_id": {
+          "name": "from_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_worker_id": {
+          "name": "to_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_leader_id": {
+          "name": "actor_leader_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "reverses_change_id": {
+          "name": "reverses_change_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "seat_changes_seat_id_seats_seat_id_fk": {
+          "name": "seat_changes_seat_id_seats_seat_id_fk",
+          "tableFrom": "seat_changes",
+          "tableTo": "seats",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "seat_id"
+          ],
+          "columnsTo": [
+            "seat_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "seat_changes_actor_leader_id_leaders_leader_id_fk": {
+          "name": "seat_changes_actor_leader_id_leaders_leader_id_fk",
+          "tableFrom": "seat_changes",
+          "tableTo": "leaders",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "actor_leader_id"
+          ],
+          "columnsTo": [
+            "leader_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "seat_changes_reverses_change_id_fkey": {
+          "name": "seat_changes_reverses_change_id_fkey",
+          "tableFrom": "seat_changes",
+          "tableTo": "seat_changes",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "reverses_change_id"
+          ],
+          "columnsTo": [
+            "change_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "seat_changes_reverses_change_id_key": {
+          "name": "seat_changes_reverses_change_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "reverses_change_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "seat_changes_change_type_check": {
+          "name": "seat_changes_change_type_check",
+          "value": "\"app\".\"seat_changes\".\"change_type\" in ('move_out', 'move_in', 'fill', 'vacate', 'reserve', 'release', 'undo', 'demo_touch')"
+        },
+        "seat_changes_from_status_check": {
+          "name": "seat_changes_from_status_check",
+          "value": "\"app\".\"seat_changes\".\"from_status\" in ('filled', 'open', 'backfill', 'offer_accepted')"
+        },
+        "seat_changes_to_status_check": {
+          "name": "seat_changes_to_status_check",
+          "value": "\"app\".\"seat_changes\".\"to_status\" in ('filled', 'open', 'backfill', 'offer_accepted')"
+        },
+        "seat_changes_from_filled_has_worker_check": {
+          "name": "seat_changes_from_filled_has_worker_check",
+          "value": "(\"app\".\"seat_changes\".\"from_status\" = 'filled') = (\"app\".\"seat_changes\".\"from_worker_id\" is not null)"
+        },
+        "seat_changes_to_filled_has_worker_check": {
+          "name": "seat_changes_to_filled_has_worker_check",
+          "value": "(\"app\".\"seat_changes\".\"to_status\" = 'filled') = (\"app\".\"seat_changes\".\"to_worker_id\" is not null)"
+        },
+        "seat_changes_undo_reverses_check": {
+          "name": "seat_changes_undo_reverses_check",
+          "value": "(\"app\".\"seat_changes\".\"change_type\" = 'undo') = (\"app\".\"seat_changes\".\"reverses_change_id\" is not null)"
+        },
+        "seat_changes_move_has_move_id_check": {
+          "name": "seat_changes_move_has_move_id_check",
+          "value": "\"app\".\"seat_changes\".\"change_type\" not in ('move_out', 'move_in') or \"app\".\"seat_changes\".\"move_id\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.seats": {
+      "name": "seats",
+      "schema": "app",
+      "columns": {
+        "seat_id": {
+          "name": "seat_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "seats_seat_id_seq",
+            "schema": "app",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "squad_id": {
+          "name": "squad_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seat_type": {
+          "name": "seat_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_by_leader_id": {
+          "name": "updated_by_leader_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "seats_worker_id_key": {
+          "name": "seats_worker_id_key",
+          "columns": [
+            {
+              "expression": "worker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"app\".\"seats\".\"worker_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "seats_squad_id_squads_squad_id_fk": {
+          "name": "seats_squad_id_squads_squad_id_fk",
+          "tableFrom": "seats",
+          "tableTo": "squads",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "squad_id"
+          ],
+          "columnsTo": [
+            "squad_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "seats_updated_by_leader_id_leaders_leader_id_fk": {
+          "name": "seats_updated_by_leader_id_leaders_leader_id_fk",
+          "tableFrom": "seats",
+          "tableTo": "leaders",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "updated_by_leader_id"
+          ],
+          "columnsTo": [
+            "leader_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "seats_seat_type_check": {
+          "name": "seats_seat_type_check",
+          "value": "\"app\".\"seats\".\"seat_type\" in ('employee', 'contingent')"
+        },
+        "seats_status_check": {
+          "name": "seats_status_check",
+          "value": "\"app\".\"seats\".\"status\" in ('filled', 'open', 'backfill', 'offer_accepted')"
+        },
+        "seats_filled_has_worker_check": {
+          "name": "seats_filled_has_worker_check",
+          "value": "(\"app\".\"seats\".\"status\" = 'filled') = (\"app\".\"seats\".\"worker_id\" is not null)"
+        },
+        "seats_version_check": {
+          "name": "seats_version_check",
+          "value": "\"app\".\"seats\".\"version\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.squads": {
+      "name": "squads",
+      "schema": "app",
+      "columns": {
+        "squad_id": {
+          "name": "squad_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "squads_squad_id_seq",
+            "schema": "app",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "squads_group_id_groups_group_id_fk": {
+          "name": "squads_group_id_groups_group_id_fk",
+          "tableFrom": "squads",
+          "tableTo": "groups",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "group_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "squads_group_id_name_key": {
+          "name": "squads_group_id_name_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "group_id",
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "workday.ingest_runs": {
+      "name": "ingest_runs",
+      "schema": "workday",
+      "columns": {
+        "run_id": {
+          "name": "run_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "ingest_runs_run_id_seq",
+            "schema": "workday",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "source_file": {
+          "name": "source_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_sha256": {
+          "name": "file_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "report_date": {
+          "name": "report_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "row_count": {
+          "name": "row_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rejection_reasons": {
+          "name": "rejection_reasons",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "ran_at": {
+          "name": "ran_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ingest_runs_file_sha256_idx": {
+          "name": "ingest_runs_file_sha256_idx",
+          "columns": [
+            {
+              "expression": "file_sha256",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ingest_runs_status_check": {
+          "name": "ingest_runs_status_check",
+          "value": "\"workday\".\"ingest_runs\".\"status\" in ('loaded', 'skipped', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "workday.raw_worker_report": {
+      "name": "raw_worker_report",
+      "schema": "workday",
+      "columns": {
+        "raw_id": {
+          "name": "raw_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "raw_worker_report_raw_id_seq",
+            "schema": "workday",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "report_date": {
+          "name": "report_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_file": {
+          "name": "source_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_sha256": {
+          "name": "file_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_row": {
+          "name": "source_row",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "loaded_at": {
+          "name": "loaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_name": {
+          "name": "worker_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_email": {
+          "name": "work_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_type": {
+          "name": "worker_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_status": {
+          "name": "worker_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hire_date": {
+          "name": "hire_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "termination_date": {
+          "name": "termination_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_end_date": {
+          "name": "contract_end_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manager_id": {
+          "name": "manager_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "job_title": {
+          "name": "job_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supervisory_organization": {
+          "name": "supervisory_organization",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position_id": {
+          "name": "position_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cost_center": {
+          "name": "cost_center",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "raw_worker_report_file_row_key": {
+          "name": "raw_worker_report_file_row_key",
+          "columns": [
+            {
+              "expression": "file_sha256",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_row",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "raw_worker_report_report_date_idx": {
+          "name": "raw_worker_report_report_date_idx",
+          "columns": [
+            {
+              "expression": "report_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "workday.workers": {
+      "name": "workers",
+      "schema": "workday",
+      "columns": {
+        "worker_id": {
+          "name": "worker_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_type": {
+          "name": "worker_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hire_date": {
+          "name": "hire_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "termination_date": {
+          "name": "termination_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manager_worker_id": {
+          "name": "manager_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "job_title": {
+          "name": "job_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supervisory_org": {
+          "name": "supervisory_org",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position_id": {
+          "name": "position_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cost_center": {
+          "name": "cost_center",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "as_of_report_date": {
+          "name": "as_of_report_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "workers_worker_type_check": {
+          "name": "workers_worker_type_check",
+          "value": "\"workday\".\"workers\".\"worker_type\" in ('employee', 'contingent')"
+        },
+        "workers_status_check": {
+          "name": "workers_status_check",
+          "value": "\"workday\".\"workers\".\"status\" in ('active', 'leave', 'terminated')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "app": "app",
+    "workday": "workday"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
