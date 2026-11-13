@@ -104,14 +104,14 @@ filled card also has a "Move to…" menu (keyboard accessible) that opens the sa
 - [ ] The dialog shows the result's `message` for any failure code, with no per-code text in the UI, so LR-02-10's `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` shows without a UI change (reviewer check; added 2026-11-13 from the LR-02-10 review)
 Likely files: `src/components/board/*`, `src/components/move-dialog.tsx`, `src/app/board/page.tsx`, `tests/e2e/move.spec.ts`.
 
-### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: review (https://github.com/rcdowns15/org-seat-planner/pull/17, stacked on #16) · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: done (https://github.com/rcdowns15/org-seat-planner/pull/17) · depends: LR-02-04 · owner: agent · executor model: sonnet
 A `CONFLICT` result shows "This seat changed since you loaded it" with a Refresh button that
 reloads the board and keeps the dialog's selection when it's still valid. A "Simulate another
 leader's edit" button (shown only when `DEMO_MODE=true`) lets you pick a seat on screen. The server
 bumps that seat's version and writes a `seat_changes` row (`change_type = 'demo_touch'`, actor = a
 seeded "Another leader") so the audit trail stays honest.
 - [ ] Playwright: open the move dialog, click simulate on the target seat, save, see the conflict message; Refresh then Save succeeds
-- [ ] DB test: the simulate action returns 404 when `DEMO_MODE` is unset, and writes nothing
+- [ ] DB test: the simulate action returns a `NOT_FOUND` result (a server action's form of 404; wording approved by Rob 2026-11-13) when `DEMO_MODE` is unset, and writes nothing
 - [ ] The simulated edit appears in that seat's history (DB test)
 - [ ] The `demo_touch` row's `effective_date` is the later of today and the latest `effective_date` already on that seat, so dbt's as-of seat state (D-036) stays correct after a future-dated move (DB test: move effective +10 days, then simulate on that seat; the touch row carries the move's date). Added 2026-11-13 from the LR-03-03 review (D-037 ordering applies to every `seat_changes` writer)
 - [ ] On the board, when the acting leader can edit no squad, "Move to…" is hidden or disabled (e2e or component test); the server still rejects such a move with `FORBIDDEN`. Added 2026-11-13 from the LR-02-04 review (P3)
@@ -140,7 +140,7 @@ two reversing rows with `reverses_change_id`. Nothing is updated in or deleted f
 - Note from the LR-02-08 review (P3): the SQL panel's "Impact of last move" (`under-the-hood.ts`) only looks at `move_out`/`move_in` rows; after an undo it would show the undone move with before = after. Make it skip undone moves (or show the undo) in this little rock.
 Likely files: `src/server/services/undo.ts`, `src/server/actions/undo.ts`, `src/components/seat-history-panel.tsx`, `tests/db/undo.test.ts`, `tests/e2e/undo.spec.ts`.
 
-### LR-02-08 · "Under the hood" read-only SQL panel · status: review (https://github.com/rcdowns15/org-seat-planner/pull/16) · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-08 · "Under the hood" read-only SQL panel · status: done (https://github.com/rcdowns15/org-seat-planner/pull/16) · depends: LR-02-04 · owner: agent · executor model: sonnet
 A collapsible panel (and a `/sql` page) that makes the write-back visible. **Read-only, preset
 queries only** (D-026). Each query shows its SQL text and its result table:
 - the selected seat's row, including `version`

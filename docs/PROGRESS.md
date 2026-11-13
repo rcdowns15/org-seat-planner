@@ -3,18 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-13 · PRs #16 (LR-02-08), #17 (LR-02-05), #18 (LR-03-04) open; orchestrator session handed off
-- **Milestone:** M2 (BR-02): 5 of 8 cut-line LRs done, LR-02-08 and LR-02-05 in review, LR-02-06 ready. M3 (BR-03): 4 of 6 done, LR-03-04 in review. Cut line overall: 19 of 27 done, 3 in review.
-- **In flight:**
-  - LR-02-08 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/16 (tripwire).
-  - LR-03-04 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/18 (tripwire). Not stacked.
-  - LR-02-05 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/17, stacked on #16.
-- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034): #16 and #18 must both be merged; both PRs are open with reviews passed.
-- **Waiting on Rob:**
-  - Merge in order: #16, #18, then #17 (after #16).
-  - Decision (navigator): the D-023 rule and the LR-02-05 criterion say "return 404"; a server action can only return a `NOT_FOUND` result. Proposed wording: "404 for routes, a `NOT_FOUND` result for server actions" (LR-02-05 review P3).
-  - Optional cleanup: delete superseded branch `lr/LR-03-04-exceptions` (pre-rebase build) and stale worktrees under `.claude/worktrees/`.
-- **Next:** a fresh orchestrator session dispatches LR-02-06 (Sonnet), branched from main once #17 merges (or stacked on `lr/LR-02-05-conflict-simulate` at e9f6ce4). Its criteria include the `seat_changes(seat_id)` index and two seat-card P3s from the LR-02-08 review. Then LR-03-05 once #16 and #18 merge. Databases: `seatplanner_lr0206` exists.
+- **Last updated:** 2026-11-13 · #16 (LR-02-08), #17 (LR-02-05), #18 (LR-03-04) merged; main CI green; D-034 tripwire met (orchestrator)
+- **Milestone:** M2 (BR-02): 7 of 8 cut-line LRs done; LR-02-06 ready. M3 (BR-03): 5 of 6 done; LR-03-05 ready. Cut line overall: 22 of 27 (81%).
+- **In flight:** none. No open PRs.
+- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034) met early: LR-02-08 and LR-03-04 both merged 2026-11-13, so "Last save: SQL executed" stays above the cut line.
+- **Waiting on Rob:** paste the next orchestrator brief (fresh session).
+- **Next:** LR-02-06 seat history panel (Sonnet; branch from main; criteria include the `seat_changes(seat_id)` index and two seat-card P3s from the LR-02-08 review) and LR-03-05 `pnpm pipeline` + Neon + SQL panel presets (Sonnet; touches `under-the-hood.ts`/`sql-panel.tsx`, and LR-02-06 touches board components, so check overlap; one Playwright run at a time on port 3000). Databases `seatplanner_lr0206` exists; create one for LR-03-05.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -28,6 +22,9 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13: LR-02-08 (PR #16), LR-03-04 (PR #18) and LR-02-05 (PR #17) are done; main CI green on the #17 merge. D-034 tripwire met. LR-03-05 is now `ready` (deps LR-03-04, LR-02-08, LR-01-09 all done). Cut line: 22 of 27.
+- 2026-11-13: Rob approved the D-023 wording: demo-only actions return 404 from routes/pages and a `NOT_FOUND` result from server actions. `CLAUDE.md` project rule and the LR-02-05 criterion updated. Navigator: add a `docs/DECISIONS.md` note under D-023.
+- 2026-11-13: Cleanup: superseded branch `lr/LR-03-04-exceptions` deleted (local and remote); all 40 stale agent worktrees removed (every commit on them was already on main, checked with `git cherry`); merged local branches deleted.
 - 2026-11-13 — LR-03-04 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/18 (Opus, build in the earlier session + 2 fix rounds; review 1 P1 + six P3s fixed after Rob decision; review 2 P2 + three P3s fixed, two noted; review 3 pass; dbt PASS=253).
 - 2026-11-13 — LR-02-05 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/17, stacked on #16 (Sonnet, build + 1 fix round; review 1 P2 + six P3s fixed, 404 wording routed to navigator; review 2 pass, 3 P3s noted).
 - 2026-11-13 — LR-03-04 fix round 1 verified (dbt PASS=252); re-review P2 (gate seed-list tests on seed state); fix round 2 dispatched (Opus).
