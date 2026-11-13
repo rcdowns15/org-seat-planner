@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BoardView } from "@/components/board/board-view";
 import { defaultGroupIdForLeader, parseGroupParam } from "@/lib/board";
-import { moveWorkerAction } from "@/server/actions/move";
+import { moveWorkerFromBoard } from "@/server/actions/board-move";
 import { getActingLeader } from "@/server/auth/acting-leader";
 import { getBoard, listGroups } from "@/server/queries/board";
 import { scopeAllows } from "@/server/services/permissions";
@@ -70,7 +70,7 @@ export default async function BoardPage({
         squads={board.squads}
         editable={editable}
         canMoveTo={leader !== null}
-        move={moveWorkerAction}
+        move={moveWorkerFromBoard}
       />
     </main>
   );
