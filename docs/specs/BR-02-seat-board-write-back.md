@@ -114,6 +114,8 @@ seeded "Another leader") so the audit trail stays honest.
 - [ ] DB test: the simulate action returns 404 when `DEMO_MODE` is unset, and writes nothing
 - [ ] The simulated edit appears in that seat's history (DB test)
 - [ ] The `demo_touch` row's `effective_date` is the later of today and the latest `effective_date` already on that seat, so dbt's as-of seat state (D-036) stays correct after a future-dated move (DB test: move effective +10 days, then simulate on that seat; the touch row carries the move's date). Added 2026-11-13 from the LR-03-03 review (D-037 ordering applies to every `seat_changes` writer)
+- [ ] On the board, when the acting leader can edit no squad, "Move to…" is hidden or disabled (e2e or component test); the server still rejects such a move with `FORBIDDEN`. Added 2026-11-13 from the LR-02-04 review (P3)
+- [ ] Every `seat_changes` insert this little rock adds obeys D-038 (reviewer check)
 Likely files: `src/server/actions/demo.ts`, `src/server/demo-mode.ts`, `src/components/move-dialog.tsx`, `src/components/demo-toolbar.tsx`, `tests/e2e/conflict.spec.ts`, `tests/db/demo.test.ts`.
 
 ### LR-02-06 · Seat history panel · status: ready · depends: LR-02-04 · owner: agent · executor model: sonnet
@@ -121,6 +123,7 @@ Clicking a seat card opens a side panel with that seat's `seat_changes`, newest 
 who did it, when it was saved, the effective date.
 - [ ] DB test: history query returns rows newest first and only for that seat
 - [ ] e2e: after a move, both seats' history panels show it
+- [ ] A new migration (via `pnpm db:generate`) adds an index on `app.seat_changes (seat_id)`, used by the history query. Added 2026-11-13 from the LR-02-10 review (P3)
 Likely files: `src/server/queries/history.ts`, `src/components/seat-history-panel.tsx`, `tests/db/history.test.ts`, `tests/e2e/history.spec.ts`.
 
 ### LR-02-07 · Undo a move (after the interview) · status: todo · depends: LR-02-03, LR-02-06 · owner: agent · executor model: sonnet
@@ -134,7 +137,7 @@ two reversing rows with `reverses_change_id`. Nothing is updated in or deleted f
 - [ ] The reversing rows' `effective_date` is no earlier than the latest `effective_date` already on either seat or the worker (the reversed move's date if it's still pending), so dbt's as-of seat state (D-036) stays correct (DB test). Added 2026-11-13 from the LR-03-03 review
 Likely files: `src/server/services/undo.ts`, `src/server/actions/undo.ts`, `src/components/seat-history-panel.tsx`, `tests/db/undo.test.ts`, `tests/e2e/undo.spec.ts`.
 
-### LR-02-08 · "Under the hood" read-only SQL panel · status: ready · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-08 · "Under the hood" read-only SQL panel · status: in-progress · depends: LR-02-04 · owner: agent · executor model: sonnet
 A collapsible panel (and a `/sql` page) that makes the write-back visible. **Read-only, preset
 queries only** (D-026). Each query shows its SQL text and its result table:
 - the selected seat's row, including `version`

@@ -27,6 +27,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13 — LR-02-08 → `in-progress` (Sonnet). Criteria (orchestrator, from the brief): LR-02-05 gains "Move to… hidden or disabled when the leader can edit no squad" (LR-02-04 P3) and a D-038 reviewer check; LR-02-06 gains a `seat_changes(seat_id)` index migration (LR-02-10 P3). Board LRs run in sequence (08 → 05 → 06) because they share `board-view.tsx`/`seat-card.tsx` and port 3000.
 - 2026-11-13: D-038 accepted. No `seat_changes` row may be dated earlier than the latest change on its seat or worker, for every writer. This widens D-037 part 1, which is now marked superseded. No timeline impact: the LR-02-05 and LR-02-07 criteria already implement it. The project rule is pending in `CLAUDE.md` (step 0 of the next brief).
 - 2026-11-13: LR-02-10 is done (PR #13 merged), as are LR-03-03 (PR #14 merged) and LR-02-04 (PR #15 merged). The write-back thin slice is complete. LR-02-05, LR-02-06 and LR-02-08 are now `ready`. LR-03-04 rebases onto `main` because its stack base merged. Cut line: 19 of 27 done.
 - 2026-11-13 — LR-02-04 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/15 (Sonnet, build + 1 fix round; review pass, 2 P2s and 2 P3s fixed, 1 P3 noted; e2e 14/14).
