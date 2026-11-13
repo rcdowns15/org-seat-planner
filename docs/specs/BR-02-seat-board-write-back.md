@@ -79,7 +79,7 @@ Record the SQL statements the transaction ran (for LR-02-08) in a small server-s
 - [ ] Every query uses bound parameters (reviewer check); the seat update SQL includes `AND version = $n`
 Likely files: `src/server/services/moves.ts`, `src/server/actions/move.ts`, `src/lib/schemas/move.ts`, `src/lib/results.ts`, `src/server/sql-log.ts`, `tests/db/moves.test.ts`, `tests/unit/move-schema.test.ts`.
 
-### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: in-progress · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
+### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/13) · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
 A missing validation from LR-02-03, not new scope. `moveWorker` rejects a move whose `effectiveDate`
 is earlier than the latest `effective_date` in `app.seat_changes` for the worker, the source seat or
 the target seat, with a new failure code `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` (checked with the
@@ -113,6 +113,7 @@ seeded "Another leader") so the audit trail stays honest.
 - [ ] Playwright: open the move dialog, click simulate on the target seat, save, see the conflict message; Refresh then Save succeeds
 - [ ] DB test: the simulate action returns 404 when `DEMO_MODE` is unset, and writes nothing
 - [ ] The simulated edit appears in that seat's history (DB test)
+- [ ] The `demo_touch` row's `effective_date` is the later of today and the latest `effective_date` already on that seat, so dbt's as-of seat state (D-036) stays correct after a future-dated move (DB test: move effective +10 days, then simulate on that seat; the touch row carries the move's date). Added 2026-11-13 from the LR-03-03 review (D-037 ordering applies to every `seat_changes` writer)
 Likely files: `src/server/actions/demo.ts`, `src/server/demo-mode.ts`, `src/components/move-dialog.tsx`, `src/components/demo-toolbar.tsx`, `tests/e2e/conflict.spec.ts`, `tests/db/demo.test.ts`.
 
 ### LR-02-06 · Seat history panel · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet
@@ -130,6 +131,7 @@ two reversing rows with `reverses_change_id`. Nothing is updated in or deleted f
 - [ ] DB test: move then undo restores both seats' status and worker; `seat_changes` has 4 rows for the pair, with no deletes
 - [ ] DB test: undoing twice returns `ALREADY_UNDONE`; undo after another change to either seat returns `CONFLICT`
 - [ ] e2e: undo from the history panel puts the worker back on the board
+- [ ] The reversing rows' `effective_date` is no earlier than the latest `effective_date` already on either seat or the worker (the reversed move's date if it's still pending), so dbt's as-of seat state (D-036) stays correct (DB test). Added 2026-11-13 from the LR-03-03 review
 Likely files: `src/server/services/undo.ts`, `src/server/actions/undo.ts`, `src/components/seat-history-panel.tsx`, `tests/db/undo.test.ts`, `tests/e2e/undo.spec.ts`.
 
 ### LR-02-08 · "Under the hood" read-only SQL panel · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet

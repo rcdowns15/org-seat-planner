@@ -27,6 +27,10 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13 — LR-03-04 → `in-progress` (Opus), stacked on #14.
+- 2026-11-13 — LR-03-03 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/14 (Sonnet, build + 2 fix rounds; review 1 P1 + three P2s fixed; review 2 one P2 fixed, one P2 waived and routed to LR-02-05/LR-02-07; dbt build PASS=203).
+- 2026-11-13 — Criteria (orchestrator, from the LR-03-03 review 2): LR-02-05's `demo_touch` row and LR-02-07's undo rows must use an effective date no earlier than the latest one already on the seat or worker, with a DB test, so the as-of seat state (D-036) stays correct. Navigator: consider widening D-037 to every `seat_changes` writer.
+- 2026-11-13 — LR-02-10 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/13 (Sonnet, build + 1 fix round; review pass, P2 fixed, 2 P3s fixed, 1 P3 noted).
 - 2026-11-13: LR-02-03 is done (PR #11 merged) and LR-03-06 is done (PR #12 merged). LR-02-04 and LR-02-10 are now `ready`. The BR-02 spec header now lists LR-02-10 on the cut line (D-037). Cut line: 16 of 27 done. Brief handed off: LR-03-03 fix round 1, LR-02-04 and LR-02-10 in parallel, then LR-03-04.
 - 2026-11-13 — Criteria (orchestrator): LR-02-04 gains a criterion that the dialog shows any failure's `message` generically, so LR-02-10's new code needs no UI change (from the LR-02-10 review, P2).
 - 2026-11-13 — Navigator, from the orchestrator report: D-036 accepted (headcount rebuilt as of each report date from `seat_changes`; LR-03-03 criteria restated and three added). D-037 accepted: new LR-02-10 rejects out-of-order effective dates (split from LR-02-03, cut line unchanged; about +0.5 Rob-hours, cut line ≈ 20.25 h, 3 days to the interview); LR-02-03 checks `CONFLICT` right after `FORBIDDEN` (spec updated). LR-03-03 fix round 1 unblocked.

@@ -81,7 +81,7 @@ service → migrate → seed → `uv run dbt build`.
 - [ ] No credentials in `profiles.yml` (env vars only)
 Likely files: `analytics/pyproject.toml`, `analytics/uv.lock`, `analytics/.python-version`, `analytics/dbt_project.yml`, `analytics/profiles.yml`, `analytics/macros/generate_schema_name.sql`, `analytics/models/staging/**`, `.github/workflows/ci.yml`.
 
-### LR-03-03 · Dimensions, squad headcount vs. plan, and custom tests · status: in-progress · depends: LR-03-02 · owner: agent · executor model: sonnet
+### LR-03-03 · Dimensions, squad headcount vs. plan, and custom tests · status: review (https://github.com/rcdowns15/org-seat-planner/pull/14) · depends: LR-03-02 · owner: agent · executor model: sonnet
 `dim_squads` (squad with group and division), `dim_people` (latest report per worker plus current
 seat). `rpt_squad_headcount` (grain: squad × report date): filled employee seats, filled contingent
 seats, open, backfill, offer accepted, approved plan for that quarter, variance, fill rate. Custom
@@ -112,7 +112,7 @@ Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_sq
   - The `dim_people` description should say seated workers never seen in a report are absent.
   - The `is_latest_report` wording overstates what it means.
 
-### LR-03-04 · Refresh changes and reconciliation exceptions · status: todo · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
+### LR-03-04 · Refresh changes and reconciliation exceptions · status: in-progress (stacked on #14) · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
 `rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
 (hire, future-dated hire, termination, manager change, worker-type change, leave start/end, and
 `aged_out`: a terminated worker who drops off under the report's 30-day termination window, which is
