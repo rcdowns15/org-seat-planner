@@ -82,6 +82,23 @@ models:
       - name: cost_center
         description: Cost center, code and name together.
         data_tests: [not_null]
+      - name: cost_center_code
+        description: Cost center code (`CC-` plus digits), split from `cost_center`.
+        data_tests: [not_null]
+      - name: cost_center_name
+        description: >
+          Cost center name, split from `cost_center`. Each cost center belongs to one group and is
+          named after it (D-029), so this is how a Workday row is matched to a group. A cost
+          center with no matching group (for example a leadership cost center in a real report)
+          is a warning, not a failure: the row just can't count toward a group's hiring gap.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__groups')
+                field: group_name
+              config:
+                severity: warn
       - name: location
         description: Work location.
       - name: is_future_hire

@@ -9,6 +9,11 @@ macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 clean-targets: ["target", "dbt_packages"]
 
+vars:
+  # A Workday report lists terminated workers for this many days, counting the report date
+  # (report date minus 29 days through the report date). Same rule as the seed (scripts/seed/config.ts).
+  workday_termination_window_days: 30
+
 # Layers (CLAUDE.md): staging -> snapshots -> intermediate -> marts.
 # The custom generate_schema_name macro uses these schema names as-is.
 models:

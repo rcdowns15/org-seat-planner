@@ -115,6 +115,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
       - run: pnpm db:seed
+      # The seed loads the 11-01 report; the refresh-changes and reconciliation tests need 11-15 too.
+      - run: pnpm workday:ingest data/workday/worker_report_2026-11-15.csv
       - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-python@v5
         with:
@@ -124,4 +126,9 @@ jobs:
       - run: uv run dbt deps
         working-directory: analytics
       - run: uv run dbt build
+        working-directory: analytics
+      # These two are warn-level so a used local database still builds. On this freshly seeded
+      # database a warning means the 11-15 report didn't load or the seed-list tests skipped, so
+      # --warn-error turns it into a failure.
+      - run: uv run dbt --warn-error test --select assert_next_report_is_loaded assert_seed_list_tests_are_active
         working-directory: analytics

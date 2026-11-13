@@ -1,0 +1,301 @@
+version: 2
+
+# dbt unit tests for the refresh-changes and reconciliation models (LR-03-04): tiny hand-written
+# inputs, checked against hand-written expected rows. The seed exercises only some change and
+# exception types (no worker-type change, no return from leave, no type mismatch), so these cover
+# the rest, plus the termination-window boundary.
+
+unit_tests:
+  # --- int_worker_report_versions -----------------------------------------------------------
+  - name: report_versions_pair_consecutive_reports
+    description: >
+      Three reports. Each report after the first is paired with the one before it: a worker in
+      both, a hire (no previous row) and a drop-off (no current row). The first report has no
+      rows, and a worker who dropped off before the previous report is not carried forward.
+    model: int_worker_report_versions
+    given:
+      - input: ref('stg_workday__worker_report')
+        rows:
+          - { worker_id: A1, report_date: "2026-11-01", worker_status: active }
+          - { worker_id: B1, report_date: "2026-11-01", worker_status: active }
+          - { worker_id: A1, report_date: "2026-11-15", worker_status: leave }
+          - { worker_id: C1, report_date: "2026-11-15", worker_status: active }
+          - { worker_id: A1, report_date: "2026-11-29", worker_status: leave }
+    expect:
+      rows:
+        - {
+            worker_id: A1,
+            report_date: "2026-11-15",
+            previous_report_date: "2026-11-01",
+            is_in_report: true,
+            is_in_previous_report: true,
+            previous_worker_status: active,
+            worker_status: leave,
+          }
+        - {
+            worker_id: B1,
+            report_date: "2026-11-15",
+            previous_report_date: "2026-11-01",
+            is_in_report: false,
+            is_in_previous_report: true,
+            previous_worker_status: active,
+            worker_status: null,
+          }
+        - {
+            worker_id: C1,
+            report_date: "2026-11-15",
+            previous_report_date: "2026-11-01",
+            is_in_report: true,
+            is_in_previous_report: false,
+            previous_worker_status: null,
+            worker_status: active,
+          }
+        - {
+            worker_id: A1,
+            report_date: "2026-11-29",
+            previous_report_date: "2026-11-15",
+            is_in_report: true,
+            is_in_previous_report: true,
+            previous_worker_status: leave,
+            worker_status: leave,
+          }
+        - {
+            worker_id: C1,
+            report_date: "2026-11-29",
+            previous_report_date: "2026-11-15",
+            is_in_report: false,
+            is_in_previous_report: true,
+            previous_worker_status: active,
+            worker_status: null,
+          }
+
+  # --- rpt_workday_changes ------------------------------------------------------------------
+  - name: workday_changes_types_precedence_and_window_boundary
+    description: >
+      The change types the seed doesn't produce, one change type per row when two things change
+      at once (termination wins over a manager change), and the 30-day window boundary for the
+      2026-11-15 report (window start 2026-10-17): a terminated worker who drops off with a
+      termination date on the window start is `missing`; one day earlier is `aged_out`. A worker
+      with nothing changed has no row.
+    model: rpt_workday_changes
+    given:
+      - input: ref('int_worker_report_versions')
+        format: csv
+        rows: |
+          worker_id,report_date,previous_report_date,is_in_report,is_in_previous_report,previous_worker_status,worker_status,previous_worker_type,worker_type,previous_manager_id,manager_id,previous_termination_date,termination_date,is_future_hire
+          TYPE,2026-11-15,2026-11-01,true,true,active,active,employee,contingent,M1,M1,,,false
+          BACK,2026-11-15,2026-11-01,true,true,leave,active,employee,employee,M1,M1,,,false
+          REHIRE,2026-11-15,2026-11-01,true,true,terminated,active,employee,employee,M1,M1,2026-10-20,,false
+          TERM_MGR,2026-11-15,2026-11-01,true,true,active,terminated,employee,employee,M1,M2,,2026-11-10,false
+          LEAVE_TERM,2026-11-15,2026-11-01,true,true,leave,terminated,employee,employee,M1,M1,,2026-11-12,false
+          SAME,2026-11-15,2026-11-01,true,true,active,active,employee,employee,M1,M1,,,false
+          ON_WINDOW_START,2026-11-15,2026-11-01,false,true,terminated,,employee,,M1,,2026-10-17,,
+          DAY_BEFORE_WINDOW,2026-11-15,2026-11-01,false,true,terminated,,employee,,M1,,2026-10-16,,
+          FUTURE,2026-11-15,2026-11-01,true,false,,active,,employee,,M1,,,true
+    expect:
+      rows:
+        - {
+            worker_id: TYPE,
+            change_type: worker_type_change,
+            termination_window_start: "2026-10-17",
+          }
+        - { worker_id: BACK, change_type: leave_end, termination_window_start: "2026-10-17" }
+        - { worker_id: REHIRE, change_type: status_change, termination_window_start: "2026-10-17" }
+        - { worker_id: TERM_MGR, change_type: termination, termination_window_start: "2026-10-17" }
+        - {
+            worker_id: LEAVE_TERM,
+            change_type: termination,
+            termination_window_start: "2026-10-17",
+          }
+        - {
+            worker_id: ON_WINDOW_START,
+            change_type: missing,
+            termination_window_start: "2026-10-17",
+          }
+        - {
+            worker_id: DAY_BEFORE_WINDOW,
+            change_type: aged_out,
+            termination_window_start: "2026-10-17",
+          }
+        - { worker_id: FUTURE, change_type: future_hire, termination_window_start: "2026-10-17" }
+
+  # --- rpt_reconciliation_exceptions --------------------------------------------------------
+  - name: reconciliation_exceptions_every_type
+    description: >
+      One case per exception type, including the two the seed doesn't produce: a worker type that
+      doesn't match the seat type, and a seated worker who is in no report at all. Also checks
+      what is not an exception: a matching seated worker, a terminated worker who dropped off
+      unseated, and a group whose future hires cover its offers. A seated worker who drops off
+      with no termination (DROP, like the seed's 100878) gets only `seated_missing_from_report`,
+      not also `missing_without_termination` (option b).
+    model: rpt_reconciliation_exceptions
+    given:
+      - input: ref('stg_workday__worker_report')
+        rows:
+          - {
+              worker_id: OK,
+              report_date: "2026-11-15",
+              is_future_hire: false,
+              cost_center_name: Group Ten,
+            }
+          - {
+              worker_id: FH1,
+              report_date: "2026-11-15",
+              is_future_hire: true,
+              cost_center_name: Group Ten,
+            }
+          - {
+              worker_id: FH2,
+              report_date: "2026-11-15",
+              is_future_hire: true,
+              cost_center_name: Group Twenty,
+            }
+      - input: ref('stg_app__seats')
+        rows:
+          - { seat_id: 1, squad_id: 1, seat_type: employee, seat_status: filled, worker_id: OK }
+          - { seat_id: 2, squad_id: 1, seat_type: employee, seat_status: filled, worker_id: TYPE }
+          - { seat_id: 3, squad_id: 1, seat_type: employee, seat_status: filled, worker_id: GHOST }
+          - { seat_id: 4, squad_id: 1, seat_type: employee, seat_status: filled, worker_id: TERM }
+          - { seat_id: 5, squad_id: 2, seat_type: employee, seat_status: filled, worker_id: LEAVE }
+          - { seat_id: 9, squad_id: 2, seat_type: employee, seat_status: filled, worker_id: DROP }
+          - {
+              seat_id: 6,
+              squad_id: 1,
+              seat_type: employee,
+              seat_status: offer_accepted,
+              worker_id: null,
+            }
+          - {
+              seat_id: 7,
+              squad_id: 1,
+              seat_type: employee,
+              seat_status: offer_accepted,
+              worker_id: null,
+            }
+          - {
+              seat_id: 8,
+              squad_id: 2,
+              seat_type: employee,
+              seat_status: offer_accepted,
+              worker_id: null,
+            }
+      - input: ref('int_worker_latest_report')
+        rows:
+          - {
+              worker_id: OK,
+              is_in_latest_report: true,
+              worker_status: active,
+              worker_type: employee,
+            }
+          - {
+              worker_id: TYPE,
+              is_in_latest_report: true,
+              worker_status: active,
+              worker_type: contingent,
+            }
+          - {
+              worker_id: TERM,
+              is_in_latest_report: true,
+              worker_status: terminated,
+              worker_type: employee,
+            }
+          - {
+              worker_id: LEAVE,
+              is_in_latest_report: true,
+              worker_status: leave,
+              worker_type: employee,
+            }
+          - {
+              worker_id: GONE,
+              is_in_latest_report: false,
+              worker_status: active,
+              worker_type: employee,
+            }
+          - {
+              worker_id: DROP,
+              is_in_latest_report: false,
+              worker_status: active,
+              worker_type: employee,
+            }
+      - input: ref('int_worker_report_versions')
+        rows:
+          - {
+              worker_id: GONE,
+              report_date: "2026-11-15",
+              is_in_report: false,
+              is_in_previous_report: true,
+              previous_worker_status: active,
+            }
+          - {
+              worker_id: DROP,
+              report_date: "2026-11-15",
+              is_in_report: false,
+              is_in_previous_report: true,
+              previous_worker_status: active,
+            }
+          - {
+              worker_id: AGED,
+              report_date: "2026-11-15",
+              is_in_report: false,
+              is_in_previous_report: true,
+              previous_worker_status: terminated,
+            }
+      - input: ref('stg_app__squads')
+        rows:
+          - { squad_id: 1, group_id: 10 }
+          - { squad_id: 2, group_id: 20 }
+      - input: ref('stg_app__groups')
+        rows:
+          - { group_id: 10, group_name: Group Ten }
+          - { group_id: 20, group_name: Group Twenty }
+    expect:
+      rows:
+        - {
+            exception_type: worker_type_mismatch,
+            subject_id: TYPE,
+            severity: error,
+            seat_id: 2,
+            group_id: 10,
+          }
+        - {
+            exception_type: seated_missing_from_report,
+            subject_id: GHOST,
+            severity: error,
+            seat_id: 3,
+            group_id: 10,
+          }
+        - {
+            exception_type: seated_missing_from_report,
+            subject_id: DROP,
+            severity: error,
+            seat_id: 9,
+            group_id: 20,
+          }
+        - {
+            exception_type: terminated_seated,
+            subject_id: TERM,
+            severity: error,
+            seat_id: 4,
+            group_id: 10,
+          }
+        - {
+            exception_type: on_leave_seated,
+            subject_id: LEAVE,
+            severity: info,
+            seat_id: 5,
+            group_id: 20,
+          }
+        - {
+            exception_type: missing_without_termination,
+            subject_id: GONE,
+            severity: warning,
+            seat_id: null,
+            group_id: null,
+          }
+        - {
+            exception_type: hiring_gap,
+            subject_id: "10",
+            severity: info,
+            seat_id: null,
+            group_id: 10,
+          }

@@ -422,3 +422,64 @@ when no change is effective after the latest report; squads with no seats count 
 effective-date rule, D-037). dbt unit tests in `analytics/models/intermediate/_unit_tests.yml` cover
 the seat-state and occupancy models and the missing-worker case with hand-made rows, because the
 seed has no `seat_changes`.
+
+### Refresh changes and reconciliation exceptions (LR-03-04)
+
+| Model | Grain | One line |
+|---|---|---|
+| `analytics.rpt_workday_changes` | `worker_id` x `report_date` | What changed for a worker since the previous report. |
+| `analytics.rpt_reconciliation_exceptions` | `exception_type` x `subject_id` | Where the latest report and the seat plan disagree, with a severity and a suggested action. |
+
+`int_worker_report_versions` (one row per worker per report date, for every report after the
+first) puts each worker's row next to their row in the previous report; a hire has no previous
+row and a worker who dropped off has no current row. `stg_workday__worker_report` splits
+`Cost_Center` into `cost_center_code` and `cost_center_name`; the name is a group name (D-029).
+
+`rpt_workday_changes.change_type`, one per row, the first that applies:
+
+| Change type | Rule |
+|---|---|
+| `future_hire` | New in this report, hire date after the report date. |
+| `hire` | New in this report, already started. |
+| `aged_out` | Dropped off; was terminated before this report's termination window. Not an exception. |
+| `missing` | Dropped off any other way (no termination, or terminated inside the window). |
+| `termination` | Status became `terminated`. |
+| `worker_type_change` | Worker type changed. |
+| `leave_start` / `leave_end` | `active` to `leave` / `leave` to `active`. |
+| `status_change` | Any other status move (for example a rehire, `terminated` to `active`). |
+| `manager_change` | `manager_id` changed. |
+
+The termination window is inclusive: the report date minus 29 days through the report date
+(`workday_termination_window_days: 30` in `analytics/dbt_project.yml`, the same rule as the seed).
+The `previous_*` and current columns show every attribute that moved, so a worker terminated and
+moved to a new manager in the same report is one `termination` row whose manager columns differ.
+
+`rpt_reconciliation_exceptions` compares the latest report with the live seat plan (`app.seats`
+as saved now, the seats `dim_people` shows), so a fix a leader saves clears the exception on the
+next build. Status and type checks look only at workers in the latest report; a seated worker
+missing from it gets `seated_missing_from_report` instead, and only that row (one problem, one
+row: an unseated worker who drops off gets `missing_without_termination`). `seat_id` is the seat in
+the saved plan, which includes moves saved with a future effective date.
+
+| Exception type | Subject | Severity | Rule |
+|---|---|---|---|
+| `terminated_seated` | worker | error | In the latest report as terminated and holds a seat. |
+| `seated_missing_from_report` | worker | error | Holds a seat, not in the latest report (even if aged out, or never in any report). |
+| `missing_without_termination` | worker | warning | Holds no seat; `active` or `leave` in the previous report, missing from the latest. |
+| `worker_type_mismatch` | worker | error | Worker type differs from seat type. |
+| `on_leave_seated` | worker | info | On leave and holds a seat (allowed; listed for awareness). |
+| `hiring_gap` | group | info | The group's `offer_accepted` seats outnumber its future-dated hires in the latest report, matched by cost center name (D-029). |
+
+Tests: `assert_workday_changes_match_seed_readme` (the 11-15 change list in
+`scripts/seed/README.md`, row for row), `assert_terminated_seated_workers_are_exceptions` (error:
+every seated worker whose latest status is terminated is in the exceptions report),
+`assert_aged_out_is_not_an_exception_but_missing_is`,
+`assert_reconciliation_exceptions_match_seed_readme` (the exceptions list in
+`scripts/seed/README.md`, both ways: each seeded exception once and nothing else), and dbt unit
+tests in `analytics/models/marts/_unit_tests.yml` for the change types and exception types the seed
+doesn't produce and for the window boundary. `tests/unit/seed-readme-dbt.test.ts` checks that the
+`VALUES` lists in the two seed-list tests match the README tables. The seed-list tests check the
+11-15 report only once it is ingested (`pnpm db:seed` loads 11-01 alone; CI ingests 11-15 before
+`dbt build`); `assert_next_report_is_loaded` warns when it isn't. The three seed-list tests compare only in the seed state (latest report 2026-11-15 and no `app.seat_changes` rows, macro `seed_list_tests_active`); otherwise `assert_seed_list_tests_are_active` warns, and CI runs both warn tests with `--warn-error`, so a skipped comparison fails CI.
+The `cost_center_name` relationships test to groups is `warn`: a real report can carry a cost
+center that isn't a group.
