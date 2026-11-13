@@ -8,7 +8,11 @@ import { BOM, parseCsv } from "../../scripts/seed/csv";
 import { fromUsDate } from "../../scripts/seed/dates";
 import { REPORT_COLUMNS } from "../../scripts/seed/workday-reports";
 import { getPool } from "@/server/db";
-import { documentedChanges, documentedFixtures } from "../support/seed-readme";
+import {
+  documentedChanges,
+  documentedExceptions,
+  documentedFixtures,
+} from "../support/seed-readme";
 import { localChildEnv } from "./local-db";
 
 // The seed's checksum, pinned (D-014). It changes only when the generator or the seeded schema
@@ -420,6 +424,33 @@ describe("facts quoted in scripts/seed/README.md prose", () => {
     const prose = readme.replace(/\s+/g, " ");
     expect(prose).toContain(squad);
     if (worker) expect(prose).toContain(`seat ${seat}`);
+  });
+
+  it("matches the reconciliation-exceptions table's seats and groups to the seed", async () => {
+    const documented = documentedExceptions();
+    expect(documented.length).toBeGreaterThan(0);
+    for (const e of documented) {
+      if (e.exceptionType === "hiring_gap") {
+        // Subject is the group ID; the group must have offer_accepted seats.
+        const g = await one<{ name: string; offers: string }>(
+          `select g.name, (select count(*) from app.seats s join app.squads q using (squad_id)
+                            where q.group_id = g.group_id and s.status = 'offer_accepted') offers
+             from app.groups g where g.group_id = $1`,
+          [Number(e.subjectId)],
+        );
+        expect(g.name, e.subjectId).toBe(e.groupName);
+        expect(Number(g.offers), e.subjectId).toBeGreaterThan(0);
+      } else {
+        // Subject is the worker, who holds the documented seat in the documented group.
+        const s = await one<{ worker_id: string | null; name: string }>(
+          `select s.worker_id, g.name from app.seats s join app.squads q using (squad_id)
+             join app.groups g using (group_id) where s.seat_id = $1`,
+          [e.seatId],
+        );
+        expect(s.worker_id, `seat ${e.seatId}`).toBe(e.subjectId);
+        expect(s.name, `seat ${e.seatId}`).toBe(e.groupName);
+      }
+    }
   });
 
   it("has the offer_accepted counts the future-hire prose cites", async () => {

@@ -49,6 +49,22 @@ export function documentedChanges(): { change: string; workerId: string; detail:
   }));
 }
 
+export function documentedExceptions(): {
+  exceptionType: string;
+  subjectId: string;
+  severity: string;
+  seatId: number | null;
+  groupName: string;
+}[] {
+  return tableRows("Reconciliation exceptions on the seed").map((c) => ({
+    exceptionType: c[0],
+    subjectId: c[1],
+    severity: c[2],
+    seatId: c[3] === "" ? null : Number(c[3]),
+    groupName: c[4],
+  }));
+}
+
 export function documentedFixtures(): Record<string, { key: string; value: string }> {
   return Object.fromEntries(
     tableRows("Named demo fixtures").map((c) => [

@@ -72,6 +72,9 @@ seat in `app.seats`:
 - `102033` (starts 11/24/2026) in Credit Decisioning, which has 2 `offer_accepted` seats (another
   gap).
 
+The other groups with `offer_accepted` seats have no future hire, so they show a gap too: all 8
+gaps are listed under "Reconciliation exceptions on the seed".
+
 They appear only in the 11-15 CSV. The seeded `workday.workers` is the 11-01 state, so it doesn't
 contain them, and the plausibility rule "hire date on or before the report date" holds for every
 seeded worker. In the 11-15 CSV that rule holds for everyone except these three.
@@ -158,6 +161,64 @@ changed by the report: these are what a later ingest and reconciliation have to 
 | aged_out       | 102006    | Termination_Date 10/11/2026, before the window start 10/17/2026                                                                                            |
 | aged_out       | 102007    | Termination_Date 10/15/2026, before the window start 10/17/2026                                                                                            |
 | missing        | 100878    | Worker_Status Active in the earlier report; dropped with no termination                                                                                    |
+
+## Reconciliation exceptions on the seed
+
+After the seed plus the 11-15 report (`pnpm db:seed`, then `pnpm workday:ingest
+data/workday/worker_report_2026-11-15.csv`, then `dbt build`), `analytics.rpt_reconciliation_exceptions`
+holds exactly these 38 rows and nothing else: 8 `terminated_seated`, 1 `seated_missing_from_report`,
+21 `on_leave_seated` and 8 `hiring_gap`. The seed has no `worker_type_mismatch` and no
+`missing_without_termination` (100878 is seated, so it gets only `seated_missing_from_report`).
+The dbt test `analytics/tests/assert_reconciliation_exceptions_match_seed_readme.sql` compares the
+mart with this list both ways, and `tests/unit/seed-readme-dbt.test.ts` checks that the test's list
+and this table agree. Subject is the worker ID, or the group ID for `hiring_gap`; Seat is the seat
+in `app.seats`, empty for a group.
+
+The hiring-gap rule flags every group whose `offer_accepted` seats outnumber its future-dated hires
+in the latest report. Only three groups have a future hire (see "Future-dated hires"), so six groups
+with offers and no future hire show a gap too. Groups with no `offer_accepted` seats (Accounts and
+Cards, Loan Origination, Cash Management) and Platform Engineering (1 offer, 1 future hire) don't.
+
+| Exception                  | Subject | Severity | Seat | Group                | Notes                                                                   |
+| -------------------------- | ------- | -------- | ---- | -------------------- | ----------------------------------------------------------------------- |
+| terminated_seated          | 100047  | error    | 33   | Digital Channels     | Terminated 11/10/2026 in the 11-15 report.                              |
+| terminated_seated          | 100052  | error    | 39   | Digital Channels     | Seeded terminated (10/28/2026); the `terminated-seated-worker` fixture. |
+| terminated_seated          | 100515  | error    | 550  | Customer Identity    | Seeded terminated (10/29/2026), inside both report windows.             |
+| terminated_seated          | 100540  | error    | 577  | Loan Origination     | Seeded terminated (10/30/2026), inside both report windows.             |
+| terminated_seated          | 100883  | error    | 960  | Loan Servicing       | Terminated 11/13/2026 in the 11-15 report.                              |
+| terminated_seated          | 101365  | error    | 1495 | Cash Management      | Terminated 11/03/2026 in the 11-15 report.                              |
+| terminated_seated          | 101441  | error    | 1578 | Cash Management      | Terminated 11/07/2026 in the 11-15 report.                              |
+| terminated_seated          | 101600  | error    | 1754 | Platform Engineering | Terminated 11/08/2026 in the 11-15 report.                              |
+| seated_missing_from_report | 100878  | error    | 955  | Loan Servicing       | Active on 11-01, missing from 11-15 with no termination, still seated.  |
+| on_leave_seated            | 100042  | info     | 28   | Digital Channels     | The `worker-on-leave` fixture.                                          |
+| on_leave_seated            | 100050  | info     | 36   | Digital Channels     | Seeded on leave.                                                        |
+| on_leave_seated            | 100082  | info     | 73   | Digital Channels     | Seeded on leave.                                                        |
+| on_leave_seated            | 100140  | info     | 135  | Digital Channels     | Seeded on leave.                                                        |
+| on_leave_seated            | 100246  | info     | 251  | Accounts and Cards   | Seeded on leave.                                                        |
+| on_leave_seated            | 100300  | info     | 310  | Accounts and Cards   | Seeded on leave.                                                        |
+| on_leave_seated            | 100363  | info     | 380  | Customer Identity    | Went on leave in the 11-15 report.                                      |
+| on_leave_seated            | 100518  | info     | 553  | Customer Identity    | Seeded on leave.                                                        |
+| on_leave_seated            | 100641  | info     | 689  | Loan Origination     | Seeded on leave.                                                        |
+| on_leave_seated            | 100680  | info     | 732  | Loan Origination     | Seeded on leave.                                                        |
+| on_leave_seated            | 100759  | info     | 820  | Credit Decisioning   | Seeded on leave.                                                        |
+| on_leave_seated            | 100895  | info     | 974  | Loan Servicing       | Seeded on leave.                                                        |
+| on_leave_seated            | 100950  | info     | 1035 | Loan Servicing       | Seeded on leave.                                                        |
+| on_leave_seated            | 100977  | info     | 1064 | Loan Servicing       | Seeded on leave.                                                        |
+| on_leave_seated            | 101205  | info     | 1318 | Treasury Operations  | Seeded on leave.                                                        |
+| on_leave_seated            | 101223  | info     | 1338 | Treasury Operations  | Seeded on leave.                                                        |
+| on_leave_seated            | 101380  | info     | 1511 | Cash Management      | Seeded on leave.                                                        |
+| on_leave_seated            | 101604  | info     | 1758 | Platform Engineering | Seeded on leave.                                                        |
+| on_leave_seated            | 101674  | info     | 1836 | Platform Engineering | Seeded on leave.                                                        |
+| on_leave_seated            | 101695  | info     | 1858 | Data and Analytics   | Seeded on leave.                                                        |
+| on_leave_seated            | 101874  | info     | 2057 | Security Engineering | Seeded on leave.                                                        |
+| hiring_gap                 | 1       | info     |      | Digital Channels     | 2 `offer_accepted` seats, 1 future-dated hire (`C-02031`).              |
+| hiring_gap                 | 3       | info     |      | Customer Identity    | 2 `offer_accepted` seats, no future-dated hire.                         |
+| hiring_gap                 | 5       | info     |      | Credit Decisioning   | 2 `offer_accepted` seats, 1 future-dated hire (`102033`).               |
+| hiring_gap                 | 6       | info     |      | Loan Servicing       | 2 `offer_accepted` seats, no future-dated hire.                         |
+| hiring_gap                 | 7       | info     |      | Payments Hub         | 1 `offer_accepted` seat, no future-dated hire.                          |
+| hiring_gap                 | 8       | info     |      | Treasury Operations  | 2 `offer_accepted` seats, no future-dated hire.                         |
+| hiring_gap                 | 11      | info     |      | Data and Analytics   | 2 `offer_accepted` seats, no future-dated hire.                         |
+| hiring_gap                 | 12      | info     |      | Security Engineering | 1 `offer_accepted` seat, no future-dated hire.                          |
 
 ## How the reset works
 
