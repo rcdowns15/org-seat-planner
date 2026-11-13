@@ -15,13 +15,14 @@ const ANALYTICS_PRESETS: PresetKey[] = [
 const IDS = { seatId: null, groupId: null };
 
 describe("analytics presets when the analytics schema is empty or missing", () => {
-  it("maps Postgres 'undefined table' and 'invalid schema' to NOT_BUILT", () => {
+  it('flags Postgres "undefined table" and "invalid schema" as missing', () => {
     expect(toFailure({ code: "42P01", message: 'relation "analytics.x" does not exist' })).toEqual({
       ok: false,
-      code: "NOT_BUILT",
+      code: "QUERY_ERROR",
+      missing: true,
       message: "Table or schema not found.",
     });
-    expect(toFailure({ code: "3F000" })).toMatchObject({ code: "NOT_BUILT" });
+    expect(toFailure({ code: "3F000" })).toMatchObject({ code: "QUERY_ERROR", missing: true });
   });
 
   it.each(ANALYTICS_PRESETS)(
@@ -50,7 +51,7 @@ describe("analytics presets when the analytics schema is empty or missing", () =
     const missing: QueryResult = toFailure({ code: "42P01" });
     const section = await runPreset("recent_changes", IDS, async () => missing);
     expect(section.empty).toBeNull();
-    expect(section.result).toMatchObject({ ok: false, code: "NOT_BUILT" });
+    expect(section.result).toMatchObject({ ok: false, code: "QUERY_ERROR", missing: true });
   });
 
   it("the three analytics presets are registered", () => {

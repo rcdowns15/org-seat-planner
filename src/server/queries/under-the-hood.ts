@@ -16,7 +16,9 @@ export type QueryResult =
   | { ok: true; columns: string[]; rows: string[][]; truncated: boolean }
   | {
       ok: false;
-      code: "READ_ONLY_VIOLATION" | "TIMEOUT" | "QUERY_ERROR" | "NOT_BUILT";
+      code: "READ_ONLY_VIOLATION" | "TIMEOUT" | "QUERY_ERROR";
+      // Set when Postgres says the table or schema does not exist (SQLSTATE 42P01 or 3F000).
+      missing?: true;
       message: string;
     };
 
@@ -45,7 +47,12 @@ export function toFailure(err: unknown, connected = true): Failure {
   // 42P01 undefined_table, 3F000 invalid_schema_name: the table or schema isn't there. For the
   // analytics presets that means dbt hasn't built yet; runPreset turns it into a friendly message.
   if (e.code === "42P01" || e.code === "3F000") {
-    return { ok: false, code: "NOT_BUILT", message: "Table or schema not found." };
+    return {
+      ok: false,
+      code: "QUERY_ERROR",
+      message: "Table or schema not found.",
+      missing: true,
+    };
   }
   if (e.code === "57014") {
     return { ok: false, code: "TIMEOUT", message: `Query stopped after ${STATEMENT_TIMEOUT}.` };
@@ -322,7 +329,7 @@ export async function runPreset(
   const result = await run(preset.sql, params);
   // An analytics preset whose schema or table is missing: say what to do, not "relation does not
   // exist".
-  if (!result.ok && result.code === "NOT_BUILT" && preset.notBuiltMessage) {
+  if (!result.ok && result.missing && preset.notBuiltMessage) {
     return { ...base, params, empty: preset.notBuiltMessage, result: null };
   }
   const empty = result.ok && result.rows.length === 0 ? preset.emptyMessage : null;
