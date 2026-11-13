@@ -1,7 +1,16 @@
+"use client";
+
 import type { BoardSquad } from "@/lib/board";
 import { SeatCard } from "./seat-card";
 
-export function SquadColumn({ squad }: { squad: BoardSquad }) {
+type Props = {
+  squad: BoardSquad;
+  editable: boolean;
+  canMoveTo: boolean;
+  onMoveTo: (seatId: number) => void;
+};
+
+export function SquadColumn({ squad, editable, canMoveTo, onMoveTo }: Props) {
   return (
     <section
       data-testid="squad-column"
@@ -16,7 +25,13 @@ export function SquadColumn({ squad }: { squad: BoardSquad }) {
       </header>
       <ul className="flex flex-col gap-2">
         {squad.seats.map((seat) => (
-          <SeatCard key={seat.seatId} seat={seat} />
+          <SeatCard
+            key={seat.seatId}
+            seat={seat}
+            editable={editable}
+            canMoveTo={canMoveTo}
+            onMoveTo={onMoveTo}
+          />
         ))}
       </ul>
     </section>

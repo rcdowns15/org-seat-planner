@@ -7,7 +7,12 @@ import type { SeatType } from "./seat-card";
 
 export type WorkerStatus = (typeof WORKER_STATUSES)[number];
 
-export type BoardGroupOption = { groupId: number; name: string; divisionName: string };
+export type BoardGroupOption = {
+  groupId: number;
+  name: string;
+  divisionId: number;
+  divisionName: string;
+};
 
 export type BoardSeat = {
   seatId: number;
@@ -49,4 +54,19 @@ export function parseGroupParam(value: string | string[] | undefined): number | 
   if (value === undefined) return null;
   if (typeof value !== "string" || !/^[1-9]\d{0,8}$/.test(value)) return "invalid";
   return Number(value);
+}
+
+// The group the board opens on when the URL has no ?group=: a group leader's own group, or the
+// first group of a division leader's division (`groups` is already ordered by division, group
+// name). Null means no leader or no match, and the caller falls back to the demo group.
+export function defaultGroupIdForLeader(
+  leader: { scopeType: string; divisionId: number | null; groupId: number | null } | null,
+  groups: BoardGroupOption[],
+): number | null {
+  if (!leader) return null;
+  if (leader.scopeType === "group") return leader.groupId;
+  if (leader.scopeType === "division") {
+    return groups.find((g) => g.divisionId === leader.divisionId)?.groupId ?? null;
+  }
+  return null;
 }

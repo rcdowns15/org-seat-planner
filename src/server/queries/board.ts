@@ -5,11 +5,12 @@ import type { SeatStatus } from "@/lib/seat-status";
 import type { Board, BoardGroupOption, BoardSquad, WorkerStatus } from "@/lib/board";
 import type { SeatType } from "@/lib/seat-card";
 
-// The group the board opens on when the URL has no ?group= (LR-02-04 changes this to the acting
-// leader's scope). Looked up by name, never by row position.
+// The group the board opens on when the URL has no ?group= and no leader is selected. With a
+// leader the page picks their scope's group first (defaultGroupIdForLeader). Looked up by name,
+// never by row position.
 export const DEFAULT_GROUP_NAME = "Digital Channels";
 
-type GroupRow = { group_id: number; name: string; division_name: string };
+type GroupRow = { group_id: number; name: string; division_id: number; division_name: string };
 type SeatRow = {
   squad_id: number;
   squad_name: string;
@@ -27,6 +28,7 @@ type SeatRow = {
 const toOption = (r: GroupRow): BoardGroupOption => ({
   groupId: r.group_id,
   name: r.name,
+  divisionId: r.division_id,
   divisionName: r.division_name,
 });
 
@@ -35,12 +37,7 @@ const toOption = (r: GroupRow): BoardGroupOption => ({
 export async function getBoard(groupId: number | null): Promise<Board | null> {
   const db = getDb();
 
-  const groupRows = await db.execute<GroupRow>(sql`
-    select g.group_id, g.name, d.name as division_name
-    from app.groups g
-    join app.divisions d on d.division_id = g.division_id
-    order by d.name, g.name`);
-  const groups = groupRows.rows.map(toOption);
+  const groups = await listGroups();
   const group =
     groupId === null
       ? groups.find((g) => g.name === DEFAULT_GROUP_NAME)
@@ -86,4 +83,14 @@ export async function getBoard(groupId: number | null): Promise<Board | null> {
     if (r.status === "filled") squad.filledCount += 1;
   }
   return { group, groups, squads: [...bySquad.values()] };
+}
+
+// All groups, ordered by division then group name (the order the board's group nav uses).
+export async function listGroups(): Promise<BoardGroupOption[]> {
+  const rows = await getDb().execute<GroupRow>(sql`
+    select g.group_id, g.name, d.division_id, d.name as division_name
+    from app.groups g
+    join app.divisions d on d.division_id = g.division_id
+    order by d.name, g.name`);
+  return rows.rows.map(toOption);
 }
