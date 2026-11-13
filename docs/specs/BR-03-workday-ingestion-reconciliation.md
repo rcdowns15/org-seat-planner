@@ -112,7 +112,7 @@ Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_sq
   - The `dim_people` description should say seated workers never seen in a report are absent.
   - The `is_latest_report` wording overstates what it means.
 
-### LR-03-04 · Refresh changes and reconciliation exceptions · status: in-progress (was stacked on #14; #14 merged, rebase onto main) · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
+### LR-03-04 · Refresh changes and reconciliation exceptions · status: in-progress (fix round 1 after Rob decision) · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
 `rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
 (hire, future-dated hire, termination, manager change, worker-type change, leave start/end, and
 `aged_out`: a terminated worker who drops off under the report's 30-day termination window, which is
@@ -131,6 +131,8 @@ D-029). Each row has a severity and a suggested action.
 - [ ] Singular test: the documented aged-out worker appears in `rpt_workday_changes` as `aged_out` and **not** in the exceptions; the documented missing-without-termination worker **does** appear
 - [ ] Every model has a description; grain tests on both reports
 Likely files: `analytics/models/intermediate/int_worker_report_versions.sql`, `analytics/models/marts/rpt_workday_changes.sql`, `analytics/models/marts/rpt_reconciliation_exceptions.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
+**Rob decision (2026-11-13, evening):** (1) keep the hiring-gap rule as written and list all 8 flagged groups in `scripts/seed/README.md` (README-only, checksum unchanged); (2) option (b): a seated worker missing from the report gets only `seated_missing_from_report`, not `missing_without_termination` (one problem, one row). The README lists every seeded exception, and `assert_reconciliation_exceptions_match_seed_readme` (both-way `EXCEPT`) enforces criterion 2.
+
 **Review 1 (2026-11-13, orchestrator; Opus build @ 9d0065e, dbt PASS=250): changes required, only on the open criterion.**
 - **P1 (needs Rob):** criterion 2 can't be tested because `scripts/seed/README.md` doesn't list the seeded exceptions. On the seed the mart has 39 rows: 8 `terminated_seated` (100515 and 100540 are not named), 21 `on_leave_seated`, 8 `hiring_gap` groups and 100878 twice.
   - **Hiring gap:** the rule as written flags 6 groups that have offers and 0 future hires, besides the README's 2. Orchestrator and reviewer recommend keeping the rule and listing all 8 (README-only change, checksum unchanged).
