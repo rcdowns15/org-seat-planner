@@ -8,7 +8,7 @@ Newest first. Navigator updates "Where we stand" at each check-in.
 - **In flight:**
   - LR-03-04 (Opus executor) on `lr/LR-03-04-exceptions`, built on the #14 branch. #14 is merged, so it rebases onto `main` and opens a normal PR (not stacked).
   - LR-02-05, LR-02-06, LR-02-08: ready to dispatch in parallel (check overlap in `move-dialog.tsx` / board components).
-- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034): LR-02-08 and LR-03-04 must both be merged; both are now unblocked.
+- **Blocked:** LR-03-04 waits on a Rob decision about the seeded exception list (see Waiting on Rob). Tripwire Sat 11/14 18:00 (D-034): LR-02-08 and LR-03-04 must both be merged; both are now unblocked.
 - **Waiting on Rob:**
   - Confirm `main` CI is green after the three merges (#15 merged last on top of #13; both touch `moves.ts`).
   - Add the D-038 project rule to `CLAUDE.md` (the navigator only edits `docs/`); the orchestrator brief's step 0 does it.
@@ -27,6 +27,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13 — LR-03-04 → `blocked`: Opus build verified (dbt PASS=250). Review 1 has one P1: the seed README doesn't list the seeded exceptions, so "exactly the seeded exceptions" can't be tested. Needs a Rob decision on the hiring-gap rule and on 100878; P3s recorded in the spec.
 - 2026-11-13 — LR-02-08 review 1: pass, no P1; 2 P2s (missing tests) + 3 P3s in fix round 1 (Sonnet, `lr/LR-02-08-fix1`); 2 seat-card P3s routed to LR-02-06 and 1 undo note to LR-02-07 as criteria.
 - 2026-11-13 — LR-02-08 built (Sonnet, `lr/LR-02-08-sql-panel` @ 73df902; orchestrator re-ran all checks: unit 93, db 141, e2e 19/19); in review. LR-02-05 → `in-progress` (Sonnet), stacked on 73df902.
 - 2026-11-13 — LR-02-08 → `in-progress` (Sonnet). Criteria (orchestrator, from the brief): LR-02-05 gains "Move to… hidden or disabled when the leader can edit no squad" (LR-02-04 P3) and a D-038 reviewer check; LR-02-06 gains a `seat_changes(seat_id)` index migration (LR-02-10 P3). Board LRs run in sequence (08 → 05 → 06) because they share `board-view.tsx`/`seat-card.tsx` and port 3000.

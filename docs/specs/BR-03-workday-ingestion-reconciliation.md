@@ -131,6 +131,18 @@ D-029). Each row has a severity and a suggested action.
 - [ ] Singular test: the documented aged-out worker appears in `rpt_workday_changes` as `aged_out` and **not** in the exceptions; the documented missing-without-termination worker **does** appear
 - [ ] Every model has a description; grain tests on both reports
 Likely files: `analytics/models/intermediate/int_worker_report_versions.sql`, `analytics/models/marts/rpt_workday_changes.sql`, `analytics/models/marts/rpt_reconciliation_exceptions.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
+**Review 1 (2026-11-13, orchestrator; Opus build @ 9d0065e, dbt PASS=250): changes required, only on the open criterion.**
+- **P1 (needs Rob):** criterion 2 can't be tested because `scripts/seed/README.md` doesn't list the seeded exceptions. On the seed the mart has 39 rows: 8 `terminated_seated` (100515 and 100540 are not named), 21 `on_leave_seated`, 8 `hiring_gap` groups and 100878 twice.
+  - **Hiring gap:** the rule as written flags 6 groups that have offers and 0 future hires, besides the README's 2. Orchestrator and reviewer recommend keeping the rule and listing all 8 (README-only change, checksum unchanged).
+  - **Fix round:** after the decision, update the README and add `assert_reconciliation_exceptions_match_seed_readme` (`VALUES` + `EXCEPT` both ways).
+- **P3 (needs Rob):** 100878 is both `seated_missing_from_report` and `missing_without_termination`. Option (a): keep both and list both. Option (b), reviewer leans this way: skip `missing_without_termination` when the worker is seated.
+- **P3s for the fix round:**
+  - The `missing` YAML description is wrong for a worker terminated inside the window.
+  - `seat_id` is described as "holds now", but it's the saved plan, including future-dated moves.
+  - Add a warn test for when the 11-15 report is absent (the seed-list tests can pass without checking anything).
+  - The terminated-seated test should filter on exception type.
+  - Consider `severity: warn` on the `cost_center_name` relationships test.
+  - Note: one change type per row (documented).
 
 ### LR-03-05 · `pnpm pipeline`, dbt on Neon, SQL panel presets · status: todo · depends: LR-03-04, LR-02-08, LR-01-09 · owner: agent · executor model: sonnet
 `pnpm pipeline [--report <file>]`: ingest the given (or latest) report → `uv run dbt build`, stopping
