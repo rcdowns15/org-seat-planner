@@ -3,16 +3,17 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-13 · orchestrator: PRs #13 (LR-02-10), #14 (LR-03-03), #15 (LR-02-04) open; LR-03-04 building (Opus, stacked on #14)
-- **Milestone:** M1 done. M2 (BR-02): 3 of 8 cut-line LRs done, 2 in review (LR-02-04, LR-02-10). M3 (BR-03): 3 of 6 done, LR-03-03 in review, LR-03-04 in progress. Cut line overall: 16 of 27 done, 3 in review.
+- **Last updated:** 2026-11-13 · #13 (LR-02-10), #14 (LR-03-03), #15 (LR-02-04) merged; write-back thin slice complete (navigator)
+- **Milestone:** M1 done. M2 (BR-02): 5 of 8 cut-line LRs done; LR-02-05, 06, 08 ready. M3 (BR-03): 4 of 6 done; LR-03-04 in progress. Cut line overall: 19 of 27 (70%).
 - **In flight:**
-  - PR #13 LR-02-10 (`lr/LR-02-10-effective-date-order`): reviewed, no P1.
-  - PR #14 LR-03-03 (`lr/LR-03-03-marts`): reviewed twice, no P1.
-  - PR #15 LR-02-04 (`lr/LR-02-04-drag-drop-move`): reviewed, no P1. Merges cleanly with #13 (both touch `moves.ts`, in different hunks).
-  - LR-03-04 (Opus executor) on `lr/LR-03-04-exceptions`, stacked on #14. Next it gets verified, reviewed and a PR saying "stacked on #14".
-- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034): LR-02-08 needs #15 merged; LR-03-04 needs #14 merged plus its own PR.
-- **Waiting on Rob:** review and merge #13, #14, #15 (merge #15 early: it unblocks LR-02-05, 06 and 08). Navigator: consider widening D-037 to every `seat_changes` writer (criteria already added to LR-02-05 and LR-02-07).
-- **Next:** LR-03-04 PR. Once #15 merges: LR-02-05, LR-02-06 and LR-02-08 in parallel (check file overlap: LR-02-05 and LR-02-08 may both touch `move-dialog.tsx` / board components).
+  - LR-03-04 (Opus executor) on `lr/LR-03-04-exceptions`, built on the #14 branch. #14 is merged, so it rebases onto `main` and opens a normal PR (not stacked).
+  - LR-02-05, LR-02-06, LR-02-08: ready to dispatch in parallel (check overlap in `move-dialog.tsx` / board components).
+- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034): LR-02-08 and LR-03-04 must both be merged; both are now unblocked.
+- **Waiting on Rob:**
+  - Confirm `main` CI is green after the three merges (#15 merged last on top of #13; both touch `moves.ts`).
+  - Add the D-038 project rule to `CLAUDE.md` (the navigator only edits `docs/`); the orchestrator brief's step 0 does it.
+  - Paste the next orchestrator brief.
+- **Next:** orchestrator finishes the LR-03-04 PR and dispatches LR-02-05, 06, 08 in parallel. LR-02-08 first priority (tripwire).
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -26,6 +27,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13: D-038 accepted. No `seat_changes` row may be dated earlier than the latest change on its seat or worker, for every writer. This widens D-037 part 1, which is now marked superseded. No timeline impact: the LR-02-05 and LR-02-07 criteria already implement it. The project rule is pending in `CLAUDE.md` (step 0 of the next brief).
+- 2026-11-13: LR-02-10 is done (PR #13 merged), as are LR-03-03 (PR #14 merged) and LR-02-04 (PR #15 merged). The write-back thin slice is complete. LR-02-05, LR-02-06 and LR-02-08 are now `ready`. LR-03-04 rebases onto `main` because its stack base merged. Cut line: 19 of 27 done.
 - 2026-11-13 — LR-02-04 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/15 (Sonnet, build + 1 fix round; review pass, 2 P2s and 2 P3s fixed, 1 P3 noted; e2e 14/14).
 - 2026-11-13 — LR-03-04 → `in-progress` (Opus), stacked on #14.
 - 2026-11-13 — LR-03-03 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/14 (Sonnet, build + 2 fix rounds; review 1 P1 + three P2s fixed; review 2 one P2 fixed, one P2 waived and routed to LR-02-05/LR-02-07; dbt build PASS=203).

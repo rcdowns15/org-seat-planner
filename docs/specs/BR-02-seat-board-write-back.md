@@ -79,7 +79,7 @@ Record the SQL statements the transaction ran (for LR-02-08) in a small server-s
 - [ ] Every query uses bound parameters (reviewer check); the seat update SQL includes `AND version = $n`
 Likely files: `src/server/services/moves.ts`, `src/server/actions/move.ts`, `src/lib/schemas/move.ts`, `src/lib/results.ts`, `src/server/sql-log.ts`, `tests/db/moves.test.ts`, `tests/unit/move-schema.test.ts`.
 
-### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/13) · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
+### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: done (https://github.com/rcdowns15/org-seat-planner/pull/13) · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
 A missing validation from LR-02-03, not new scope. `moveWorker` rejects a move whose `effectiveDate`
 is earlier than the latest `effective_date` in `app.seat_changes` for the worker, the source seat or
 the target seat, with a new failure code `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` (checked with the
@@ -91,7 +91,7 @@ one seat on every date" true in the data, so dbt's seat history (D-036) can't do
 - [ ] The LR-02-04 dialog shows this code's message (if LR-02-04 has merged; otherwise note it for LR-02-04)
 Likely files: `src/server/services/moves.ts`, `src/lib/results.ts`, `tests/db/moves.test.ts`.
 
-### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/15) · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
+### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: done (https://github.com/rcdowns15/org-seat-planner/pull/15) · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
 With dnd-kit, a filled card can be dragged onto an `open` or `backfill` card the leader can edit.
 Dropping opens a dialog: who moves, from where, to where, an effective-date picker (default today),
 Save and Cancel. Save calls the move action; a failure shows its message in the dialog and the
@@ -104,7 +104,7 @@ filled card also has a "Move to…" menu (keyboard accessible) that opens the sa
 - [ ] The dialog shows the result's `message` for any failure code, with no per-code text in the UI, so LR-02-10's `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` shows without a UI change (reviewer check; added 2026-11-13 from the LR-02-10 review)
 Likely files: `src/components/board/*`, `src/components/move-dialog.tsx`, `src/app/board/page.tsx`, `tests/e2e/move.spec.ts`.
 
-### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: ready · depends: LR-02-04 · owner: agent · executor model: sonnet
 A `CONFLICT` result shows "This seat changed since you loaded it" with a Refresh button that
 reloads the board and keeps the dialog's selection when it's still valid. A "Simulate another
 leader's edit" button (shown only when `DEMO_MODE=true`) lets you pick a seat on screen. The server
@@ -116,7 +116,7 @@ seeded "Another leader") so the audit trail stays honest.
 - [ ] The `demo_touch` row's `effective_date` is the later of today and the latest `effective_date` already on that seat, so dbt's as-of seat state (D-036) stays correct after a future-dated move (DB test: move effective +10 days, then simulate on that seat; the touch row carries the move's date). Added 2026-11-13 from the LR-03-03 review (D-037 ordering applies to every `seat_changes` writer)
 Likely files: `src/server/actions/demo.ts`, `src/server/demo-mode.ts`, `src/components/move-dialog.tsx`, `src/components/demo-toolbar.tsx`, `tests/e2e/conflict.spec.ts`, `tests/db/demo.test.ts`.
 
-### LR-02-06 · Seat history panel · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-06 · Seat history panel · status: ready · depends: LR-02-04 · owner: agent · executor model: sonnet
 Clicking a seat card opens a side panel with that seat's `seat_changes`, newest first: what changed,
 who did it, when it was saved, the effective date.
 - [ ] DB test: history query returns rows newest first and only for that seat
@@ -134,7 +134,7 @@ two reversing rows with `reverses_change_id`. Nothing is updated in or deleted f
 - [ ] The reversing rows' `effective_date` is no earlier than the latest `effective_date` already on either seat or the worker (the reversed move's date if it's still pending), so dbt's as-of seat state (D-036) stays correct (DB test). Added 2026-11-13 from the LR-03-03 review
 Likely files: `src/server/services/undo.ts`, `src/server/actions/undo.ts`, `src/components/seat-history-panel.tsx`, `tests/db/undo.test.ts`, `tests/e2e/undo.spec.ts`.
 
-### LR-02-08 · "Under the hood" read-only SQL panel · status: todo · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-08 · "Under the hood" read-only SQL panel · status: ready · depends: LR-02-04 · owner: agent · executor model: sonnet
 A collapsible panel (and a `/sql` page) that makes the write-back visible. **Read-only, preset
 queries only** (D-026). Each query shows its SQL text and its result table:
 - the selected seat's row, including `version`

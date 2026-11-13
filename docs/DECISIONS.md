@@ -271,7 +271,7 @@ the history, so using it costs one intermediate model, and it shows why the audi
 **Alternatives:** keep live counts and limit `squad_not_over_plan` to the latest report (faster,
 but publishes known-wrong history).
 
-### D-037 · 2026-11-13 · accepted (Rob, 2026-11-13) · The move service rejects out-of-order effective dates (LR-02-10); stale versions are checked right after permission
+### D-037 · 2026-11-13 · accepted (Rob, 2026-11-13); part (1) superseded by D-038 (widened to every writer) · The move service rejects out-of-order effective dates (LR-02-10); stale versions are checked right after permission
 **Decision:** (1) `moveWorker` rejects a move whose effective date is earlier than the latest
 pending change on the worker, the source seat or the target seat
 (`EFFECTIVE_DATE_BEFORE_PENDING_CHANGE`). It's built as LR-02-10, split from LR-02-03 so #11 can
@@ -287,3 +287,19 @@ error.
 **Alternatives:** (1) order by save time in dbt with no server rule (the invariant holds only in
 analytics); fold the rule into #11 (delays LR-02-04 and LR-02-08 toward the tripwire). (2) keep
 `CONFLICT` last (domain checks would validate rows that may already have changed).
+
+### D-038 · 2026-11-13 · accepted (Rob, 2026-11-13) · No `seat_changes` row may be dated earlier than the latest change on its seat or worker (widens D-037 part 1)
+**Decision:** every code path that inserts into `app.seat_changes` (the move service, LR-02-05's
+"simulate another leader's edit", LR-02-07's undo, and any future writer) rejects or dates the row
+so that its `effective_date` is never earlier than the latest `effective_date` already recorded for
+the same seat or worker. An equal date is allowed. It becomes a project rule the reviewer checks on
+every little rock. The criteria the orchestrator added to LR-02-05 and LR-02-07 implement it, and
+LR-02-10's `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` stays the move service's code.
+**Why:** dbt rebuilds seat state as of each report date (D-036) and ordering by
+`(effective_date, change_id)` is only correct if no writer backdates. The LR-03-03 review 2 found
+that a likely demo sequence (move someone, then simulate an edit on that seat) would break the
+as-of seat state and `no_double_seating`. One rule for all writers beats per-feature criteria
+that a new writer could miss.
+**Alternatives:** keep the criteria per little rock with no rule (a future writer could miss it);
+order by save time in dbt (the invariant would hold only in analytics, see D-037).
+**Timeline impact:** none. No new little rock, and the criteria already exist.

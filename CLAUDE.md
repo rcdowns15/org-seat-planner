@@ -135,6 +135,7 @@ one, and cite the decision ID. Domain edge cases worth testing also go here.
 - **Every mutation is validated server-side**: a Zod schema plus a permission check of the acting leader against every squad the mutation touches (D-005, D-013).
 - **Every seat update uses the optimistic-lock version check** and fails with `CONFLICT` on a stale version (D-011).
 - **`app.seat_changes` is append-only.** No `UPDATE` or `DELETE` in code; a database trigger and grants enforce it too. Undo is a reversing insert (D-010).
+- **No backdated audit rows.** Every insert into `app.seat_changes` (moves, simulated edits, undo, any future writer) has an `effective_date` no earlier than the latest one already recorded for the same seat or worker; equal is allowed. Moves fail with `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` (D-037, D-038).
 - **The app never writes `workday` tables.** Only `scripts/ingest/` and `scripts/seed/` write them. Nothing under `src/` issues `INSERT`/`UPDATE`/`DELETE` against `workday`; from BR-07 on, the app's database role can't (D-015).
 - **Ingestion validates the whole file before loading anything**, loads raw rows unchanged, and is idempotent by file hash (D-028). Cleaning happens in dbt staging, not in the loader.
 - **Demo-only actions** (simulate another leader's edit, simulate Workday refresh, reset demo) sit behind `DEMO_MODE=true`, checked on the server, and return 404 otherwise (D-023).
