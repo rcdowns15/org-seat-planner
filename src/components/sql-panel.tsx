@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { PanelSection, QueryResult, UnderTheHood } from "@/server/queries/under-the-hood";
 import type { SaveLogEntry } from "@/server/sql-log";
 
@@ -111,7 +112,16 @@ function LastSave({ save }: { save: SaveLogEntry | null }) {
   );
 }
 
-export function SqlPanelBody({ data }: { data: UnderTheHood }) {
+// `analytics` adds the three dbt-mart presets (LR-03-05). They are on /sql only: rendering their
+// tables (hundreds of rows) inside the board page made the board hydrate slowly enough that early
+// clicks were lost in the e2e specs.
+export function SqlPanelBody({
+  data,
+  analytics = true,
+}: {
+  data: UnderTheHood;
+  analytics?: boolean;
+}) {
   const bySection = (key: string) => data.sections.find((s) => s.key === key)!;
   return (
     <div>
@@ -121,9 +131,13 @@ export function SqlPanelBody({ data }: { data: UnderTheHood }) {
       <Section section={bySection("worker")} />
       <Section section={bySection("recent_changes")} />
       <Section section={bySection("plan_gaps")} />
-      <Section section={bySection("reconciliation_exceptions")} />
-      <Section section={bySection("workday_changes")} />
-      <Section section={bySection("squad_headcount_vs_plan")} />
+      {analytics ? (
+        <>
+          <Section section={bySection("reconciliation_exceptions")} />
+          <Section section={bySection("workday_changes")} />
+          <Section section={bySection("squad_headcount_vs_plan")} />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -135,7 +149,14 @@ export function SqlPanel({ data }: { data: UnderTheHood }) {
       <summary className="cursor-pointer text-sm font-semibold">
         Under the hood: the SQL behind this board (read-only)
       </summary>
-      <SqlPanelBody data={data} />
+      <SqlPanelBody data={data} analytics={false} />
+      <p className="text-muted-foreground mt-3 text-xs">
+        The reconciliation, Workday-change and headcount-vs-plan presets (dbt marts) are on the{" "}
+        <Link href="/sql" className="underline">
+          full SQL page
+        </Link>
+        .
+      </p>
     </details>
   );
 }
