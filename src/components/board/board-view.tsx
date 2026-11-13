@@ -47,6 +47,8 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
   // sends. The live `squads` prop can be newer, e.g. after another save revalidated the page.
   // `refreshing` stays true from a Refresh click until a new `squads` arrives.
   const [loaded, setLoaded] = useState({ squads, refreshing: false });
+  // A short status line after a refresh cleared the chosen target or closed the dialog.
+  const [notice, setNotice] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -75,15 +77,24 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
         dialog.toSeatId === null ? undefined : allSeats.find((s) => s.seatId === dialog.toSeatId);
       if (!fromNow || fromNow.status !== "filled" || fromNow.workerId !== dialog.workerId) {
         setDialog(null); // the worker is no longer in that seat: nothing left to move
+        setNotice("That worker is no longer in that seat, so the move was closed.");
       } else if (toNow && toNow.status !== "open" && toNow.status !== "backfill") {
         setDialog({ ...dialog, toSeatId: null }); // the target is taken: pick again
+        setNotice("That seat was taken; pick another.");
       }
     }
   }
 
   function openDialog(next: DialogState) {
     setLoaded({ squads, refreshing: false });
+    setNotice(null);
     setDialog(next);
+  }
+
+  function closeDialog() {
+    setLoaded((l) => ({ ...l, refreshing: false }));
+    setNotice(null);
+    setDialog(null);
   }
 
   function refresh() {
@@ -122,6 +133,11 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
+      {notice && !dialog ? (
+        <p role="status" data-testid="board-notice" className="mt-4 text-sm font-medium">
+          {notice}
+        </p>
+      ) : null}
       <div data-testid="board" className="mt-6 flex gap-4 overflow-x-auto pb-4">
         {squads.map((squad) => (
           <SquadColumn
@@ -140,8 +156,9 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
       </div>
       {dialog && from ? (
         <MoveDialog
-          // A fresh dialog (date, error, pick) for every move.
-          key={`${dialog.fromSeatId}-${dialog.toSeatId}`}
+          // A fresh dialog (date, error, pick) for every moved worker's seat. Not keyed on the
+          // target, so a refresh that clears the target keeps the chosen date.
+          key={dialog.fromSeatId}
           from={from}
           to={to}
           targets={targets.filter((t) => t.seat.seatType === from.seat.seatType)}
@@ -149,11 +166,12 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
           loadedVersions={loadedVersions}
           onRefresh={refresh}
           refreshing={loaded.refreshing}
+          notice={notice}
           simulate={simulate}
-          onClose={() => setDialog(null)}
+          onClose={closeDialog}
           onMoved={() => {
             // The save action revalidates /board, so the board refreshes itself.
-            setDialog(null);
+            closeDialog();
           }}
         />
       ) : null}

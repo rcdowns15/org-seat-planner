@@ -114,7 +114,8 @@ export async function simulateAnotherLeaderEdit(
         toWorkerId: seat.workerId,
         actorLeaderId: other.leaderId,
         effectiveDate,
-        note: "Simulated edit by another leader (demo)",
+        // The recorded actor is the seeded "Another leader"; the note says who really ran it.
+        note: `Simulated edit by another leader (demo), run by leader ${leader.leaderId}`,
       });
 
       return {

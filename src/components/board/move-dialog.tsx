@@ -34,6 +34,8 @@ type Props = {
   // Reloads the board and the loaded versions; `refreshing` is true until the new board arrives.
   onRefresh: () => void;
   refreshing: boolean;
+  // Set when a refresh cleared the chosen target (it was taken): shown as a status line.
+  notice: string | null;
   // Set only when DEMO_MODE=true: the "simulate another leader's edit" server action.
   simulate?: (input: unknown) => Promise<SimulateEditResult>;
   onClose: () => void;
@@ -53,6 +55,7 @@ export function MoveDialog({
   loadedVersions,
   onRefresh,
   refreshing,
+  notice,
   simulate,
   onClose,
   onMoved,
@@ -144,6 +147,12 @@ export function MoveDialog({
           <SimulateEditButton seatId={target.seat.seatId} simulate={simulate} idSuffix="dialog" />
         ) : null}
 
+        {notice && !error ? (
+          <p role="status" data-testid="move-notice" className="text-sm font-medium">
+            {notice}
+          </p>
+        ) : null}
+
         {error && (
           <div className="flex flex-col items-start gap-2">
             <p
@@ -151,7 +160,7 @@ export function MoveDialog({
               data-testid="move-error"
               className="text-destructive text-sm font-medium"
             >
-              {error.code === "CONFLICT" ? "This seat changed since you loaded it." : error.message}
+              {error.message}
             </p>
             {error.code === "CONFLICT" ? (
               <Button

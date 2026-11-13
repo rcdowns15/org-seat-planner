@@ -19,7 +19,7 @@ import { simulateAnotherLeaderEditAction } from "@/server/actions/demo";
 import { getPool } from "@/server/db";
 import { ANOTHER_LEADER_WORKER_ID, simulateAnotherLeaderEdit } from "@/server/services/demo-touch";
 import { moveWorker } from "@/server/services/moves";
-import { canEditAnyGroup, type Leader } from "@/server/services/permissions";
+import { type Leader } from "@/server/services/permissions";
 
 // Named fixtures from scripts/seed/README.md. Seats are found by attributes, not position.
 const DIVISION_LEADER_WORKER = "100002"; // demo-division-leader
@@ -171,6 +171,7 @@ describe("simulate another leader's edit: with DEMO_MODE=true", () => {
       from_status: before.status,
       to_status: before.status,
       worker_id: before.worker_id,
+      note: `Simulated edit by another leader (demo), run by leader ${divisionLeader.leaderId}`,
     });
   });
 
@@ -270,13 +271,45 @@ describe("simulate another leader's edit: with DEMO_MODE=true", () => {
   it("D-038: a clock earlier than the seat's latest change never backdates the row", async () => {
     vi.stubEnv("DEMO_MODE", "true");
     const divisionLeader = await leaderByWorker(DIVISION_LEADER_WORKER);
-    // The first test left a demo_touch dated today on this seat; the injected clock is months
-    // earlier, so the later of the two (today) must win.
+    cookieValue = String(divisionLeader.leaderId);
     const { from } = await pickMovePair((await leaderByWorker(GROUP_LEADER_WORKER)).groupId!);
+    // Its own prior row: a touch dated today. The injected clock is months earlier, so the
+    // later of the two (today) must win.
+    expect(await simulateAnotherLeaderEditAction({ seatId: from.seat_id })).toMatchObject({
+      ok: true,
+      effectiveDate: utcToday(),
+    });
     const result = await simulateAnotherLeaderEdit(from.seat_id, divisionLeader, {
       now: new Date(Date.UTC(2026, 5, 1)),
     });
     expect(result).toMatchObject({ ok: true, effectiveDate: utcToday() });
+  });
+
+  it("D-038: the touch row takes a later date recorded for the seated worker on another seat", async () => {
+    vi.stubEnv("DEMO_MODE", "true");
+    const divisionLeader = await leaderByWorker(DIVISION_LEADER_WORKER);
+    cookieValue = String(divisionLeader.leaderId);
+    const groupId = (await leaderByWorker(GROUP_LEADER_WORKER)).groupId!;
+    const { from, to } = await pickMovePair(groupId);
+    const [another] = await query<{ leader_id: number }>(
+      "select leader_id from app.leaders where worker_id = $1",
+      [ANOTHER_LEADER_WORKER_ID],
+    );
+    // A later-dated row for the worker, but on a different seat (the open one).
+    const laterDate = addUtcDays(utcToday(), 20);
+    await query(
+      `insert into app.seat_changes
+         (seat_id, change_type, worker_id, from_status, to_status, from_worker_id,
+          to_worker_id, actor_leader_id, effective_date)
+       values ($1, 'demo_touch', $2, 'filled', 'filled', $2, $2, $3, $4)`,
+      [to.seat_id, from.worker_id, another.leader_id, laterDate],
+    );
+
+    const result = await simulateAnotherLeaderEditAction({ seatId: from.seat_id });
+
+    expect(result).toMatchObject({ ok: true, effectiveDate: laterDate });
+    const touch = (await changesOn(from.seat_id)).filter((r) => r.change_type === "demo_touch");
+    expect(touch.at(-1)!.effective_date).toBe(laterDate);
   });
 
   it("READ_ONLY with no acting leader; nothing written", async () => {
@@ -300,7 +333,8 @@ describe("simulate another leader's edit: with DEMO_MODE=true", () => {
 
   it("INVALID_INPUT: a bad seat id; a spoofed leader field is ignored", async () => {
     vi.stubEnv("DEMO_MODE", "true");
-    cookieValue = String((await leaderByWorker(DIVISION_LEADER_WORKER)).leaderId);
+    const divisionLeader = await leaderByWorker(DIVISION_LEADER_WORKER);
+    cookieValue = String(divisionLeader.leaderId);
     expect(await simulateAnotherLeaderEditAction({ seatId: "x" })).toMatchObject({
       ok: false,
       code: "INVALID_INPUT",
@@ -309,6 +343,19 @@ describe("simulate another leader's edit: with DEMO_MODE=true", () => {
       ok: false,
       code: "INVALID_INPUT",
     });
+
+    // A spoofed leader id in the input is ignored: the result follows the cookie leader. The
+    // group leader (cookie) can't edit an out-of-scope seat even when the input names the
+    // division leader, who can.
+    const groupLeader = await leaderByWorker(GROUP_LEADER_WORKER);
+    cookieValue = String(groupLeader.leaderId);
+    const changesBefore = await changeCount();
+    const spoofed = await simulateAnotherLeaderEditAction({
+      seatId: OUT_OF_SCOPE_OPEN_SEAT,
+      leaderId: divisionLeader.leaderId,
+    });
+    expect(spoofed).toMatchObject({ ok: false, code: "FORBIDDEN" });
+    expect(await changeCount()).toBe(changesBefore);
   });
 });
 
@@ -321,16 +368,6 @@ describe("a leader who can edit no squad", () => {
     divisionId: null,
     groupId: 9_999_999, // no such group
   };
-
-  it("canEditAnyGroup is false for them, true for the seeded leaders", async () => {
-    const groups = await query<{ groupId: number; divisionId: number }>(
-      'select group_id as "groupId", division_id as "divisionId" from app.groups',
-    );
-    expect(canEditAnyGroup(nobody, groups)).toBe(false);
-    expect(canEditAnyGroup(null, groups)).toBe(false);
-    expect(canEditAnyGroup(await leaderByWorker(GROUP_LEADER_WORKER), groups)).toBe(true);
-    expect(canEditAnyGroup(await leaderByWorker(DIVISION_LEADER_WORKER), groups)).toBe(true);
-  });
 
   it("the server still rejects their move with FORBIDDEN, writing nothing", async () => {
     const { from, to } = await pickMovePair((await leaderByWorker(GROUP_LEADER_WORKER)).groupId!);

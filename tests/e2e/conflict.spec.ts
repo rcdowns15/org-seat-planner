@@ -122,8 +122,8 @@ test("simulate another leader's edit on the target seat: Save conflicts, Refresh
 
   // Save now loses the optimistic lock.
   await dialog.getByRole("button", { name: "Save" }).click();
-  await expect(dialog.getByTestId("move-error")).toHaveText(
-    "This seat changed since you loaded it.",
+  await expect(dialog.getByTestId("move-error")).toContainText(
+    "This seat changed since you loaded it",
   );
 
   // Refresh reloads the board and keeps the dialog's selection (the target is still open).
