@@ -5,7 +5,9 @@
 --
 -- Worker checks on Workday attributes (status, type) use workers who are in the latest report.
 -- A seated worker who isn't in it gets `seated_missing_from_report` instead, whatever their last
--- known status was (even a terminated worker who aged out of the report).
+-- known status was (even a terminated worker who aged out of the report). That is the only row a
+-- seated missing worker gets: `missing_without_termination` is for unseated workers, so one
+-- problem is one row (Rob's decision on LR-03-04, option b).
 
 with latest as (
 
@@ -68,6 +70,7 @@ seated_missing as (
 
 ),
 
+-- Unseated workers only: a seated worker who drops off is already `seated_missing_from_report`.
 missing_without_termination as (
 
     select
@@ -75,18 +78,22 @@ missing_without_termination as (
         'warning' as severity,
         versions.worker_id as subject_id,
         versions.worker_id,
-        seats.seat_id,
-        seats.squad_id,
+        null::integer as seat_id,
+        null::integer as squad_id,
         'In the previous report as ' || versions.previous_worker_status
             || ', missing from the latest report with no termination.' as detail,
         'Ask the HRIS team why the worker dropped from the report without a termination.'
             as suggested_action
     from {{ ref('int_worker_report_versions') }} as versions
     inner join latest on latest.report_date = versions.report_date
-    left join {{ ref('stg_app__seats') }} as seats on seats.worker_id = versions.worker_id
     where versions.is_in_previous_report
       and not versions.is_in_report
       and versions.previous_worker_status in ('active', 'leave')
+      and not exists (
+          select 1
+          from seated
+          where seated.worker_id = versions.worker_id
+      )
 
 ),
 

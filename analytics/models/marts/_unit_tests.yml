@@ -125,7 +125,9 @@ unit_tests:
       One case per exception type, including the two the seed doesn't produce: a worker type that
       doesn't match the seat type, and a seated worker who is in no report at all. Also checks
       what is not an exception: a matching seated worker, a terminated worker who dropped off
-      unseated, and a group whose future hires cover its offers.
+      unseated, and a group whose future hires cover its offers. A seated worker who drops off
+      with no termination (DROP, like the seed's 100878) gets only `seated_missing_from_report`,
+      not also `missing_without_termination` (option b).
     model: rpt_reconciliation_exceptions
     given:
       - input: ref('stg_workday__worker_report')
@@ -155,6 +157,7 @@ unit_tests:
           - { seat_id: 3, squad_id: 1, seat_type: employee, seat_status: filled, worker_id: GHOST }
           - { seat_id: 4, squad_id: 1, seat_type: employee, seat_status: filled, worker_id: TERM }
           - { seat_id: 5, squad_id: 2, seat_type: employee, seat_status: filled, worker_id: LEAVE }
+          - { seat_id: 9, squad_id: 2, seat_type: employee, seat_status: filled, worker_id: DROP }
           - {
               seat_id: 6,
               squad_id: 1,
@@ -208,10 +211,23 @@ unit_tests:
               worker_status: active,
               worker_type: employee,
             }
+          - {
+              worker_id: DROP,
+              is_in_latest_report: false,
+              worker_status: active,
+              worker_type: employee,
+            }
       - input: ref('int_worker_report_versions')
         rows:
           - {
               worker_id: GONE,
+              report_date: "2026-11-15",
+              is_in_report: false,
+              is_in_previous_report: true,
+              previous_worker_status: active,
+            }
+          - {
+              worker_id: DROP,
               report_date: "2026-11-15",
               is_in_report: false,
               is_in_previous_report: true,
@@ -247,6 +263,13 @@ unit_tests:
             severity: error,
             seat_id: 3,
             group_id: 10,
+          }
+        - {
+            exception_type: seated_missing_from_report,
+            subject_id: DROP,
+            severity: error,
+            seat_id: 9,
+            group_id: 20,
           }
         - {
             exception_type: terminated_seated,

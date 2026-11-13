@@ -2,8 +2,10 @@
 -- 2026-11-15 report:
 --   * the aged-out workers 102005, 102006 and 102007 (terminated before the 11-15 window) are
 --     `aged_out` in rpt_workday_changes and are NOT in rpt_reconciliation_exceptions;
---   * the missing worker 100878 (Active on 11-01, dropped with no termination) is `missing` in
---     rpt_workday_changes and IS in rpt_reconciliation_exceptions as `missing_without_termination`.
+--   * the missing worker 100878 (Active on 11-01, dropped with no termination, still seated) is
+--     `missing` in rpt_workday_changes and IS in rpt_reconciliation_exceptions, once, as
+--     `seated_missing_from_report` (a seated worker doesn't also get
+--     `missing_without_termination`: Rob's decision on LR-03-04, option b).
 -- Returns one row per broken expectation. Checks only once the 11-15 report is ingested.
 
 with report_loaded as (
@@ -58,14 +60,23 @@ problems as (
 
     union all
 
-    select '100878' as worker_id, 'missing worker is not a missing_without_termination exception'
+    select '100878' as worker_id, 'missing worker is not a seated_missing_from_report exception'
         as problem
     where not exists (
         select 1
         from {{ ref('rpt_reconciliation_exceptions') }} as exceptions
         where exceptions.worker_id = '100878'
-          and exceptions.exception_type = 'missing_without_termination'
+          and exceptions.exception_type = 'seated_missing_from_report'
     )
+
+    union all
+
+    select '100878' as worker_id, 'missing worker has more than one exception row' as problem
+    where (
+        select count(*)
+        from {{ ref('rpt_reconciliation_exceptions') }} as exceptions
+        where exceptions.worker_id = '100878'
+    ) <> 1
 
 )
 

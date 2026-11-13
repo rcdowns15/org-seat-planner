@@ -180,8 +180,11 @@ models:
       `termination`, `worker_type_change`, `leave_start`, `leave_end`, `status_change` (any other
       status move, such as a rehire), `manager_change`, `aged_out` (a terminated worker who
       dropped off because their termination date is before the report's termination window; not
-      an exception) and `missing` (dropped off with no termination on record; an exception in
-      `rpt_reconciliation_exceptions`). The termination window is the report date minus 29 days
+      an exception) and `missing` (dropped off although the window says they should still be in
+      the report: either no termination on record, or terminated with a date inside this
+      report's window). A `missing` worker is an exception in `rpt_reconciliation_exceptions`
+      when they hold a seat (`seated_missing_from_report`) or were active or on leave in the
+      previous report (`missing_without_termination`). The termination window is the report date minus 29 days
       through the report date (`workday_termination_window_days` = 30), the rule the mock reports
       follow. A row has one change type, the first that applies in that order; the `previous_*`
       and current columns show every attribute that moved.
@@ -265,8 +268,9 @@ models:
       shows), so a fix a leader saves clears the exception on the next build. Exception types:
       `terminated_seated` (error: in the latest report as terminated, still holds a seat);
       `seated_missing_from_report` (error: holds a seat but is not in the latest report, even if
-      they aged out); `missing_without_termination` (warning: in the previous report as active or
-      on leave, missing now with no termination); `worker_type_mismatch` (error: worker type
+      they aged out); `missing_without_termination` (warning: holds no seat, was in the previous
+      report as active or on leave, and is missing now with no termination; a seated worker who
+      drops off gets only `seated_missing_from_report`, so one problem is one row); `worker_type_mismatch` (error: worker type
       differs from seat type); `on_leave_seated` (info: on leave and holds a seat, which is
       allowed); `hiring_gap` (info: a group's `offer_accepted` seats outnumber its future-dated
       hires in the latest report, matched by cost center name because seats aren't linked to
@@ -315,7 +319,10 @@ models:
       - name: worker_id
         description: The worker; null for `hiring_gap`.
       - name: seat_id
-        description: The seat the worker holds now; null if none or for `hiring_gap`.
+        description: >
+          The worker's seat in the saved plan (`app.seats` as saved now, which includes moves
+          saved with a future effective date, so it can differ from the seat held today); null
+          for `hiring_gap` and `missing_without_termination`.
       - name: squad_id
         description: That seat's squad.
         data_tests:
@@ -324,7 +331,7 @@ models:
                 to: ref('dim_squads')
                 field: squad_id
       - name: group_id
-        description: The seat's group, or the group for `hiring_gap`; null for an unseated worker.
+        description: The seat's group, or the group for `hiring_gap`; null when there is no seat.
       - name: detail
         description: What was found, in a sentence.
         data_tests: [not_null]
