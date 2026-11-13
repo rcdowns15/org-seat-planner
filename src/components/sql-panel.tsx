@@ -121,6 +121,9 @@ export function SqlPanelBody({ data }: { data: UnderTheHood }) {
       <Section section={bySection("worker")} />
       <Section section={bySection("recent_changes")} />
       <Section section={bySection("plan_gaps")} />
+      <Section section={bySection("reconciliation_exceptions")} />
+      <Section section={bySection("workday_changes")} />
+      <Section section={bySection("squad_headcount_vs_plan")} />
     </div>
   );
 }

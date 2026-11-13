@@ -18,7 +18,9 @@
     "db:seed": "tsx scripts/seed/index.ts",
     "db:seed:check": "tsx scripts/seed/index.ts --check",
     "workday:ingest": "tsx scripts/ingest/index.ts",
-    "docs:check": "tsx scripts/docs-check.ts"
+    "docs:check": "tsx scripts/docs-check.ts",
+    "workday:reports": "tsx scripts/write-reports.ts",
+    "pipeline": "tsx scripts/pipeline.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

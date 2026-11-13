@@ -14,7 +14,11 @@ export const STATEMENT_TIMEOUT = "2s";
 
 export type QueryResult =
   | { ok: true; columns: string[]; rows: string[][]; truncated: boolean }
-  | { ok: false; code: "READ_ONLY_VIOLATION" | "TIMEOUT" | "QUERY_ERROR"; message: string };
+  | {
+      ok: false;
+      code: "READ_ONLY_VIOLATION" | "TIMEOUT" | "QUERY_ERROR" | "NOT_BUILT";
+      message: string;
+    };
 
 // Shows a cell as text: dates as ISO strings, null as an empty cell.
 function cell(value: unknown): string {
@@ -27,7 +31,8 @@ function cell(value: unknown): string {
 type Runner = (text: string, values: unknown[]) => Promise<QueryResult>;
 type Failure = Extract<QueryResult, { ok: false }>;
 
-function toFailure(err: unknown, connected = true): Failure {
+// Exported for the unit tests only.
+export function toFailure(err: unknown, connected = true): Failure {
   if (!connected) {
     // Driver messages can carry hosts or user names, so keep them out of the UI; log server-side.
     console.error("Under the hood: could not get a database connection:", err);
@@ -36,6 +41,11 @@ function toFailure(err: unknown, connected = true): Failure {
   const e = err as { code?: string; message?: string };
   if (e.code === "25006") {
     return { ok: false, code: "READ_ONLY_VIOLATION", message: "Writes are not allowed here." };
+  }
+  // 42P01 undefined_table, 3F000 invalid_schema_name: the table or schema isn't there. For the
+  // analytics presets that means dbt hasn't built yet; runPreset turns it into a friendly message.
+  if (e.code === "42P01" || e.code === "3F000") {
+    return { ok: false, code: "NOT_BUILT", message: "Table or schema not found." };
   }
   if (e.code === "57014") {
     return { ok: false, code: "TIMEOUT", message: `Query stopped after ${STATEMENT_TIMEOUT}.` };
@@ -107,6 +117,9 @@ export const PRESET_KEYS = [
   "worker",
   "plan_gaps",
   "last_move_impact",
+  "reconciliation_exceptions",
+  "workday_changes",
+  "squad_headcount_vs_plan",
 ] as const;
 export type PresetKey = (typeof PRESET_KEYS)[number];
 
@@ -117,7 +130,13 @@ type Preset = {
   needs: "seatId" | "groupId" | null;
   sql: string;
   emptyMessage: string;
+  // Set for presets that read `analytics` (dbt marts): shown instead of an error when the schema
+  // or tables don't exist yet.
+  notBuiltMessage?: string;
 };
+
+const ANALYTICS_NOT_BUILT =
+  "The analytics models aren't built yet. Run `pnpm run pipeline` (or `cd analytics && uv run dbt build`) to build them.";
 
 // Every statement is a constant. `$1` is the only thing bound, and only a typed ID.
 const PRESETS: Record<PresetKey, Preset> = {
@@ -229,6 +248,51 @@ order by q.name, q.squad_id, p.phase desc
 limit 201`,
     emptyMessage: "No move yet. Move a worker and this table shows its effect on both squads.",
   },
+  reconciliation_exceptions: {
+    title: "Reconciliation exceptions (latest Workday report vs. the plan)",
+    description:
+      "The dbt mart analytics.rpt_reconciliation_exceptions: where the latest Workday report and the seat plan disagree, errors first.",
+    needs: null,
+    sql: `select exception_type, severity, subject_type, subject_id, seat_id, squad_id, group_id,
+       report_date::text as report_date, detail
+from analytics.rpt_reconciliation_exceptions
+order by case severity when 'error' then 1 when 'warning' then 2 else 3 end,
+         exception_type, subject_id
+limit 201`,
+    emptyMessage: "No reconciliation exceptions: the latest report and the plan agree.",
+    notBuiltMessage: ANALYTICS_NOT_BUILT,
+  },
+  workday_changes: {
+    title: "Latest Workday changes",
+    description:
+      "The dbt mart analytics.rpt_workday_changes: what changed for each worker between the latest Workday report and the one before it.",
+    needs: null,
+    sql: `select worker_id, change_type, report_date::text as report_date,
+       previous_report_date::text as previous_report_date,
+       previous_worker_status, worker_status, previous_manager_id, manager_id
+from analytics.rpt_workday_changes
+where report_date = (select max(report_date) from analytics.rpt_workday_changes)
+order by change_type, worker_id
+limit 201`,
+    emptyMessage: "No Workday changes yet: load a second report to compare against the first.",
+    notBuiltMessage: ANALYTICS_NOT_BUILT,
+  },
+  squad_headcount_vs_plan: {
+    title: "Squad headcount vs. plan (latest Workday report)",
+    description:
+      "The dbt mart analytics.rpt_squad_headcount: seats as of the latest report date against that quarter's approved plan, most over plan first.",
+    needs: null,
+    sql: `select h.squad_id, q.name as squad_name, h.report_date::text as report_date,
+       h.filled_employee_seats, h.filled_contingent_seats, h.offer_accepted_seats,
+       h.open_seats, h.backfill_seats, h.approved_seats, h.variance, h.fill_rate
+from analytics.rpt_squad_headcount h
+join app.squads q on q.squad_id = h.squad_id
+where h.is_latest_report
+order by h.variance desc, h.squad_id
+limit 201`,
+    emptyMessage: "No squad headcount rows yet.",
+    notBuiltMessage: ANALYTICS_NOT_BUILT,
+  },
 };
 
 export type PanelSection = {
@@ -242,8 +306,12 @@ export type PanelSection = {
   result: QueryResult | null;
 };
 
-// Runs one preset with already-validated IDs.
-async function runPreset(key: PresetKey, ids: PanelParams, run: Runner): Promise<PanelSection> {
+// Runs one preset with already-validated IDs. Exported for the unit tests (with a stubbed runner).
+export async function runPreset(
+  key: PresetKey,
+  ids: PanelParams,
+  run: Runner,
+): Promise<PanelSection> {
   const preset = PRESETS[key];
   const base = { key, title: preset.title, description: preset.description, sql: preset.sql };
   const bound = preset.needs === null ? null : ids[preset.needs];
@@ -252,6 +320,11 @@ async function runPreset(key: PresetKey, ids: PanelParams, run: Runner): Promise
   }
   const params = bound === null ? [] : [bound];
   const result = await run(preset.sql, params);
+  // An analytics preset whose schema or table is missing: say what to do, not "relation does not
+  // exist".
+  if (!result.ok && result.code === "NOT_BUILT" && preset.notBuiltMessage) {
+    return { ...base, params, empty: preset.notBuiltMessage, result: null };
+  }
   const empty = result.ok && result.rows.length === 0 ? preset.emptyMessage : null;
   return { ...base, params, empty, result };
 }
@@ -279,7 +352,7 @@ export type UnderTheHood = {
 export async function getUnderTheHood(rawParams: unknown): Promise<UnderTheHood> {
   const ids = panelParamsSchema.parse(rawParams);
   // One connection, one snapshot, presets run one after another (a single client can't run
-  // queries in parallel anyway). Latency: worst case is about 5 x 2s (every preset hitting the
+  // queries in parallel anyway). Latency: worst case is about 8 x 2s (every preset hitting the
   // statement timeout) plus the connect timeout. Accepted as the price of one consistent snapshot.
   const out = await inReadOnlyTransaction(async (run) => {
     const done: PanelSection[] = [];
