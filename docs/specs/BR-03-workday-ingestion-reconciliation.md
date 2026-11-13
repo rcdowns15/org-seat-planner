@@ -87,10 +87,15 @@ seat). `rpt_squad_headcount` (grain: squad × report date): filled employee seat
 seats, open, backfill, offer accepted, approved plan for that quarter, variance, fill rate. Custom
 tests: `no_double_seating` (error), `squad_not_over_plan` (error: filled + offer accepted ≤ approved).
 - [ ] Grain tests on all three models (`unique` / `not_null`, or `unique_combination_of_columns`)
-- [ ] Singular test: `rpt_squad_headcount` totals for the latest report equal live counts from `app.seats`
+- [ ] Seat counts are rebuilt as of each report date from `app.seat_changes` (D-036): start from live `app.seats` and rewind every change with `effective_date` > report date using its `from_*` columns (`int_seat_state_as_of`). Changes are ordered by `(effective_date, change_id)`.
+- [ ] Singular test: latest-report totals in `rpt_squad_headcount` equal live `app.seats` counts when no seat change is effective after the report date (restated by D-036; coalesce squads with no seats to 0)
+- [ ] dbt `unit_tests:` for the seat-state/occupancy model: a same-day double hop, a move pair, a seat that never changed, a planted overlap (the seed has 0 `seat_changes`, so the seed alone proves nothing)
+- [ ] dbt unit test: a worker missing from a later report stays in `dim_people` with `is_in_latest_report = false`
+- [ ] Warn-level test: no seat change has an `effective_date` earlier than an earlier-saved change on the same worker or seat (backstop for LR-02-10, D-037)
 - [ ] Each custom test fails on a hand-made bad row (show the failing run in the PR) and passes on the seed
 Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_squads.sql`, `analytics/models/marts/dim_people.sql`, `analytics/models/marts/rpt_squad_headcount.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
-**Review 1 (2026-11-12, orchestrator; branch `lr/LR-03-03-marts` @ cdaf6bf): changes required. Fix round 1 waits on a navigator/Rob call.**
+**Decided 2026-11-13 (Rob):** P1 → option 1 (D-036). P2 ordering → the move service rejects backwards effective dates in new LR-02-10 (D-037); this model orders by `(effective_date, change_id)` and adds the warn-level test. The criteria above are updated; fix the remaining P2s and P3s in fix round 1.
+**Review 1 (2026-11-12, orchestrator; branch `lr/LR-03-03-marts` @ cdaf6bf): changes required.**
 - **P1:** `rpt_squad_headcount` stamps today's live `app.seats` counts on every report date. The stated premise, "no seat history", is false: `app.seat_changes` has `from_*`/`to_*`/`effective_date`.
   - Historical rows are wrong.
   - The latest row counts future-dated moves.
@@ -140,7 +145,7 @@ task it would be in production (sensor on the report, ingest, dbt build, alert o
 - [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
 Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
 
-### LR-03-06 · Stop a position backfill from wedging ingestion · status: review (https://github.com/rcdowns15/org-seat-planner/pull/12) · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
+### LR-03-06 · Stop a position backfill from wedging ingestion · status: done (https://github.com/rcdowns15/org-seat-planner/pull/12) · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
 From the LR-03-01 round-2 review (P2, waived in that PR). `workday.workers` is upsert-only (approved), and the partial unique
 index `workers_position_id_active_key` (migration 0001, D-029) allows one non-terminated holder per `Position_ID`. If worker A
 drops out of the extract while still non-terminated and B is backfilled into A's position, every later report fails that

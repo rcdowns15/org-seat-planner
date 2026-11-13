@@ -1,6 +1,6 @@
 # BR-02 — Seat board and write-back (the centerpiece)
 
-**Status:** in-progress · **Depends on:** BR-01 · **Milestone:** M2 (thin slice = LR-02-01…04) · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** LR-02-01…06 and LR-02-08; LR-02-07 and LR-02-09 come after the interview
+**Status:** in-progress · **Depends on:** BR-01 · **Milestone:** M2 (thin slice = LR-02-01…04) · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** LR-02-01…06, LR-02-08 and LR-02-10 (D-037); LR-02-07 and LR-02-09 come after the interview
 
 ## Goal
 A leader picks who they're acting as, sees their org as a board of squads and seat cards, and drags a
@@ -60,14 +60,17 @@ module. Don't touch the header layout (LR-02-01 owns it).
 - [ ] The board query is parameterized and lives in `src/server/queries/board.ts`
 Likely files: `src/app/board/page.tsx`, `src/components/board/*`, `src/server/queries/board.ts`, `tests/e2e/board.spec.ts`.
 
-### LR-02-03 · Move service: validation, transaction, locking, audit · status: review (https://github.com/rcdowns15/org-seat-planner/pull/11) · depends: LR-02-01 · owner: agent · executor model: opus
+### LR-02-03 · Move service: validation, transaction, locking, audit · status: done (https://github.com/rcdowns15/org-seat-planner/pull/11) · depends: LR-02-01 · owner: agent · executor model: opus
 `moveWorker(input, leader)` in `src/server/services/moves.ts`, called by a server action. Zod input:
 `workerId`, `fromSeatId`, `toSeatId`, `effectiveDate`, `fromSeatVersion`, `toSeatVersion`. In one
 transaction it checks, in order, and returns a typed failure code for each: `INVALID_INPUT`, `READ_ONLY` (no acting leader; added from the LR-02-03 review),
-`FORBIDDEN` (permission on both squads), `WORKER_NOT_ACTIVE` (Workday status must be `active`),
+`FORBIDDEN` (permission on both squads), `CONFLICT` (either version stale; checked right after
+`FORBIDDEN` so the remaining checks run on exactly the rows the update will lock, approved by Rob
+2026-11-13), `WORKER_NOT_ACTIVE` (Workday status must be `active`),
 `NOT_IN_SEAT` (worker isn't in `fromSeatId`, which also catches double-seating), `SEAT_NOT_AVAILABLE`
 (target must be `open` or `backfill`), `SEAT_TYPE_MISMATCH`, `INVALID_EFFECTIVE_DATE` (today to +90
-days), `CONFLICT` (either version stale). On success: the source seat becomes `backfill` with no
+days). The updates still carry `AND version = $n`, so a race after the check also ends in `CONFLICT`.
+The effective-date ordering rule is split out to LR-02-10 (D-037). On success: the source seat becomes `backfill` with no
 worker, the target becomes `filled`, both versions +1, and two `seat_changes` rows share a `move_id`.
 Record the SQL statements the transaction ran (for LR-02-08) in a small server-side ring buffer.
 - [ ] `pnpm test:db` has one test per failure code; each asserts both seat rows and the `seat_changes` count are unchanged
@@ -76,7 +79,19 @@ Record the SQL statements the transaction ran (for LR-02-08) in a small server-s
 - [ ] Every query uses bound parameters (reviewer check); the seat update SQL includes `AND version = $n`
 Likely files: `src/server/services/moves.ts`, `src/server/actions/move.ts`, `src/lib/schemas/move.ts`, `src/lib/results.ts`, `src/server/sql-log.ts`, `tests/db/moves.test.ts`, `tests/unit/move-schema.test.ts`.
 
-### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: todo · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
+### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: ready · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
+A missing validation from LR-02-03, not new scope. `moveWorker` rejects a move whose `effectiveDate`
+is earlier than the latest `effective_date` in `app.seat_changes` for the worker, the source seat or
+the target seat, with a new failure code `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` (checked with the
+other domain rules, after `CONFLICT`). An equal date is allowed. This keeps "a worker holds at most
+one seat on every date" true in the data, so dbt's seat history (D-036) can't double-seat anyone.
+- [ ] DB test per subject (worker, source seat, target seat): an earlier date is rejected, both seat rows and the `seat_changes` count are unchanged
+- [ ] DB test: a move with the same effective date as the latest pending change succeeds
+- [ ] The query is parameterized; the failure message names the conflicting date
+- [ ] The LR-02-04 dialog shows this code's message (if LR-02-04 has merged; otherwise note it for LR-02-04)
+Likely files: `src/server/services/moves.ts`, `src/lib/results.ts`, `tests/db/moves.test.ts`.
+
+### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: ready · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
 With dnd-kit, a filled card can be dragged onto an `open` or `backfill` card the leader can edit.
 Dropping opens a dialog: who moves, from where, to where, an effective-date picker (default today),
 Save and Cancel. Save calls the move action; a failure shows its message in the dialog and the

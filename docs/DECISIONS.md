@@ -258,3 +258,32 @@ separately from core, so different minor versions are expected. Pinning to the m
 local and CI identical. **To check at BR-06:** whether `dbt-metricflow` works with dbt-core 1.10;
 pin it to match.
 **Alternatives:** dbt Fusion (not Postgres-ready for this project; would need its own decision).
+
+### D-036 · 2026-11-13 · accepted (Rob, 2026-11-13) · Squad headcount is rebuilt as of each report date from `app.seat_changes`
+**Decision:** `rpt_squad_headcount` (LR-03-03) computes seat state as of each report date: start
+from live `app.seats` and rewind every change with `effective_date` after the report date using its
+`from_*` columns, ordered by `(effective_date, change_id)`. The live-count test is restated: latest
+report totals equal live `app.seats` counts when no change is effective after the report date.
+**Why:** headcount is a point-in-time measure (project rule). Stamping today's counts on every
+report date makes past rows wrong, counts future-dated moves early, and can fail
+`squad_not_over_plan` falsely across a quarter boundary. The append-only audit log already holds
+the history, so using it costs one intermediate model, and it shows why the audit trail exists.
+**Alternatives:** keep live counts and limit `squad_not_over_plan` to the latest report (faster,
+but publishes known-wrong history).
+
+### D-037 · 2026-11-13 · accepted (Rob, 2026-11-13) · The move service rejects out-of-order effective dates (LR-02-10); stale versions are checked right after permission
+**Decision:** (1) `moveWorker` rejects a move whose effective date is earlier than the latest
+pending change on the worker, the source seat or the target seat
+(`EFFECTIVE_DATE_BEFORE_PENDING_CHANGE`). It's built as LR-02-10, split from LR-02-03 so #11 can
+merge without another fix round. It's a missing validation, not new scope, so the cut line doesn't
+move. dbt orders changes by `(effective_date, change_id)` and has a warn-level backstop test.
+(2) In LR-02-03, `CONFLICT` (stale version) is checked right after `FORBIDDEN`, before the worker,
+seat and date checks (the LR-02-03 review P2 fix).
+**Why:** (1) "a worker holds at most one seat on every date" must hold in the data, not only in
+dbt's reading of it. Correctness lives on the server and in the database. (2) After the version
+check, the domain checks run on exactly the rows the update will write; checking stale rows was the
+review's race. The cost is a stale-board user with a bad date seeing "refresh" before the date
+error.
+**Alternatives:** (1) order by save time in dbt with no server rule (the invariant holds only in
+analytics); fold the rule into #11 (delays LR-02-04 and LR-02-08 toward the tripwire). (2) keep
+`CONFLICT` last (domain checks would validate rows that may already have changed).

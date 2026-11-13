@@ -3,22 +3,17 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · orchestrator handoff at the context budget (LR-02-03 / LR-03-03 / LR-03-06 brief)
-- **Milestone:** M1 done. M2 (BR-02): 2 of 7 cut-line LRs done; LR-02-03 in review. M3 (BR-03): 2 of 6 done (LR-03-01, LR-03-02); LR-03-06 in review; LR-03-03 needs a decision.
+- **Last updated:** 2026-11-13 · #11 (LR-02-03) and #12 (LR-03-06) merged; brief for LR-03-03 fix, LR-02-04, LR-02-10, LR-03-04 handed off (navigator)
+- **Milestone:** M1 done. M2 (BR-02): 3 of 8 cut-line LRs done; LR-02-04 and LR-02-10 ready. M3 (BR-03): 3 of 6 done; LR-03-03 in fix round 1. Cut line overall: 16 of 27 (59%).
 - **In flight:**
-  - PR #11 LR-02-03 (https://github.com/rcdowns15/org-seat-planner/pull/11): CI green; review pass after 1 fix round.
-  - PR #12 LR-03-06 (https://github.com/rcdowns15/org-seat-planner/pull/12): review pass; checks and Vercel green; db and dbt CI still running at handoff.
-  - LR-03-03 is built on `lr/LR-03-03-marts` @ cdaf6bf (not pushed; local checks green, dbt PASS=185). Review 1 is changes required: 1 P1, 3 P2s; findings are in the spec.
-- **Blocked:** LR-03-03 fix round 1 waits on a navigator/Rob call. Choose P1 option 1 (rebuild seat state as of each report date; restate criterion 2) or option 2 (approve the live-count shortcut). Decide the effective-date ordering rule (the move service rejects backwards effective dates, or the model orders by `created_at`). Tripwire Sat 11/14 18:00: LR-03-04 depends on LR-03-03.
+  - LR-03-03 on `lr/LR-03-03-marts` @ cdaf6bf: fix round 1 (rebase onto main first; LR-03-06 added analytics tests and migration 0004).
+  - LR-02-04 and LR-02-10: ready, dispatched in the brief (parallel; LR-02-10 is service only, LR-02-04 is UI).
+  - LR-03-04 (Opus): may stack on the LR-03-03 branch once LR-03-03's review passes.
+- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034): LR-02-08 needs LR-02-04; LR-03-04 needs LR-03-03. Friday's plan slipped by about one LR (LR-02-04 not started), so Saturday is full.
 - **Waiting on Rob:**
-  - Merge #11, then #12 (either order works: no migration collision, no shared files).
-  - OK the LR-02-03 behaviour change: CONFLICT is now also checked right after FORBIDDEN.
-  - Push local `main`: the orchestrator's doc commits aren't on origin because auto mode blocks pushes to `main`.
-  - Decide the LR-03-03 questions.
-- **Next:**
-  - LR-03-03 fix round 1: a fresh executor branched from cdaf6bf, own DB `seatplanner_lr0303`, then re-review.
-  - After #11 merges: LR-02-04 (thin slice complete).
-  - After LR-03-03 merges: LR-03-04 (Opus).
+  - Paste the orchestrator brief (its step 0 commits and pushes these doc changes).
+  - Review and merge the PRs it opens the same day.
+- **Next:** orchestrator runs LR-03-03 fix round 1, LR-02-04 and LR-02-10 in parallel, then LR-03-04. After that: LR-02-05, 06, 08 in parallel once LR-02-04 merges.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -32,6 +27,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13: LR-02-03 is done (PR #11 merged) and LR-03-06 is done (PR #12 merged). LR-02-04 and LR-02-10 are now `ready`. The BR-02 spec header now lists LR-02-10 on the cut line (D-037). Cut line: 16 of 27 done. Brief handed off: LR-03-03 fix round 1, LR-02-04 and LR-02-10 in parallel, then LR-03-04.
+- 2026-11-13 — Navigator, from the orchestrator report: D-036 accepted (headcount rebuilt as of each report date from `seat_changes`; LR-03-03 criteria restated and three added). D-037 accepted: new LR-02-10 rejects out-of-order effective dates (split from LR-02-03, cut line unchanged; about +0.5 Rob-hours, cut line ≈ 20.25 h, 3 days to the interview); LR-02-03 checks `CONFLICT` right after `FORBIDDEN` (spec updated). LR-03-03 fix round 1 unblocked.
 - 2026-11-12 — LR-03-03 built (Sonnet, `lr/LR-03-03-marts` @ cdaf6bf, dbt PASS=185). Review 1: changes required (P1: live counts stamped on every report date; P2s: effective-date ordering, missing unit tests). Findings recorded in the spec; the fix round waits on a navigator/Rob call. No PR yet.
 - 2026-11-12 — LR-03-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/12 (Sonnet, one pass; review pass, 3 P3s noted). Migration 0004 drops `workers_position_id_active_key`; dbt test `assert_one_current_holder_per_position` on the latest report.
 - 2026-11-12 — LR-02-03 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/11 (Opus build + 1 fix round; review 1 P1 source-squad permission test and P2 early version check fixed, review 2 pass; P3s noted). Needs Rob: CONFLICT now also checked right after FORBIDDEN.
