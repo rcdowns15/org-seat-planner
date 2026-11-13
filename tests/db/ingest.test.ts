@@ -140,47 +140,81 @@ describe("ingesting the two mock reports", () => {
   });
 });
 
-describe("a file that passes validation but violates a database constraint", () => {
+describe("a position backfill after a worker drops out of the extract", () => {
+  it("ingests, and the dropped worker stays a non-terminated row with an older report date", async () => {
+    // Worker A is active in report 1 and missing from report 2, where worker B (new) holds A's
+    // position. Workers is upsert-only, so A's row stays; this used to break the unique index on
+    // position_id and reject every later report (LR-03-06).
+    await clearWorkday();
+    expect((await ingest(report1)).status).toBe("loaded");
+    const [header, ...body] = parseCsv(readFileSync(report1, "utf8"));
+    const col = (name: string) => header.indexOf(name);
+    const a = body.find(
+      (r) => r[col("Worker_Status")] === "Active" && r[col("Worker_Type")] === "Employee",
+    )!;
+    const positionA = a[col("Position_ID")];
+    const b = [...a];
+    b[col("Worker_ID")] = "999001";
+    b[col("Worker_Name")] = "Backfill, Bea";
+    b[col("Work_Email")] = "bea.backfill@example.test";
+    const next = body.filter((r) => r !== a).concat([b]);
+    const file = path.join(dir, "worker_report_2026-11-20.csv");
+    writeFileSync(file, formatCsv(header, next));
+
+    const result = await ingest(file);
+
+    expect(result.status).toBe("loaded");
+    const held = await rows<{ worker_id: string; status: string; as_of: string }>(
+      `select worker_id, status, as_of_report_date::text as as_of from workday.workers
+       where position_id = $1 order by worker_id`,
+      [positionA],
+    );
+    expect(held).toEqual([
+      { worker_id: a[col("Worker_ID")], status: "active", as_of: "2026-11-01" },
+      { worker_id: "999001", status: "active", as_of: "2026-11-20" },
+    ]);
+  });
+});
+
+describe("a file that passes validation but is refused by the database", () => {
   it("is recorded as a rejected run, loads nothing and leaves workers unchanged", async () => {
-    // Workers is upsert-only, so a worker missing from a newer report still holds a position.
-    // A non-terminated row in the new file that takes that position passes validation (the file
-    // has no clash) but breaks workers_position_id_active_key.
-    const missing = ids1.filter((id) => !ids2.includes(id));
-    const held = await rows<{ worker_id: string; position_id: string }>(
-      "select worker_id, position_id from workday.workers where worker_id = any($1) and status <> 'terminated' limit 1",
-      [missing],
+    // Nothing in the real schema refuses a valid report any more, so add a throwaway check
+    // constraint for the duration of this test to exercise the load-failure path.
+    await clearWorkday();
+    expect((await ingest(report1)).status).toBe("loaded");
+    await getPool().query(
+      "alter table workday.workers add constraint workers_test_refuse check (cost_center <> 'CC-REFUSED')",
     );
-    expect(held).toHaveLength(1);
+    try {
+      const [header, ...body] = parseCsv(readFileSync(report2, "utf8"));
+      body[0][header.indexOf("Cost_Center")] = "CC-REFUSED";
+      const crafted = path.join(dir, "worker_report_2026-12-06.csv");
+      writeFileSync(crafted, formatCsv(header, body));
 
-    const [header, ...body] = parseCsv(readFileSync(report2, "utf8"));
-    const statusCol = header.indexOf("Worker_Status");
-    const positionCol = header.indexOf("Position_ID");
-    const victim = body.findIndex((r) => r[statusCol] !== "Terminated");
-    body[victim][positionCol] = held[0].position_id;
-    const crafted = path.join(dir, "worker_report_2026-12-06.csv");
-    writeFileSync(crafted, formatCsv(header, body));
+      const rawBefore = await count("workday.raw_worker_report");
+      const workersBefore = await rows("select * from workday.workers order by worker_id");
+      const runsBefore = await count("workday.ingest_runs");
 
-    const rawBefore = await count("workday.raw_worker_report");
-    const workersBefore = await rows("select * from workday.workers order by worker_id");
-    const runsBefore = await count("workday.ingest_runs");
+      const result = await ingest(crafted);
 
-    const result = await ingest(crafted);
-
-    expect(result.status).toBe("rejected");
-    expect(result.reasons[0]).toMatch(/nothing was loaded.*workers_position_id_active_key/);
-    expect(result.reasons[0]).not.toMatch(/postgres:\/\//);
-    expect(result.reasons[0]).not.toMatch(/Failing row/);
-    expect(await count("workday.raw_worker_report")).toBe(rawBefore);
-    expect(await rows("select * from workday.workers order by worker_id")).toEqual(workersBefore);
-    expect(await count("workday.ingest_runs")).toBe(runsBefore + 1);
-    const run = await rows<{ status: string; report_date: string; row_count: number }>(
-      "select status, report_date::text, row_count from workday.ingest_runs order by run_id desc limit 1",
-    );
-    expect(run[0]).toEqual({
-      status: "rejected",
-      report_date: "2026-12-06",
-      row_count: body.length,
-    });
+      expect(result.status).toBe("rejected");
+      expect(result.reasons[0]).toMatch(/nothing was loaded.*workers_test_refuse/);
+      expect(result.reasons[0]).not.toMatch(/postgres:\/\//);
+      expect(result.reasons[0]).not.toMatch(/Failing row/);
+      expect(await count("workday.raw_worker_report")).toBe(rawBefore);
+      expect(await rows("select * from workday.workers order by worker_id")).toEqual(workersBefore);
+      expect(await count("workday.ingest_runs")).toBe(runsBefore + 1);
+      const run = await rows<{ status: string; report_date: string; row_count: number }>(
+        "select status, report_date::text, row_count from workday.ingest_runs order by run_id desc limit 1",
+      );
+      expect(run[0]).toEqual({
+        status: "rejected",
+        report_date: "2026-12-06",
+        row_count: body.length,
+      });
+    } finally {
+      await getPool().query("alter table workday.workers drop constraint workers_test_refuse");
+    }
   });
 });
 

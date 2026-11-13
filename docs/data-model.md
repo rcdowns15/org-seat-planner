@@ -257,12 +257,13 @@ by `scripts/ingest/` and `scripts/seed/` (D-015).
 **Upsert-only.** Each accepted report inserts new workers and updates the ones it lists; it never
 deletes. A worker missing from a later report keeps their row with an older `as_of_report_date`,
 which dbt treats as a reconciliation exception, not a deletion. Because rows persist, a worker
-missing from a report can still hold a position that a listed worker now claims; the partial unique
-index on `position_id` then makes the load fail, and the run is recorded as `rejected`.
-
-Known limit: a backfill into the position of a worker who dropped out of the extract while still
-non-terminated would hit `workers_position_id_active_key` and reject every later report; tracked as
-a follow-up little rock (LR-03-06).
+missing from a report can still hold a position that a listed worker now claims, so `position_id`
+is deliberately **not unique** here. The partial unique index `workers_position_id_active_key`
+(D-029) was dropped in migration `0004_worried_diamondback.sql` (LR-03-06, D-034): it made every
+report after a backfill fail and be recorded `rejected`. "One current holder per position" is now
+checked on the latest report only, by the dbt singular test
+`analytics/tests/assert_one_current_holder_per_position.sql` (severity `error`). The ingest
+validator still rejects a single file that lists a position twice among non-terminated rows.
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
@@ -277,7 +278,7 @@ a follow-up little rock (LR-03-06).
 | `manager_worker_id` | text | yes | the manager's `worker_id`; no FK (a manager can be missing from an extract) |
 | `job_title` | text | no | |
 | `supervisory_org` | text | no | as in the report: `<org name> (<manager full name>)`; follows the manager tree, not squads (D-031) |
-| `position_id` | text | no | Workday position (D-029); unique among non-terminated workers; not linked to `app.seats` |
+| `position_id` | text | no | Workday position (D-029); not unique (D-034: one current holder is a dbt test on the latest report); not linked to `app.seats` |
 | `cost_center` | text | no | D-029 |
 | `location` | text | no | D-029 |
 | `as_of_report_date` | date | no | date of the report this row came from |
@@ -328,10 +329,10 @@ Rules:
 - **Required non-blank columns** (approved by Rob, 2026-11-12). `Worker_Name` (`Last, First`), `Work_Email`, `Job_Title`,
   `Supervisory_Organization`, `Position_ID`, `Cost_Center` and `Location` must be non-empty on every
   row, because the typed table needs them.
-- **Unique positions** (added in review). `Position_ID` must be unique among non-`Terminated` rows.
+- **Unique positions** (added in review). `Position_ID` must be unique among non-`Terminated` rows
+  within the file. Across reports it is a dbt check, not a database constraint (D-034).
 - **Invalid UTF-8 rejects the file** (added in review), as does CSV syntax the parser can't read.
-- **A load failure is a rejection too** (added in review). If the database refuses the load (for example a position
-  clash with a worker the report omits), the load rolls back and a `rejected` run is recorded with
+- **A load failure is a rejection too** (added in review). If the database refuses the load, the load rolls back and a `rejected` run is recorded with
   the database's message.
 - Row numbers in messages count the first data row as row 1 (the header is "header").
 
@@ -362,7 +363,7 @@ Rules:
 - **Leader scope as two FK columns.** The spec's polymorphic `scope_id` can't carry a foreign key,
   so a leader has `division_id` or `group_id`, and a `CHECK` makes exactly the one matching
   `scope_type` non-null.
-- **`workday.workers` doesn't second-guess the HRIS.** Beyond types, enums and the position rule,
+- **`workday.workers` doesn't second-guess the HRIS.** Beyond types and enums,
   it accepts what the report says; dbt reports oddities instead of the loader rejecting them.
 - **Append-only audit log.** A custom migration (`db/migrations/0002_seat_changes_append_only.sql`)
   adds a `BEFORE UPDATE OR DELETE ... FOR EACH ROW` trigger that always raises, and a

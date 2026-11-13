@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
   check,
   date,
@@ -51,10 +50,9 @@ export const workers = workday.table(
   (t) => [
     check("workers_worker_type_check", inList(t.workerType, WORKER_TYPES)),
     check("workers_status_check", inList(t.status, WORKER_STATUSES)),
-    // A position is held by at most one current worker; terminated workers keep their old one.
-    uniqueIndex("workers_position_id_active_key")
-      .on(t.positionId)
-      .where(sql`${t.status} <> 'terminated'`),
+    // No unique index on position_id (D-034). "One current holder per position" is checked on the
+    // latest report in dbt (analytics/tests/assert_one_current_holder_per_position.sql): this table
+    // is upsert-only, so a worker who dropped out of the extract keeps their old position row.
   ],
 );
 

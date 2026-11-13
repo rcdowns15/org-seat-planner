@@ -296,23 +296,17 @@ describe("workday.workers constraints", () => {
     );
   }
 
-  it("keeps position_id unique among non-terminated workers only", async () => {
+  it("lets several non-terminated workers share a position_id (checked in dbt, D-034)", async () => {
     await withRollback(async (client) => {
       const { suffix } = await insertFixture(client);
       const position = `P-TEST-${suffix}`;
-      await insertWorker(client, `test-w1-${suffix}`, "terminated", position);
-      await insertWorker(client, `test-w2-${suffix}`, "active", position); // reuse after a termination
-      const err = await expectSqlState(
-        client,
-        "23505",
-        `insert into workday.workers
-           (worker_id, first_name, last_name, email, worker_type, status, hire_date, job_title,
-            supervisory_org, position_id, cost_center, location, as_of_report_date)
-         values ($1, 'Test', 'Worker', 'x@example.test', 'employee', 'leave', '2024-01-15',
-                 'Engineer', 'Test Org', $2, 'CC-0000 Test', 'Remote', '2026-11-01')`,
-        [`test-w3-${suffix}`, position],
+      await insertWorker(client, `test-w1-${suffix}`, "active", position);
+      await insertWorker(client, `test-w2-${suffix}`, "leave", position);
+      const { rows } = await client.query(
+        "select count(*)::int as n from workday.workers where position_id = $1",
+        [position],
       );
-      expect(err.constraint).toBe("workers_position_id_active_key");
+      expect(rows[0].n).toBe(2);
     });
   });
 
