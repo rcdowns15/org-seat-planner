@@ -1,5 +1,6 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { addUtcDays, utcToday } from "@/lib/dates";
+import { SimulateEditButton } from "@/components/simulate-edit-button";
+import type { SimulateEditResult } from "@/lib/schemas/demo";
 import { MAX_EFFECTIVE_DAYS_AHEAD, type MoveResult } from "@/lib/schemas/move";
 import { cardState, cardStateLabel } from "@/lib/seat-card";
 import type { BoardSeat } from "@/lib/board";
@@ -25,6 +28,16 @@ type Props = {
   targets: SeatRef[];
   // The server action, passed down from the page (client code never imports src/server).
   move: (input: unknown) => Promise<MoveResult>;
+  // The seat versions the board showed when this dialog opened (or was last refreshed). A save
+  // sends these, not the live ones, so a seat someone else changed since then is a CONFLICT.
+  loadedVersions: ReadonlyMap<number, number>;
+  // Reloads the board and the loaded versions; `refreshing` is true until the new board arrives.
+  onRefresh: () => void;
+  refreshing: boolean;
+  // Set when a refresh cleared the chosen target (it was taken): shown as a status line.
+  notice: string | null;
+  // Set only when DEMO_MODE=true: the "simulate another leader's edit" server action.
+  simulate?: (input: unknown) => Promise<SimulateEditResult>;
   onClose: () => void;
   onMoved: () => void;
 };
@@ -34,10 +47,22 @@ function seatLabel(ref: SeatRef): string {
   return `${ref.squadName}, seat ${ref.seat.seatId} (${state})`;
 }
 
-export function MoveDialog({ from, to, targets, move, onClose, onMoved }: Props) {
+export function MoveDialog({
+  from,
+  to,
+  targets,
+  move,
+  loadedVersions,
+  onRefresh,
+  refreshing,
+  notice,
+  simulate,
+  onClose,
+  onMoved,
+}: Props) {
   const [pickedId, setPickedId] = useState<string>("");
   const [date, setDate] = useState(() => utcToday());
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
   const target = to ?? targets.find((t) => String(t.seat.seatId) === pickedId) ?? null;
@@ -53,14 +78,14 @@ export function MoveDialog({ from, to, targets, move, onClose, onMoved }: Props)
           fromSeatId: from.seat.seatId,
           toSeatId: target.seat.seatId,
           effectiveDate: date,
-          fromSeatVersion: from.seat.version,
-          toSeatVersion: target.seat.version,
+          fromSeatVersion: loadedVersions.get(from.seat.seatId) ?? from.seat.version,
+          toSeatVersion: loadedVersions.get(target.seat.seatId) ?? target.seat.version,
         });
         // Whatever the failure code, show the server's own message: a new code needs no UI change.
         if (result.ok) onMoved();
-        else setError(result.message);
+        else setError({ code: result.code, message: result.message });
       } catch {
-        setError("Could not reach the server. Try again.");
+        setError({ code: "NETWORK", message: "Could not reach the server. Try again." });
       }
     });
   }
@@ -90,7 +115,7 @@ export function MoveDialog({ from, to, targets, move, onClose, onMoved }: Props)
               <select
                 id="move-to-seat"
                 className="border-input bg-background w-full rounded-md border px-2 py-1"
-                value={pickedId}
+                value={targets.some((t) => String(t.seat.seatId) === pickedId) ? pickedId : ""}
                 onChange={(e) => setPickedId(e.target.value)}
               >
                 <option value="">Choose a seat…</option>
@@ -118,18 +143,49 @@ export function MoveDialog({ from, to, targets, move, onClose, onMoved }: Props)
           </dd>
         </dl>
 
-        {error && (
-          <p role="alert" data-testid="move-error" className="text-destructive text-sm font-medium">
-            {error}
+        {simulate && target ? (
+          <SimulateEditButton seatId={target.seat.seatId} simulate={simulate} idSuffix="dialog" />
+        ) : null}
+
+        {notice && !error ? (
+          <p role="status" data-testid="move-notice" className="text-sm font-medium">
+            {notice}
           </p>
+        ) : null}
+
+        {error && (
+          <div className="flex flex-col items-start gap-2">
+            <p
+              role="alert"
+              data-testid="move-error"
+              className="text-destructive text-sm font-medium"
+            >
+              {error.message}
+            </p>
+            {error.code === "CONFLICT" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-testid="move-refresh"
+                onClick={() => {
+                  setError(null);
+                  onRefresh();
+                }}
+              >
+                <RefreshCw aria-hidden />
+                Refresh
+              </Button>
+            ) : null}
+          </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={pending}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={pending || !target}>
-            {pending ? "Saving…" : "Save"}
+          <Button onClick={save} disabled={pending || refreshing || !target}>
+            {pending ? "Saving…" : refreshing ? "Refreshing…" : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

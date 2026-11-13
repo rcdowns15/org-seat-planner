@@ -64,3 +64,12 @@ export async function requireEditSquads(
   }
   return { ok: true };
 }
+
+// True when the leader can edit at least one group's squads. A leader who can edit nothing gets no
+// "Move to…" on the board (LR-02-05); the server still rejects their moves with FORBIDDEN.
+export function canEditAnyGroup(
+  leader: Leader | null,
+  groups: { groupId: number; divisionId: number }[],
+): boolean {
+  return leader !== null && groups.some((g) => scopeAllows(leader, g));
+}

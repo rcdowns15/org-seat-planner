@@ -312,6 +312,7 @@ describe("scripts/seed/README.md matches the code", () => {
 
   it("documents each named demo fixture with a key and value", () => {
     expect(Object.keys(documentedFixtures()).sort()).toEqual([
+      "another-leader",
       "demo-division-leader",
       "demo-group-leader",
       "out-of-scope-open-seat",
