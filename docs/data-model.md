@@ -480,6 +480,6 @@ tests in `analytics/models/marts/_unit_tests.yml` for the change types and excep
 doesn't produce and for the window boundary. `tests/unit/seed-readme-dbt.test.ts` checks that the
 `VALUES` lists in the two seed-list tests match the README tables. The seed-list tests check the
 11-15 report only once it is ingested (`pnpm db:seed` loads 11-01 alone; CI ingests 11-15 before
-`dbt build`); `assert_next_report_is_loaded` warns when it isn't, so a vacuous pass is visible.
+`dbt build`); `assert_next_report_is_loaded` warns when it isn't. The three seed-list tests compare only in the seed state (latest report 2026-11-15 and no `app.seat_changes` rows, macro `seed_list_tests_active`); otherwise `assert_seed_list_tests_are_active` warns, and CI runs both warn tests with `--warn-error`, so a skipped comparison fails CI.
 The `cost_center_name` relationships test to groups is `warn`: a real report can carry a cost
 center that isn't a group.
