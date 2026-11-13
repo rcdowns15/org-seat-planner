@@ -6,7 +6,7 @@ dbt project for Org Seat Planner. Layers: `staging` (1:1 with sources: rename, c
 
 Currently built: sources for `workday.*` and `app.*`, `stg_workday__worker_report` (cleans the
 messy Workday report rows), one `stg_app__*` model per app table, and a singular test proving
-every raw report row maps to exactly one staged row.
+every raw report row maps to exactly one staged row. Marts (LR-03-03): `dim_squads`, `dim_people`, `rpt_squad_headcount` (see `docs/data-model.md`), with intermediate models and custom tests `no_double_seating`, `squad_not_over_plan` and a live-seat reconciliation test.
 
 ## Run it
 

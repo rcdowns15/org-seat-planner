@@ -382,3 +382,43 @@ Rules:
   migrations with `drizzle-orm/node-postgres/migrator` using `DATABASE_URL_UNPOOLED`, falling back
   to `DATABASE_URL` (D-007). It prints only counts and error codes, never the connection string.
   `pnpm test:db` runs the same function first (Vitest `globalSetup`).
+
+## Analytics marts (dbt, LR-03-03)
+
+Built by dbt in `analytics/` into the `analytics` schema (intermediate models in
+`analytics_intermediate`). Not covered by the `information_schema` doc test above, which checks only
+`app` and `workday`. Column-level descriptions live in `analytics/models/marts/_marts.yml`.
+
+| Model | Grain | One line |
+|---|---|---|
+| `analytics.dim_squads` | `squad_id` | Squad with its group and division. |
+| `analytics.dim_people` | `worker_id` | Each worker's row from the latest report they appear in, plus the seat they hold now. |
+| `analytics.rpt_squad_headcount` | `squad_id` x `report_date` | Seats by state, the approved plan for the quarter, variance and fill rate. |
+
+Definitions in `rpt_squad_headcount`:
+
+- Committed seats = filled employee + filled contingent + `offer_accepted` seats.
+- **Variance** = committed seats minus approved seats. Positive is over plan (the `squad_not_over_plan`
+  test fails), zero is on plan, negative is room under plan.
+- **Fill rate** = filled seats (employee + contingent) divided by approved seats, a fraction rounded
+  to 4 decimals; null when approved seats is zero.
+- The plan is the squad's `app.headcount_plan` row for the quarter containing the report date.
+- Seat counts are as of each report date (D-036). `int_seat_state_as_of` (one row per seat per report
+  date) starts from live `app.seats` and rewinds every `app.seat_changes` row whose `effective_date`
+  is after the report date, using its `from_*` columns, in `(effective_date, change_id)` order.
+  `int_squad_seat_counts` counts those states per squad and report date. A move effective after a
+  report date is therefore not in that date's row. `is_latest_report` only marks the newest report.
+- `dim_people` starts from reports: a worker who holds a seat but appears in no report is absent.
+
+Intermediate models: `int_worker_latest_report` (one row per worker), `int_seat_state_as_of`,
+`int_squad_seat_counts`, and `int_seat_occupancy` (who held which seat when, half-open periods,
+ordered by `(effective_date, change_id)`; D-037 makes that agree with save order).
+
+Custom tests (`analytics/tests/`): `no_double_seating` (error; no worker holds two seats in
+overlapping periods, built from `app.seat_changes` in `int_seat_occupancy`), `squad_not_over_plan`
+(error), `assert_squad_headcount_matches_live_seats` (latest-report counts equal live `app.seats`
+when no change is effective after the latest report; squads with no seats count as 0), and
+`assert_seat_changes_effective_dates_in_save_order` (warn; backstop for the move service's
+effective-date rule, D-037). dbt unit tests in `analytics/models/intermediate/_unit_tests.yml` cover
+the seat-state and occupancy models and the missing-worker case with hand-made rows, because the
+seed has no `seat_changes`.

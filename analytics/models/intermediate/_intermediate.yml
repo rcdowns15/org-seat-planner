@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: int_worker_latest_report
+    description: >
+      One row per worker: the row from the most recent report the worker appears in. A worker
+      missing from the newest report keeps their last known row (a missing worker is an exception,
+      not a deletion); `is_in_latest_report` is false for them.
+    columns:
+      - name: worker_id
+        description: Worker ID; one row per worker.
+        data_tests: [unique, not_null]
+      - name: last_seen_report_date
+        description: Date of the newest report that lists the worker.
+        data_tests: [not_null]
+      - name: is_in_latest_report
+        description: True when the worker is in the newest report.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: first_name
+        description: First name from the worker's latest row.
+      - name: last_name
+        description: Last name from the worker's latest row.
+      - name: work_email
+        description: Work email from the worker's latest row.
+      - name: worker_type
+        description: Worker type from the worker's latest row.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: worker_status
+        description: Worker status from the worker's latest row.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: hire_date
+        description: Hire date from the worker's latest row.
+      - name: termination_date
+        description: Termination date from the worker's latest row; null unless terminated.
+      - name: contract_end_date
+        description: Contract end date from the worker's latest row; contingent workers only.
+      - name: manager_id
+        description: Manager's worker ID from the worker's latest row.
+      - name: job_title
+        description: Job title from the worker's latest row.
+      - name: supervisory_organization
+        description: Supervisory organization from the worker's latest row.
+      - name: position_id
+        description: Workday position ID from the worker's latest row.
+      - name: cost_center
+        description: Cost center from the worker's latest row.
+      - name: location
+        description: Work location from the worker's latest row.
+
+  - name: int_seat_state_as_of
+    description: >
+      Every seat's state as of each report date, one row per seat per report date (D-036). Starts
+      from the live seat plan (`app.seats`) and rewinds every change in `app.seat_changes` whose
+      effective date is after the report date, using its `from_*` columns, ordered by
+      `(effective_date, change_id)`. Seats with no later change keep their live state.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [seat_id, report_date]
+    columns:
+      - name: seat_id
+        description: The seat.
+        data_tests: [not_null]
+      - name: squad_id
+        description: The seat's squad (a seat never changes squad).
+        data_tests: [not_null]
+      - name: seat_type
+        description: Seat type (a seat never changes type).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: report_date
+        description: Workday report date the state is as of.
+        data_tests: [not_null]
+      - name: seat_status
+        description: Seat status on the report date.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["open", "filled", "backfill", "offer_accepted"]
+      - name: worker_id
+        description: Worker holding the seat on the report date; null unless the seat is filled.
+
+  - name: int_squad_seat_counts
+    description: >
+      One row per squad per report date, for squads that have seats: the squad's seats counted by
+      state as of that report date (from `int_seat_state_as_of`).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [squad_id, report_date]
+    columns:
+      - name: squad_id
+        description: The squad.
+        data_tests: [not_null]
+      - name: report_date
+        description: Workday report date the counts are as of.
+        data_tests: [not_null]
+      - name: filled_employee_seats
+        description: Employee seats with status `filled`.
+        data_tests: [not_null]
+      - name: filled_contingent_seats
+        description: Contingent seats with status `filled`.
+        data_tests: [not_null]
+      - name: open_seats
+        description: Seats with status `open`.
+        data_tests: [not_null]
+      - name: backfill_seats
+        description: Seats with status `backfill`.
+        data_tests: [not_null]
+      - name: offer_accepted_seats
+        description: Seats with status `offer_accepted`.
+        data_tests: [not_null]
+      - name: total_seats
+        description: All seats in the squad.
+        data_tests: [not_null]
+
+  - name: int_seat_occupancy
+    description: >
+      Who held which seat and when, built from the audit log (`app.seat_changes`) plus current seat
+      holders of seats that never changed. Changes are ordered by `(effective_date, change_id)`.
+      Periods are half-open `[start_date, end_date)`; a null
+      `end_date` means still holding. Not unique by design: the double-seating test looks for
+      overlaps between rows of the same worker.
+    columns:
+      - name: seat_id
+        description: The seat held.
+        data_tests: [not_null]
+      - name: worker_id
+        description: The worker holding it.
+        data_tests: [not_null]
+      - name: start_date
+        description: First day of the period (1900-01-01 when held since before any recorded change).
+        data_tests: [not_null]
+      - name: end_date
+        description: Day after the last day of the period; null while still holding.

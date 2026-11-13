@@ -1,0 +1,173 @@
+version: 2
+
+models:
+  - name: dim_squads
+    description: One row per squad with its group and division. The org hierarchy the marts group by.
+    columns:
+      - name: squad_id
+        description: Squad; one row per squad.
+        data_tests: [unique, not_null]
+      - name: squad_name
+        description: Squad name, unique within its group.
+        data_tests: [not_null]
+      - name: group_id
+        description: The group the squad belongs to.
+        data_tests: [not_null]
+      - name: group_name
+        description: Group name.
+        data_tests: [not_null]
+      - name: division_id
+        description: The division the group belongs to.
+        data_tests: [not_null]
+      - name: division_name
+        description: Division name.
+        data_tests: [not_null]
+
+  - name: dim_people
+    description: >
+      One row per worker ever seen in an ingested Workday report: the worker's row from the latest
+      report they appear in, plus the seat they hold now in the leaders' plan. A worker missing
+      from the newest report keeps their last known row and has `is_in_latest_report = false`.
+      Workers who hold a seat in the plan but appear in no report are absent (the model starts
+      from reports); a reconciliation model has to find those.
+    columns:
+      - name: worker_id
+        description: Worker ID; one row per worker.
+        data_tests: [unique, not_null]
+      - name: last_seen_report_date
+        description: Date of the newest report that lists the worker.
+        data_tests: [not_null]
+      - name: is_in_latest_report
+        description: True when the worker is in the newest report.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: first_name
+        description: First name.
+      - name: last_name
+        description: Last name.
+      - name: work_email
+        description: Work email.
+      - name: worker_type
+        description: Worker type.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: worker_status
+        description: Worker status in Workday.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: hire_date
+        description: Hire date; can be in the future.
+      - name: termination_date
+        description: Termination date; null unless terminated.
+      - name: contract_end_date
+        description: Contract end date; contingent workers only.
+      - name: manager_id
+        description: Manager's worker ID.
+      - name: job_title
+        description: Job title.
+      - name: supervisory_organization
+        description: Supervisory organization as written in the report.
+      - name: position_id
+        description: Workday position ID. Seats are not linked to positions (D-029).
+      - name: cost_center
+        description: Cost center, code and name together.
+      - name: location
+        description: Work location.
+      - name: current_seat_id
+        description: Seat assigned in the leaders' plan in `app.seats` (includes moves saved but not yet effective, D-012); null if none.
+        data_tests:
+          - unique
+      - name: current_squad_id
+        description: Squad of that seat; null if none.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_squads')
+                field: squad_id
+      - name: current_seat_type
+        description: Type of that seat; null if none.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: holds_seat
+        description: True when the worker holds a seat now.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+
+  - name: rpt_squad_headcount
+    description: >
+      Squad headcount against the approved plan, one row per squad per report date. Seat counts are
+      as of each report date, rebuilt from the audit log (`int_seat_state_as_of`, D-036), so moves
+      effective after a report date are not counted in that date's row.
+      The plan is the squad's approved seats for the quarter containing the report date.
+      Committed seats = filled employee + filled contingent + offer accepted seats.
+      Variance = committed seats minus approved seats: zero means exactly on plan, negative means
+      room left under plan, positive means over plan (the `squad_not_over_plan` test fails on it).
+      Fill rate = filled seats (employee + contingent) divided by approved seats, as a fraction
+      rounded to 4 decimals (0.95 is 95%); null when approved seats is zero. Open, backfill and
+      offer accepted seats are not filled, so they lower the fill rate.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [squad_id, report_date]
+    columns:
+      - name: squad_id
+        description: The squad.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_squads')
+                field: squad_id
+      - name: report_date
+        description: Workday report date the row is stamped with.
+        data_tests: [not_null]
+      - name: is_latest_report
+        description: True for the newest ingested report date. It marks which row is newest, not that the counts equal today's live seats.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: plan_quarter_start
+        description: First day of the quarter containing the report date; the plan quarter used.
+        data_tests: [not_null]
+      - name: filled_employee_seats
+        description: Employee seats with status `filled`.
+        data_tests: [not_null]
+      - name: filled_contingent_seats
+        description: Contingent seats with status `filled`.
+        data_tests: [not_null]
+      - name: open_seats
+        description: Seats with status `open`.
+        data_tests: [not_null]
+      - name: backfill_seats
+        description: Seats with status `backfill` (approved seats to refill).
+        data_tests: [not_null]
+      - name: offer_accepted_seats
+        description: Seats with status `offer_accepted` (reserved for an incoming hire).
+        data_tests: [not_null]
+      - name: approved_seats
+        description: Approved seats for the squad in the plan quarter.
+        data_tests: [not_null]
+      - name: variance
+        description: Committed seats (filled + offer accepted) minus approved seats. Positive is over plan.
+        data_tests: [not_null]
+      - name: fill_rate
+        description: Filled seats divided by approved seats, as a fraction from 0 to 1; null when approved seats is zero.
