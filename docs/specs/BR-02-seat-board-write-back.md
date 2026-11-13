@@ -140,7 +140,7 @@ two reversing rows with `reverses_change_id`. Nothing is updated in or deleted f
 - Note from the LR-02-08 review (P3): the SQL panel's "Impact of last move" (`under-the-hood.ts`) only looks at `move_out`/`move_in` rows; after an undo it would show the undone move with before = after. Make it skip undone moves (or show the undo) in this little rock.
 Likely files: `src/server/services/undo.ts`, `src/server/actions/undo.ts`, `src/components/seat-history-panel.tsx`, `tests/db/undo.test.ts`, `tests/e2e/undo.spec.ts`.
 
-### LR-02-08 · "Under the hood" read-only SQL panel · status: in-progress · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-08 · "Under the hood" read-only SQL panel · status: review (https://github.com/rcdowns15/org-seat-planner/pull/16) · depends: LR-02-04 · owner: agent · executor model: sonnet
 A collapsible panel (and a `/sql` page) that makes the write-back visible. **Read-only, preset
 queries only** (D-026). Each query shows its SQL text and its result table:
 - the selected seat's row, including `version`
