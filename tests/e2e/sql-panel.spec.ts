@@ -284,12 +284,12 @@ test.describe("Under the hood panel", () => {
     await button.focus();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(new RegExp(`seat=${pick.to.seatId}`));
-    await expect(button).toHaveText("Selected");
+    await expect(button).toHaveText(/^Selected /);
     await expect(button).toHaveAttribute("aria-pressed", "true");
     // Selecting it again clears the selection.
     await button.focus();
     await page.keyboard.press("Enter");
     await expect(page).not.toHaveURL(/seat=/);
-    await expect(button).toHaveText("Select");
+    await expect(button).toHaveText(/^Select /);
   });
 });

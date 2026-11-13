@@ -160,7 +160,7 @@ test.describe("seat history panel", () => {
     await expect(page.getByTestId("seat-history-empty")).toBeVisible();
   });
 
-  test("dropping a dragged card on itself does not select the seat", async ({
+  test("dropping a dragged card does not select or deselect the source seat", async ({
     page,
     context,
     baseURL,
@@ -171,25 +171,44 @@ test.describe("seat history panel", () => {
     const source = card(page, pick.from.seatId);
     await expect(source).toHaveAttribute("data-draggable", "true");
     await source.scrollIntoViewIfNeeded();
-    const box = (await source.boundingBox())!;
-    const x = box.x + box.width / 2;
-    // Press on the card body (not the buttons), move past the 6px drag threshold, and come back:
-    // the pointer is released over the same card, so the browser sends a click to it.
-    await page.mouse.move(x, box.y + box.height - 4);
-    await page.mouse.down();
-    await page.mouse.move(x + 20, box.y + box.height - 4, { steps: 4 });
-    await page.mouse.move(x, box.y + box.height - 4, { steps: 4 });
-    await page.mouse.up();
 
+    // A real pointer drag onto the target seat. While dragging, the source card follows the
+    // pointer, so the browser sends the click that follows the drop to the source card.
+    const s = (await source.boundingBox())!;
+    const t = (await card(page, pick.to.seatId).boundingBox())!;
+    await page.mouse.move(s.x + s.width / 2, s.y + s.height - 4);
+    await page.mouse.down();
+    await page.mouse.move(s.x + s.width / 2 + 12, s.y + s.height + 6, { steps: 4 });
+    await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2, { steps: 12 });
+    await page.mouse.up();
+    // dnd-kit usually swallows the click that follows a drop, and Playwright's mouse doesn't
+    // always produce one, so send the click a browser may send, right after the drop.
+    await source.dispatchEvent("click");
+
+    const dialog = page.getByTestId("move-dialog");
+    await expect(dialog).toBeVisible();
     await page.waitForTimeout(500); // a wrongly-fired select would have changed the URL by now
     await expect(page).not.toHaveURL(/seat=/);
     await expect(source).not.toHaveAttribute("data-selected", "true");
-    await expect(page.getByTestId("seat-history-panel")).toBeHidden();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
 
-    // A plain click on the card still selects it (the guard only covers the click after a drag).
+    // Same when the seat is already selected: the drop must not deselect it.
     await page.waitForTimeout(400);
-    await source.click({ position: { x: 10, y: box.height - 6 } });
+    await source.getByTestId("select-seat-button").click();
+    await expect(page).toHaveURL(new RegExp(`seat=${pick.from.seatId}`));
+    const s2 = (await source.boundingBox())!;
+    const t2 = (await card(page, pick.to.seatId).boundingBox())!;
+    await page.mouse.move(s2.x + s2.width / 2, s2.y + s2.height - 4);
+    await page.mouse.down();
+    await page.mouse.move(s2.x + s2.width / 2 + 12, s2.y + s2.height + 6, { steps: 4 });
+    await page.mouse.move(t2.x + t2.width / 2, t2.y + t2.height / 2, { steps: 12 });
+    await page.mouse.up();
+    await source.dispatchEvent("click");
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page).toHaveURL(new RegExp(`seat=${pick.from.seatId}`));
     await expect(source).toHaveAttribute("data-selected", "true");
+    await dialog.getByRole("button", { name: "Cancel" }).click();
   });
 
   test("the Select button's accessible name starts with its visible text and describes the seat", async ({
