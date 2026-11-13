@@ -6,12 +6,13 @@ dbt project for Org Seat Planner. Layers: `staging` (1:1 with sources: rename, c
 
 Currently built: sources for `workday.*` and `app.*`, `stg_workday__worker_report` (cleans the
 messy Workday report rows), one `stg_app__*` model per app table, and a singular test proving
-every raw report row maps to exactly one staged row. Marts (LR-03-03): `dim_squads`, `dim_people`, `rpt_squad_headcount` (see `docs/data-model.md`), with intermediate models and custom tests `no_double_seating`, `squad_not_over_plan` and a live-seat reconciliation test.
+every raw report row maps to exactly one staged row. Marts (LR-03-03): `dim_squads`, `dim_people`, `rpt_squad_headcount` (see `docs/data-model.md`), with intermediate models and custom tests `no_double_seating`, `squad_not_over_plan` and a live-seat reconciliation test. LR-03-04 adds `rpt_workday_changes` and `rpt_reconciliation_exceptions` (changes between consecutive reports, and where the latest report disagrees with the seat plan).
 
 ## Run it
 
 From the repo root, start Postgres, migrate and seed (`docker compose up -d db`, `pnpm db:migrate`,
-`pnpm db:seed`), then:
+`pnpm db:seed`). The seed loads the 11-01 Workday report; to see refresh changes and exceptions,
+also load the next one (`pnpm workday:ingest data/workday/worker_report_2026-11-15.csv`). Then:
 
 ```sh
 cd analytics
