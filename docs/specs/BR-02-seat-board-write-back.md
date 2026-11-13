@@ -60,7 +60,7 @@ module. Don't touch the header layout (LR-02-01 owns it).
 - [ ] The board query is parameterized and lives in `src/server/queries/board.ts`
 Likely files: `src/app/board/page.tsx`, `src/components/board/*`, `src/server/queries/board.ts`, `tests/e2e/board.spec.ts`.
 
-### LR-02-03 · Move service: validation, transaction, locking, audit · status: in-progress · depends: LR-02-01 · owner: agent · executor model: opus
+### LR-02-03 · Move service: validation, transaction, locking, audit · status: review (https://github.com/rcdowns15/org-seat-planner/pull/11) · depends: LR-02-01 · owner: agent · executor model: opus
 `moveWorker(input, leader)` in `src/server/services/moves.ts`, called by a server action. Zod input:
 `workerId`, `fromSeatId`, `toSeatId`, `effectiveDate`, `fromSeatVersion`, `toSeatVersion`. In one
 transaction it checks, in order, and returns a typed failure code for each: `INVALID_INPUT`, `READ_ONLY` (no acting leader; added from the LR-02-03 review),

@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-02-03 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/11 (Opus build + 1 fix round; review 1 P1 source-squad permission test and P2 early version check fixed, review 2 pass; P3s noted). Needs Rob: CONFLICT now also checked right after FORBIDDEN.
 - 2026-11-12 — LR-03-02 done (PR #10 merged). LR-03-03 and LR-03-06 → `in-progress` (Sonnet, in parallel; LR-03-06 owns a separate singular dbt test so the two touch no shared analytics file). LR-02-03 → `in-progress` (Opus; built and verified, in review).
 - 2026-11-12 — D-035 accepted: dbt-core 1.10 and dbt-postgres 1.9 on Python 3.12, pinned in `analytics/pyproject.toml` and locked in `uv.lock` (from LR-03-02, PR #10). MetricFlow compatibility to check at BR-06.
 - 2026-11-12 — D-034 accepted (big change, cut line): LR-03-06 moves above the cut line with nothing dropped now; D-029's position index is amended. Tripwire: at Sat 11/14 18:00, if LR-02-08 or LR-03-04 isn't merged, "Last save: SQL executed" drops below the line. Timeline impact: +1 PR, about +0.75 Rob-hours (cut line ≈ 19.75 h); covered by the half-day lead, 3.5 days to the interview. LR-03-06 → `ready` (dispatch after #10 merges).
