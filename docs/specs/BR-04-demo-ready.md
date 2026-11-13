@@ -24,7 +24,7 @@ smoke workflow.
 ## Little rocks
 Parallel: LR-04-02 and LR-04-03 together once BR-02 and BR-03 are merged.
 
-### LR-04-01 · Demo mode: reset and fictional-data banner · status: ready · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
+### LR-04-01 · Demo mode: reset and fictional-data banner · status: in-progress · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
 With `DEMO_MODE=true`: a site-wide banner ("Second Republic Bank is fictional; all data is
 generated") and a "Reset demo data" action that restores the `app` tables to the seed (one
 transaction; Workday tables are untouched because the app never writes them). Throttle resets to one
