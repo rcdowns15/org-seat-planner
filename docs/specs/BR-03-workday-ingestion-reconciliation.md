@@ -112,7 +112,7 @@ Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_sq
   - The `dim_people` description should say seated workers never seen in a report are absent.
   - The `is_latest_report` wording overstates what it means.
 
-### LR-03-04 · Refresh changes and reconciliation exceptions · status: in-progress (fix round 1 after Rob decision) · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
+### LR-03-04 · Refresh changes and reconciliation exceptions · status: review (https://github.com/rcdowns15/org-seat-planner/pull/18) · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
 `rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
 (hire, future-dated hire, termination, manager change, worker-type change, leave start/end, and
 `aged_out`: a terminated worker who drops off under the report's 30-day termination window, which is
