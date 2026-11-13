@@ -153,6 +153,16 @@ unit_tests:
           - { seat_id: 4, squad_id: 11, seat_type: contingent, seat_status: filled, worker_id: X1 }
           # Changed on 2026-11-01, before both report dates.
           - { seat_id: 5, squad_id: 11, seat_type: employee, seat_status: filled, worker_id: Y1 }
+          # Changed exactly ON the first report date: that change counts as already effective.
+          - { seat_id: 6, squad_id: 11, seat_type: employee, seat_status: filled, worker_id: Z1 }
+          # Chain of two future changes (2026-12-01, then 2026-12-20); live state is after both.
+          - {
+              seat_id: 7,
+              squad_id: 11,
+              seat_type: employee,
+              seat_status: backfill,
+              worker_id: null,
+            }
       - input: ref('stg_app__seat_changes')
         rows:
           - {
@@ -190,8 +200,33 @@ unit_tests:
               from_worker_id: null,
               effective_date: "2026-11-01",
             }
+          - {
+              change_id: 6,
+              seat_id: 6,
+              from_status: open,
+              from_worker_id: null,
+              effective_date: "2026-11-15",
+            }
+          - {
+              change_id: 7,
+              seat_id: 7,
+              from_status: open,
+              from_worker_id: null,
+              effective_date: "2026-12-01",
+            }
+          - {
+              change_id: 8,
+              seat_id: 7,
+              from_status: filled,
+              from_worker_id: V1,
+              effective_date: "2026-12-20",
+            }
     expect:
       rows:
+        - { seat_id: 6, report_date: "2026-11-15", seat_status: filled, worker_id: Z1 }
+        - { seat_id: 7, report_date: "2026-11-15", seat_status: open, worker_id: null }
+        - { seat_id: 6, report_date: "2026-12-05", seat_status: filled, worker_id: Z1 }
+        - { seat_id: 7, report_date: "2026-12-05", seat_status: filled, worker_id: V1 }
         - { seat_id: 1, report_date: "2026-11-15", seat_status: filled, worker_id: W1 }
         - { seat_id: 2, report_date: "2026-11-15", seat_status: open, worker_id: null }
         - { seat_id: 3, report_date: "2026-11-15", seat_status: open, worker_id: null }

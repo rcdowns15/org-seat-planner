@@ -84,7 +84,7 @@ models:
       - name: location
         description: Work location.
       - name: current_seat_id
-        description: Seat the worker holds now in `app.seats`; null if none.
+        description: Seat assigned in the leaders' plan in `app.seats` (includes moves saved but not yet effective, D-012); null if none.
         data_tests:
           - unique
       - name: current_squad_id
