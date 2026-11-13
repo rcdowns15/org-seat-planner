@@ -150,3 +150,84 @@ models:
         data_tests: [not_null]
       - name: end_date
         description: Day after the last day of the period; null while still holding.
+
+  - name: int_worker_report_versions
+    description: >
+      Each worker's row in a report next to their row in the previous report: one row per worker
+      per report date, for every report that has a previous report, covering every worker in
+      either of the two reports. A worker in only one of them has nulls on the other side (a hire
+      has no previous row; a worker who dropped off has no current row). The first report has no
+      rows. Feeds `rpt_workday_changes` and the missing-worker check in
+      `rpt_reconciliation_exceptions`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [worker_id, report_date]
+    columns:
+      - name: worker_id
+        description: Worker ID.
+        data_tests: [not_null]
+      - name: report_date
+        description: The report being compared.
+        data_tests: [not_null]
+      - name: previous_report_date
+        description: The report before it (the next older ingested report date).
+        data_tests: [not_null]
+      - name: is_in_report
+        description: True when the worker is in the report.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: is_in_previous_report
+        description: True when the worker is in the previous report.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: previous_worker_status
+        description: Status in the previous report; null if not in it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: worker_status
+        description: Status in the report; null if not in it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: previous_worker_type
+        description: Worker type in the previous report; null if not in it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: worker_type
+        description: Worker type in the report; null if not in it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: previous_manager_id
+        description: Manager's worker ID in the previous report.
+      - name: manager_id
+        description: Manager's worker ID in the report.
+      - name: previous_supervisory_organization
+        description: Supervisory organization in the previous report.
+      - name: supervisory_organization
+        description: Supervisory organization in the report.
+      - name: previous_termination_date
+        description: Termination date in the previous report; null unless terminated then.
+      - name: termination_date
+        description: Termination date in the report; null unless terminated.
+      - name: hire_date
+        description: Hire date in the report; null if not in it.
+      - name: is_future_hire
+        description: True when the hire date is after the report date; null if not in the report.
+      - name: cost_center_name
+        description: Cost center name (a group name, D-029), from the report or else the previous report.

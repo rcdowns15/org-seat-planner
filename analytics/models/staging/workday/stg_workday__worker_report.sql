@@ -62,6 +62,9 @@ select
         as supervisory_org_name,
     nullif({{ clean_text("substring(supervisory_organization from '\(([^()]*)\)$')") }}, '')
         as supervisory_org_manager_name,
+    -- "CC-1010 Digital Channels": the code, then the name (a group name, D-029).
+    substring(cost_center from '^(CC-[0-9]+)\s') as cost_center_code,
+    nullif({{ clean_text("substring(cost_center from '^CC-[0-9]+\s+(.*)$')") }}, '') as cost_center_name,
     -- A future-dated hire: in the report, but starts after the report date.
     hire_date > report_date as is_future_hire
 from cleaned

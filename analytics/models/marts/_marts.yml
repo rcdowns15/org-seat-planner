@@ -171,3 +171,163 @@ models:
         data_tests: [not_null]
       - name: fill_rate
         description: Filled seats divided by approved seats, as a fraction from 0 to 1; null when approved seats is zero.
+
+  - name: rpt_workday_changes
+    description: >
+      What changed for each worker between consecutive Workday reports, one row per worker per
+      report date; workers with no change have no row, and the first report has none. Change
+      types: `hire` (new, already started), `future_hire` (new, hire date after the report date),
+      `termination`, `worker_type_change`, `leave_start`, `leave_end`, `status_change` (any other
+      status move, such as a rehire), `manager_change`, `aged_out` (a terminated worker who
+      dropped off because their termination date is before the report's termination window; not
+      an exception) and `missing` (dropped off with no termination on record; an exception in
+      `rpt_reconciliation_exceptions`). The termination window is the report date minus 29 days
+      through the report date (`workday_termination_window_days` = 30), the rule the mock reports
+      follow. A row has one change type, the first that applies in that order; the `previous_*`
+      and current columns show every attribute that moved.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [worker_id, report_date]
+    columns:
+      - name: worker_id
+        description: Worker ID.
+        data_tests: [not_null]
+      - name: report_date
+        description: The report in which the change shows up.
+        data_tests: [not_null]
+      - name: previous_report_date
+        description: The report it is compared with.
+        data_tests: [not_null]
+      - name: change_type
+        description: What changed (see the model description).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    "hire",
+                    "future_hire",
+                    "termination",
+                    "worker_type_change",
+                    "leave_start",
+                    "leave_end",
+                    "status_change",
+                    "manager_change",
+                    "aged_out",
+                    "missing",
+                  ]
+      - name: previous_worker_status
+        description: Status in the previous report; null for a hire.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: worker_status
+        description: Status in this report; null when the worker dropped off.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["active", "leave", "terminated"]
+      - name: previous_worker_type
+        description: Worker type in the previous report; null for a hire.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: worker_type
+        description: Worker type in this report; null when the worker dropped off.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: previous_manager_id
+        description: Manager's worker ID in the previous report.
+      - name: manager_id
+        description: Manager's worker ID in this report.
+      - name: previous_supervisory_organization
+        description: Supervisory organization in the previous report.
+      - name: supervisory_organization
+        description: Supervisory organization in this report.
+      - name: hire_date
+        description: Hire date in this report; null when the worker dropped off.
+      - name: termination_date
+        description: Termination date in this report, or in the previous report when the worker dropped off.
+      - name: termination_window_start
+        description: First day of this report's termination window (report date minus 29 days).
+        data_tests: [not_null]
+
+  - name: rpt_reconciliation_exceptions
+    description: >
+      Where the latest Workday report and the seat plan disagree, one row per exception type per
+      subject. The plan is the live plan in `app.seats` (as saved now, the seats `dim_people`
+      shows), so a fix a leader saves clears the exception on the next build. Exception types:
+      `terminated_seated` (error: in the latest report as terminated, still holds a seat);
+      `seated_missing_from_report` (error: holds a seat but is not in the latest report, even if
+      they aged out); `missing_without_termination` (warning: in the previous report as active or
+      on leave, missing now with no termination); `worker_type_mismatch` (error: worker type
+      differs from seat type); `on_leave_seated` (info: on leave and holds a seat, which is
+      allowed); `hiring_gap` (info: a group's `offer_accepted` seats outnumber its future-dated
+      hires in the latest report, matched by cost center name because seats aren't linked to
+      positions, D-029). Worker checks on status and type look only at workers in the latest
+      report; a seated worker missing from it gets `seated_missing_from_report` instead.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [exception_type, subject_id]
+    columns:
+      - name: exception_type
+        description: Which check found the exception (see the model description).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    "terminated_seated",
+                    "seated_missing_from_report",
+                    "missing_without_termination",
+                    "worker_type_mismatch",
+                    "on_leave_seated",
+                    "hiring_gap",
+                  ]
+      - name: subject_id
+        description: The worker ID, or the group ID (as text) for `hiring_gap`.
+        data_tests: [not_null]
+      - name: subject_type
+        description: "`group` for `hiring_gap`, `worker` otherwise."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["worker", "group"]
+      - name: severity
+        description: "`error` (the plan is wrong), `warning` (the HRIS data needs a look) or `info` (worth knowing; no fix needed)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["error", "warning", "info"]
+      - name: report_date
+        description: The latest report date, the report the plan was compared with.
+        data_tests: [not_null]
+      - name: worker_id
+        description: The worker; null for `hiring_gap`.
+      - name: seat_id
+        description: The seat the worker holds now; null if none or for `hiring_gap`.
+      - name: squad_id
+        description: That seat's squad.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_squads')
+                field: squad_id
+      - name: group_id
+        description: The seat's group, or the group for `hiring_gap`; null for an unseated worker.
+      - name: detail
+        description: What was found, in a sentence.
+        data_tests: [not_null]
+      - name: suggested_action
+        description: What to do about it.
+        data_tests: [not_null]

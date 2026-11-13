@@ -82,6 +82,19 @@ models:
       - name: cost_center
         description: Cost center, code and name together.
         data_tests: [not_null]
+      - name: cost_center_code
+        description: Cost center code (`CC-` plus digits), split from `cost_center`.
+        data_tests: [not_null]
+      - name: cost_center_name
+        description: >
+          Cost center name, split from `cost_center`. Each cost center belongs to one group and is
+          named after it (D-029), so this is how a Workday row is matched to a group.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_app__groups')
+                field: group_name
       - name: location
         description: Work location.
       - name: is_future_hire
