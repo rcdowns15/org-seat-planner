@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
   MAX_EFFECTIVE_DAYS_AHEAD,
@@ -51,7 +51,7 @@ export type MoveOptions = {
 // Moves a worker from one seat to another (LR-02-03). Checks run in this order, and the first
 // one that fails is returned: INVALID_INPUT, READ_ONLY (no leader), FORBIDDEN, CONFLICT (versions
 // as read), WORKER_NOT_ACTIVE, NOT_IN_SEAT, SEAT_NOT_AVAILABLE, SEAT_TYPE_MISMATCH,
-// INVALID_EFFECTIVE_DATE, CONFLICT (versions at write).
+// INVALID_EFFECTIVE_DATE, EFFECTIVE_DATE_BEFORE_PENDING_CHANGE, CONFLICT (versions at write).
 //
 // Concurrency (D-011, optimistic locking): the reads take no row locks. The seat read must show
 // the versions the leader loaded, so the checks run on exactly the state the lock guards. The
@@ -178,6 +178,23 @@ async function runMove(
     );
   }
 
+  // EFFECTIVE_DATE_BEFORE_PENDING_CHANGE (D-037): a move can't take effect before a change already
+  // recorded for the worker, the source seat or the target seat. Otherwise the history on those
+  // dates would not match the order the changes were made in (a worker could be in two seats on
+  // one date). An equal date is fine. One bound-parameter read finds the latest date per subject.
+  const latest = await latestEffectiveDates(tx, input);
+  const earlier = [
+    { subject: "worker", date: latest.worker },
+    { subject: "source seat", date: latest.fromSeat },
+    { subject: "target seat", date: latest.toSeat },
+  ].find((s) => s.date !== null && input.effectiveDate < s.date);
+  if (earlier) {
+    fail(
+      "EFFECTIVE_DATE_BEFORE_PENDING_CHANGE",
+      `The ${earlier.subject} already has a change effective ${earlier.date}. Choose ${earlier.date} or later.`,
+    );
+  }
+
   // CONFLICT: the version-checked writes (D-011). Source first, then target. A move that read
   // the seats before a racing move committed passed the check above and fails here.
   const [fromAfter] = await tx
@@ -239,4 +256,27 @@ async function runMove(
     fromSeat: { seatId: input.fromSeatId, version: fromAfter.version },
     toSeat: { seatId: input.toSeatId, version: toAfter.version },
   };
+}
+
+// The latest effective_date (YYYY-MM-DD, or null when none) already recorded in app.seat_changes
+// for the worker, the source seat and the target seat. Cast to text so the driver doesn't turn
+// the date into a JS Date in the server's time zone. The worker subject matches worker_id,
+// from_worker_id and to_worker_id, so writers that set only the from/to columns are still caught.
+async function latestEffectiveDates(tx: Tx, input: MoveInput) {
+  const workerMatch = or(
+    eq(seatChanges.workerId, input.workerId),
+    eq(seatChanges.fromWorkerId, input.workerId),
+    eq(seatChanges.toWorkerId, input.workerId),
+  );
+  const latestWhere = (condition: SQL) =>
+    sql<string | null>`(max(${seatChanges.effectiveDate}) filter (where ${condition}))::text`;
+  const [row] = await tx
+    .select({
+      worker: latestWhere(sql`${workerMatch}`),
+      fromSeat: latestWhere(sql`${seatChanges.seatId} = ${input.fromSeatId}`),
+      toSeat: latestWhere(sql`${seatChanges.seatId} = ${input.toSeatId}`),
+    })
+    .from(seatChanges)
+    .where(or(workerMatch, inArray(seatChanges.seatId, [input.fromSeatId, input.toSeatId])));
+  return row;
 }

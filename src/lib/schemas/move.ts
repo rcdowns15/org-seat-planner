@@ -34,6 +34,7 @@ export const MOVE_FAILURE_CODES = [
   "SEAT_NOT_AVAILABLE",
   "SEAT_TYPE_MISMATCH",
   "INVALID_EFFECTIVE_DATE",
+  "EFFECTIVE_DATE_BEFORE_PENDING_CHANGE",
   "CONFLICT",
 ] as const;
 export type MoveFailureCode = (typeof MOVE_FAILURE_CODES)[number];
