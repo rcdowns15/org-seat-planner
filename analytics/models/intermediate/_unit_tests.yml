@@ -1,0 +1,138 @@
+version: 2
+
+# dbt unit tests: tiny hand-written inputs, checked against hand-written expected rows. The seed has
+# no seat changes, so these are what prove the seat-history models do the right thing.
+
+unit_tests:
+  # --- int_seat_occupancy -------------------------------------------------------------------
+  - name: occupancy_move_pair
+    description: A move writes two changes; the worker leaves seat 1 and holds seat 2 from the effective date.
+    model: int_seat_occupancy
+    given:
+      - input: ref('stg_app__seats')
+        rows:
+          - {seat_id: 1, worker_id: null}
+          - {seat_id: 2, worker_id: W1}
+      - input: ref('stg_app__seat_changes')
+        rows:
+          - {change_id: 1, seat_id: 1, from_worker_id: W1, to_worker_id: null, effective_date: "2026-12-01"}
+          - {change_id: 2, seat_id: 2, from_worker_id: null, to_worker_id: W1, effective_date: "2026-12-01"}
+    expect:
+      rows:
+        - {seat_id: 1, worker_id: W1, start_date: "1900-01-01", end_date: "2026-12-01"}
+        - {seat_id: 2, worker_id: W1, start_date: "2026-12-01", end_date: null}
+
+  - name: occupancy_same_day_double_hop
+    description: >
+      A worker moves seat 1 to seat 2, then seat 2 to seat 3, all effective the same day. Seat 2
+      was held for zero days, so it has no period and nothing overlaps.
+    model: int_seat_occupancy
+    given:
+      - input: ref('stg_app__seats')
+        rows:
+          - {seat_id: 1, worker_id: null}
+          - {seat_id: 2, worker_id: null}
+          - {seat_id: 3, worker_id: W1}
+      - input: ref('stg_app__seat_changes')
+        rows:
+          - {change_id: 1, seat_id: 1, from_worker_id: W1, to_worker_id: null, effective_date: "2026-12-01"}
+          - {change_id: 2, seat_id: 2, from_worker_id: null, to_worker_id: W1, effective_date: "2026-12-01"}
+          - {change_id: 3, seat_id: 2, from_worker_id: W1, to_worker_id: null, effective_date: "2026-12-01"}
+          - {change_id: 4, seat_id: 3, from_worker_id: null, to_worker_id: W1, effective_date: "2026-12-01"}
+    expect:
+      rows:
+        - {seat_id: 1, worker_id: W1, start_date: "1900-01-01", end_date: "2026-12-01"}
+        - {seat_id: 3, worker_id: W1, start_date: "2026-12-01", end_date: null}
+
+  - name: occupancy_seat_never_changed
+    description: A seat with no changes is held by its current worker since the beginning of time.
+    model: int_seat_occupancy
+    given:
+      - input: ref('stg_app__seats')
+        rows:
+          - {seat_id: 5, worker_id: W5}
+          - {seat_id: 6, worker_id: null}
+      - input: ref('stg_app__seat_changes')
+        rows: []
+    expect:
+      rows:
+        - {seat_id: 5, worker_id: W5, start_date: "1900-01-01", end_date: null}
+
+  - name: occupancy_planted_overlap
+    description: >
+      Bad data on purpose: W1 still holds seat 1 (no move-out) while a change puts them in seat 2.
+      The model reports two open-ended periods that overlap, which no_double_seating then flags.
+    model: int_seat_occupancy
+    given:
+      - input: ref('stg_app__seats')
+        rows:
+          - {seat_id: 1, worker_id: W1}
+          - {seat_id: 2, worker_id: W1}
+      - input: ref('stg_app__seat_changes')
+        rows:
+          - {change_id: 1, seat_id: 2, from_worker_id: null, to_worker_id: W1, effective_date: "2026-12-01"}
+    expect:
+      rows:
+        - {seat_id: 1, worker_id: W1, start_date: "1900-01-01", end_date: null}
+        - {seat_id: 2, worker_id: W1, start_date: "2026-12-01", end_date: null}
+
+  # --- int_seat_state_as_of -----------------------------------------------------------------
+  - name: seat_state_rewinds_future_changes
+    description: >
+      Changes effective after a report date are rewound with their from_* columns; changes effective
+      on or before it stay. Two report dates show the same seats at two points in time.
+    model: int_seat_state_as_of
+    given:
+      - input: ref('stg_workday__worker_report')
+        rows:
+          - {report_date: "2026-11-15"}
+          - {report_date: "2026-12-05"}
+      - input: ref('stg_app__seats')
+        rows:
+          # Moved out (to backfill) on 2026-12-01.
+          - {seat_id: 1, squad_id: 10, seat_type: employee, seat_status: backfill, worker_id: null}
+          # Same-day double hop: filled then vacated again on 2026-12-01; ends backfill.
+          - {seat_id: 2, squad_id: 10, seat_type: employee, seat_status: backfill, worker_id: null}
+          # Filled on 2026-12-01.
+          - {seat_id: 3, squad_id: 10, seat_type: employee, seat_status: filled, worker_id: W1}
+          # Never changed.
+          - {seat_id: 4, squad_id: 11, seat_type: contingent, seat_status: filled, worker_id: X1}
+          # Changed on 2026-11-01, before both report dates.
+          - {seat_id: 5, squad_id: 11, seat_type: employee, seat_status: filled, worker_id: Y1}
+      - input: ref('stg_app__seat_changes')
+        rows:
+          - {change_id: 1, seat_id: 1, from_status: filled, from_worker_id: W1, effective_date: "2026-12-01"}
+          - {change_id: 2, seat_id: 2, from_status: open, from_worker_id: null, effective_date: "2026-12-01"}
+          - {change_id: 3, seat_id: 2, from_status: filled, from_worker_id: W1, effective_date: "2026-12-01"}
+          - {change_id: 4, seat_id: 3, from_status: open, from_worker_id: null, effective_date: "2026-12-01"}
+          - {change_id: 5, seat_id: 5, from_status: open, from_worker_id: null, effective_date: "2026-11-01"}
+    expect:
+      rows:
+        - {seat_id: 1, report_date: "2026-11-15", seat_status: filled, worker_id: W1}
+        - {seat_id: 2, report_date: "2026-11-15", seat_status: open, worker_id: null}
+        - {seat_id: 3, report_date: "2026-11-15", seat_status: open, worker_id: null}
+        - {seat_id: 4, report_date: "2026-11-15", seat_status: filled, worker_id: X1}
+        - {seat_id: 5, report_date: "2026-11-15", seat_status: filled, worker_id: Y1}
+        - {seat_id: 1, report_date: "2026-12-05", seat_status: backfill, worker_id: null}
+        - {seat_id: 2, report_date: "2026-12-05", seat_status: backfill, worker_id: null}
+        - {seat_id: 3, report_date: "2026-12-05", seat_status: filled, worker_id: W1}
+        - {seat_id: 4, report_date: "2026-12-05", seat_status: filled, worker_id: X1}
+        - {seat_id: 5, report_date: "2026-12-05", seat_status: filled, worker_id: Y1}
+
+  # --- int_worker_latest_report -------------------------------------------------------------
+  - name: worker_missing_from_latest_report_is_kept
+    description: >
+      A worker in the first report but not the second keeps their last known row, flagged
+      is_in_latest_report = false (a missing worker is an exception, not a deletion). dim_people
+      is built one-to-one from this model.
+    model: int_worker_latest_report
+    given:
+      - input: ref('stg_workday__worker_report')
+        rows:
+          - {worker_id: A1, report_date: "2026-11-01", job_title: Analyst}
+          - {worker_id: B1, report_date: "2026-11-01", job_title: Engineer}
+          - {worker_id: A1, report_date: "2026-11-15", job_title: Senior Analyst}
+    expect:
+      rows:
+        - {worker_id: A1, last_seen_report_date: "2026-11-15", is_in_latest_report: true, job_title: Senior Analyst}
+        - {worker_id: B1, last_seen_report_date: "2026-11-01", is_in_latest_report: false, job_title: Engineer}

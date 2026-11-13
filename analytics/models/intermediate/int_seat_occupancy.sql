@@ -7,6 +7,8 @@
 --   2. the first change's from_worker_id held the seat from the beginning of time until that change;
 --   3. a seat never changed is held by its current worker since the beginning of time.
 -- "Beginning of time" is 1900-01-01.
+-- Changes are ordered by (effective_date, change_id). The move service rejects an effective date
+-- earlier than a pending change (D-037), so effective order and save order agree.
 
 with changes as (
 
@@ -15,8 +17,8 @@ with changes as (
         from_worker_id,
         to_worker_id,
         effective_date,
-        row_number() over (partition by seat_id order by effective_date, created_at, change_id) as change_seq,
-        lead(effective_date) over (partition by seat_id order by effective_date, created_at, change_id) as next_effective_date
+        row_number() over (partition by seat_id order by effective_date, change_id) as change_seq,
+        lead(effective_date) over (partition by seat_id order by effective_date, change_id) as next_effective_date
     from {{ ref('stg_app__seat_changes') }}
 
 ),

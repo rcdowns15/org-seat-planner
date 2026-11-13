@@ -1,5 +1,5 @@
--- Grain: squad x report date. Seat counts are the live seat plan (the app keeps no seat history yet),
--- repeated for every report date; the plan is the quarter containing the report date.
+-- Grain: squad x report date. Seat counts are as of each report date, rebuilt from the audit log
+-- (int_seat_state_as_of, D-036); the plan is the quarter containing the report date.
 
 with report_dates as (
 
@@ -39,7 +39,9 @@ joined as (
         coalesce(counts.offer_accepted_seats, 0) as offer_accepted_seats,
         plan.approved_seats
     from squad_dates
-    left join {{ ref('int_squad_seat_counts') }} as counts on counts.squad_id = squad_dates.squad_id
+    left join {{ ref('int_squad_seat_counts') }} as counts
+        on counts.squad_id = squad_dates.squad_id
+        and counts.report_date = squad_dates.report_date
     left join {{ ref('stg_app__headcount_plan') }} as plan
         on plan.squad_id = squad_dates.squad_id
         and plan.quarter_start = squad_dates.plan_quarter_start

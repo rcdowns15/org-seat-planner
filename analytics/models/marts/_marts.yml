@@ -28,6 +28,8 @@ models:
       One row per worker ever seen in an ingested Workday report: the worker's row from the latest
       report they appear in, plus the seat they hold now in the leaders' plan. A worker missing
       from the newest report keeps their last known row and has `is_in_latest_report = false`.
+      Workers who hold a seat in the plan but appear in no report are absent (the model starts
+      from reports); a reconciliation model has to find those.
     columns:
       - name: worker_id
         description: Worker ID; one row per worker.
@@ -109,9 +111,9 @@ models:
 
   - name: rpt_squad_headcount
     description: >
-      Squad headcount against the approved plan, one row per squad per report date. Seat counts come
-      from the live seat plan (`app.seats`), which keeps no history yet, so every report date shows
-      the same current counts; `is_latest_report` marks the date the counts are current for.
+      Squad headcount against the approved plan, one row per squad per report date. Seat counts are
+      as of each report date, rebuilt from the audit log (`int_seat_state_as_of`, D-036), so moves
+      effective after a report date are not counted in that date's row.
       The plan is the squad's approved seats for the quarter containing the report date.
       Committed seats = filled employee + filled contingent + offer accepted seats.
       Variance = committed seats minus approved seats: zero means exactly on plan, negative means
@@ -136,7 +138,7 @@ models:
         description: Workday report date the row is stamped with.
         data_tests: [not_null]
       - name: is_latest_report
-        description: True for the newest report date.
+        description: True for the newest ingested report date. It marks which row is newest, not that the counts equal today's live seats.
         data_tests:
           - not_null
           - accepted_values:

@@ -1,19 +1,41 @@
 -- For the latest report, rpt_squad_headcount must equal live counts taken straight from app.seats
--- (the source, not the staging or intermediate models the mart is built from).
--- Returns squads whose mart counts differ from the live counts, plus a 'ALL' row if the grand
--- totals differ or the mart has no latest-report rows at all.
+-- (the source, not the staging or intermediate models the mart is built from), provided no seat
+-- change is effective after the latest report date (D-036: a future-dated change makes the live
+-- seats differ from the as-of state on purpose, so the test has nothing to compare then).
+-- Squads with no seats count as 0 on both sides. Returns squads whose mart counts differ from the
+-- live counts, plus an 'ALL' row if the grand totals differ or the mart has no latest-report rows.
 
-with live as (
+with latest as (
+
+    select max(report_date) as report_date
+    from {{ ref('rpt_squad_headcount') }}
+
+),
+
+comparable as (
+
+    select 1 as one
+    from latest
+    where not exists (
+        select 1
+        from {{ source('app', 'seat_changes') }} as changes
+        where changes.effective_date > latest.report_date
+    )
+
+),
+
+live as (
 
     select
-        squad_id,
-        count(*) filter (where status = 'filled' and seat_type = 'employee') as filled_employee_seats,
-        count(*) filter (where status = 'filled' and seat_type = 'contingent') as filled_contingent_seats,
-        count(*) filter (where status = 'open') as open_seats,
-        count(*) filter (where status = 'backfill') as backfill_seats,
-        count(*) filter (where status = 'offer_accepted') as offer_accepted_seats
-    from {{ source('app', 'seats') }}
-    group by squad_id
+        squads.squad_id,
+        count(seats.seat_id) filter (where seats.status = 'filled' and seats.seat_type = 'employee') as filled_employee_seats,
+        count(seats.seat_id) filter (where seats.status = 'filled' and seats.seat_type = 'contingent') as filled_contingent_seats,
+        count(seats.seat_id) filter (where seats.status = 'open') as open_seats,
+        count(seats.seat_id) filter (where seats.status = 'backfill') as backfill_seats,
+        count(seats.seat_id) filter (where seats.status = 'offer_accepted') as offer_accepted_seats
+    from {{ source('app', 'squads') }} as squads
+    left join {{ source('app', 'seats') }} as seats on seats.squad_id = squads.squad_id
+    group by squads.squad_id
 
 ),
 
@@ -46,8 +68,11 @@ totals as (
 
 )
 
-select subject from per_squad
+select per_squad.subject
+from per_squad
+cross join comparable
 union all
 select 'ALL' as subject
 from totals
+cross join comparable
 where mart_total is distinct from live_total

@@ -60,14 +60,58 @@ models:
       - name: location
         description: Work location from the worker's latest row.
 
+  - name: int_seat_state_as_of
+    description: >
+      Every seat's state as of each report date, one row per seat per report date (D-036). Starts
+      from the live seat plan (`app.seats`) and rewinds every change in `app.seat_changes` whose
+      effective date is after the report date, using its `from_*` columns, ordered by
+      `(effective_date, change_id)`. Seats with no later change keep their live state.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [seat_id, report_date]
+    columns:
+      - name: seat_id
+        description: The seat.
+        data_tests: [not_null]
+      - name: squad_id
+        description: The seat's squad (a seat never changes squad).
+        data_tests: [not_null]
+      - name: seat_type
+        description: Seat type (a seat never changes type).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["employee", "contingent"]
+      - name: report_date
+        description: Workday report date the state is as of.
+        data_tests: [not_null]
+      - name: seat_status
+        description: Seat status on the report date.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["open", "filled", "backfill", "offer_accepted"]
+      - name: worker_id
+        description: Worker holding the seat on the report date; null unless the seat is filled.
+
   - name: int_squad_seat_counts
     description: >
-      One row per squad that has seats: its seats counted by state, from the live seat plan
-      (`app.seats`). The plan keeps no seat history yet, so these are current counts.
+      One row per squad per report date, for squads that have seats: the squad's seats counted by
+      state as of that report date (from `int_seat_state_as_of`).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [squad_id, report_date]
     columns:
       - name: squad_id
-        description: Squad; one row per squad.
-        data_tests: [unique, not_null]
+        description: The squad.
+        data_tests: [not_null]
+      - name: report_date
+        description: Workday report date the counts are as of.
+        data_tests: [not_null]
       - name: filled_employee_seats
         description: Employee seats with status `filled`.
         data_tests: [not_null]
@@ -90,7 +134,8 @@ models:
   - name: int_seat_occupancy
     description: >
       Who held which seat and when, built from the audit log (`app.seat_changes`) plus current seat
-      holders of seats that never changed. Periods are half-open `[start_date, end_date)`; a null
+      holders of seats that never changed. Changes are ordered by `(effective_date, change_id)`.
+      Periods are half-open `[start_date, end_date)`; a null
       `end_date` means still holding. Not unique by design: the double-seating test looks for
       overlaps between rows of the same worker.
     columns:
