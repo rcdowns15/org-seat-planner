@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { parseGroupParam, workerStatusLabel } from "@/lib/board";
+import { defaultGroupIdForLeader, parseGroupParam, workerStatusLabel } from "@/lib/board";
+
+describe("defaultGroupIdForLeader", () => {
+  const groups = [
+    { groupId: 5, name: "A", divisionId: 1, divisionName: "D1" },
+    { groupId: 6, name: "B", divisionId: 1, divisionName: "D1" },
+    { groupId: 7, name: "C", divisionId: 2, divisionName: "D2" },
+  ];
+  it("opens a group leader on their own group", () => {
+    expect(
+      defaultGroupIdForLeader({ scopeType: "group", divisionId: null, groupId: 6 }, groups),
+    ).toBe(6);
+  });
+  it("opens a division leader on the first group of their division", () => {
+    expect(
+      defaultGroupIdForLeader({ scopeType: "division", divisionId: 2, groupId: null }, groups),
+    ).toBe(7);
+    expect(
+      defaultGroupIdForLeader({ scopeType: "division", divisionId: 1, groupId: null }, groups),
+    ).toBe(5);
+  });
+  it("returns null with no leader (the caller falls back to the demo group)", () => {
+    expect(defaultGroupIdForLeader(null, groups)).toBeNull();
+  });
+});
 
 describe("parseGroupParam", () => {
   it("accepts absent and positive integers", () => {
