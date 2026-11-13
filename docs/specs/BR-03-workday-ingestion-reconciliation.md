@@ -124,7 +124,7 @@ task it would be in production (sensor on the report, ingest, dbt build, alert o
 - [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
 Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
 
-### LR-03-06 · Stop a position backfill from wedging ingestion · status: in-progress · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
+### LR-03-06 · Stop a position backfill from wedging ingestion · status: review (https://github.com/rcdowns15/org-seat-planner/pull/12) · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
 From the LR-03-01 round-2 review (P2, waived in that PR). `workday.workers` is upsert-only (approved), and the partial unique
 index `workers_position_id_active_key` (migration 0001, D-029) allows one non-terminated holder per `Position_ID`. If worker A
 drops out of the extract while still non-terminated and B is backfilled into A's position, every later report fails that
