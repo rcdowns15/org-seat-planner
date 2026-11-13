@@ -79,7 +79,7 @@ Record the SQL statements the transaction ran (for LR-02-08) in a small server-s
 - [ ] Every query uses bound parameters (reviewer check); the seat update SQL includes `AND version = $n`
 Likely files: `src/server/services/moves.ts`, `src/server/actions/move.ts`, `src/lib/schemas/move.ts`, `src/lib/results.ts`, `src/server/sql-log.ts`, `tests/db/moves.test.ts`, `tests/unit/move-schema.test.ts`.
 
-### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: ready · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
+### LR-02-10 · Reject out-of-order effective dates (split from LR-02-03) · status: in-progress · depends: LR-02-03 (merged, #11) · owner: agent · executor model: sonnet · cut line: yes (D-037)
 A missing validation from LR-02-03, not new scope. `moveWorker` rejects a move whose `effectiveDate`
 is earlier than the latest `effective_date` in `app.seat_changes` for the worker, the source seat or
 the target seat, with a new failure code `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` (checked with the
@@ -91,7 +91,7 @@ one seat on every date" true in the data, so dbt's seat history (D-036) can't do
 - [ ] The LR-02-04 dialog shows this code's message (if LR-02-04 has merged; otherwise note it for LR-02-04)
 Likely files: `src/server/services/moves.ts`, `src/lib/results.ts`, `tests/db/moves.test.ts`.
 
-### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: ready · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
+### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: in-progress · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
 With dnd-kit, a filled card can be dragged onto an `open` or `backfill` card the leader can edit.
 Dropping opens a dialog: who moves, from where, to where, an effective-date picker (default today),
 Save and Cancel. Save calls the move action; a failure shows its message in the dialog and the
