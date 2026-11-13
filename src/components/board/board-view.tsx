@@ -9,7 +9,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { BoardSquad } from "@/lib/board";
 import type { SimulateEditResult } from "@/lib/schemas/demo";
 import type { MoveResult } from "@/lib/schemas/move";
@@ -31,6 +31,9 @@ type Props = {
   simulate?: (input: unknown) => Promise<SimulateEditResult>;
 };
 
+// A click this soon after a drag ended belongs to the drag.
+const CLICK_AFTER_DRAG_MS = 300;
+
 // `workerId` is who the dialog is moving, so a refresh can tell whether the selection is still valid.
 type DialogState = { fromSeatId: number; toSeatId: number | null; workerId: string };
 
@@ -49,6 +52,8 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
   const [loaded, setLoaded] = useState({ squads, refreshing: false });
   // A short status line after a refresh cleared the chosen target or closed the dialog.
   const [notice, setNotice] = useState<string | null>(null);
+  // When the last drag ended (ms since epoch), so the click that follows a drag can be ignored.
+  const lastDragEnd = useRef(0);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -56,6 +61,8 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
   // Selecting is a URL change, so the server re-renders the page with the new selection.
   // Selecting the selected seat again clears it.
   function selectSeat(seatId: number) {
+    // A drag that ends over its own card is followed by a click on that card: not a selection.
+    if (Date.now() - lastDragEnd.current < CLICK_AFTER_DRAG_MS) return;
     const next = new URLSearchParams(searchParams.toString());
     if (seatId === selectedSeatId) next.delete("seat");
     else next.set("seat", String(seatId));
@@ -119,6 +126,8 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
   );
 
   function onDragEnd(event: DragEndEvent) {
+    // dnd-kit calls this on pointer-up, before the browser's click event (if there is one).
+    lastDragEnd.current = Date.now();
     if (!event.over) return;
     const fromSeatId = parseSeatDndId(event.active.id);
     const toSeatId = parseSeatDndId(event.over.id);
@@ -132,7 +141,14 @@ export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId, s
   const to = dialog?.toSeatId != null ? (refs.get(dialog.toSeatId) ?? null) : null;
 
   return (
-    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => {
+        lastDragEnd.current = Date.now();
+      }}
+    >
       {notice && !dialog ? (
         <p role="status" data-testid="board-notice" className="mt-4 text-sm font-medium">
           {notice}

@@ -21,6 +21,12 @@ export function cardState(status: SeatStatus, seatType: SeatType): CardState {
   return status;
 }
 
+// What a seat is, in words, for the Select button's accessible name:
+// "Open seat 206" or "Filled (employee) seat 12, Jane Doe".
+export function seatDescription(seatId: number, state: CardState, workerName: string | null) {
+  return `${cardStateLabel(state)} seat ${seatId}${workerName ? `, ${workerName}` : ""}`;
+}
+
 // Always shown as text next to an icon, never color alone.
 export function cardStateLabel(state: CardState): string {
   if (state === "filled_employee") return `${formatSeatStatus("filled")} (employee)`;

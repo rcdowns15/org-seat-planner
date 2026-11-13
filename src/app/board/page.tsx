@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { BoardView } from "@/components/board/board-view";
 import { defaultGroupIdForLeader, parseGroupParam } from "@/lib/board";
 import { SqlPanel } from "@/components/sql-panel";
+import { SeatHistoryPanel } from "@/components/seat-history-panel";
+import { getSeatHistory } from "@/server/queries/history";
 import { parseSeatParam } from "@/lib/schemas/sql-panel";
 import { getUnderTheHood } from "@/server/queries/under-the-hood";
 import { DemoToolbar } from "@/components/demo-toolbar";
@@ -83,14 +85,24 @@ export default async function BoardPage({
         ))}
       </nav>
 
-      <BoardView
-        squads={board.squads}
-        editable={editable}
-        canMoveTo={canMoveTo}
-        move={moveWorkerFromBoard}
-        selectedSeatId={selectedSeatId}
-        simulate={demoMode ? simulateAnotherLeaderEditAction : undefined}
-      />
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <BoardView
+            squads={board.squads}
+            editable={editable}
+            canMoveTo={canMoveTo}
+            move={moveWorkerFromBoard}
+            selectedSeatId={selectedSeatId}
+            simulate={demoMode ? simulateAnotherLeaderEditAction : undefined}
+          />
+        </div>
+        {selectedSeatId !== null ? (
+          <SeatHistoryPanel
+            seatId={selectedSeatId}
+            entries={await getSeatHistory(selectedSeatId)}
+          />
+        ) : null}
+      </div>
       {demoMode ? (
         <DemoToolbar selectedSeatId={selectedSeatId} simulate={simulateAnotherLeaderEditAction} />
       ) : null}
