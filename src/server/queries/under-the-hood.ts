@@ -27,7 +27,12 @@ function cell(value: unknown): string {
 type Runner = (text: string, values: unknown[]) => Promise<QueryResult>;
 type Failure = Extract<QueryResult, { ok: false }>;
 
-function toFailure(err: unknown): Failure {
+function toFailure(err: unknown, connected = true): Failure {
+  if (!connected) {
+    // Driver messages can carry hosts or user names, so keep them out of the UI; log server-side.
+    console.error("Under the hood: could not get a database connection:", err);
+    return { ok: false, code: "QUERY_ERROR", message: "Database unavailable." };
+  }
   const e = err as { code?: string; message?: string };
   if (e.code === "25006") {
     return { ok: false, code: "READ_ONLY_VIOLATION", message: "Writes are not allowed here." };
@@ -44,7 +49,8 @@ function toFailure(err: unknown): Failure {
 // fails (timeout, error, refused write) Postgres aborts the transaction, so we roll back to the
 // savepoint and the next query still works. Connection failures come back as a failure result
 // instead of throwing, so a database hiccup can't take down the page that renders the panel.
-async function inReadOnlyTransaction<T>(
+// Exported for the tests only; code outside this file must use getUnderTheHood (D-026).
+export async function inReadOnlyTransaction<T>(
   work: (run: Runner) => Promise<T>,
 ): Promise<{ ok: true; value: T } | Failure> {
   let client: PoolClient | null = null;
@@ -67,12 +73,13 @@ async function inReadOnlyTransaction<T>(
         };
       } catch (err) {
         await conn.query("rollback to savepoint preset");
+        await conn.query("release savepoint preset"); // so failed savepoints don't stack up
         return toFailure(err);
       }
     };
     return { ok: true, value: await work(run) };
   } catch (err) {
-    return toFailure(err);
+    return toFailure(err, client !== null);
   } finally {
     if (client) {
       // If rollback itself fails, destroy the connection instead of returning it to the pool.
@@ -272,7 +279,8 @@ export type UnderTheHood = {
 export async function getUnderTheHood(rawParams: unknown): Promise<UnderTheHood> {
   const ids = panelParamsSchema.parse(rawParams);
   // One connection, one snapshot, presets run one after another (a single client can't run
-  // queries in parallel anyway).
+  // queries in parallel anyway). Latency: worst case is about 5 x 2s (every preset hitting the
+  // statement timeout) plus the connect timeout. Accepted as the price of one consistent snapshot.
   const out = await inReadOnlyTransaction(async (run) => {
     const done: PanelSection[] = [];
     for (const key of PRESET_KEYS) done.push(await runPreset(key, ids, run));

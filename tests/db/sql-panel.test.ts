@@ -5,6 +5,7 @@ import { getPool } from "@/server/db";
 import {
   ROW_LIMIT,
   getUnderTheHood,
+  inReadOnlyTransaction,
   runReadOnlyQuery,
   type PanelSection,
 } from "@/server/queries/under-the-hood";
@@ -94,6 +95,27 @@ describe("runReadOnlyQuery", () => {
       rows: [["1"]],
     });
   });
+});
+
+describe("savepoint recovery", () => {
+  it("one transaction keeps working after a timeout, an error and a refused write", async () => {
+    const out = await inReadOnlyTransaction(async (run) => [
+      await run("select pg_sleep(10)", []),
+      await run("select * from no_such_table", []),
+      await run("insert into app.divisions (name) values ($1)", ["Should Not Exist"]),
+      await run("show transaction_read_only", []),
+      await run("show statement_timeout", []),
+      await run("select 1 as one", []),
+    ]);
+    if (!out.ok) throw new Error("could not connect");
+    const [timeout, error, write, readOnly, stmtTimeout, one] = out.value;
+    expect(timeout).toMatchObject({ ok: false, code: "TIMEOUT" });
+    expect(error).toMatchObject({ ok: false, code: "QUERY_ERROR" });
+    expect(write).toMatchObject({ ok: false, code: "READ_ONLY_VIOLATION" });
+    expect(readOnly).toMatchObject({ ok: true, rows: [["on"]] });
+    expect(stmtTimeout).toMatchObject({ ok: true, rows: [["2s"]] });
+    expect(one).toMatchObject({ ok: true, rows: [["1"]] });
+  }, 15_000);
 });
 
 describe("getUnderTheHood", () => {

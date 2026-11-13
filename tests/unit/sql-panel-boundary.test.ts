@@ -14,13 +14,16 @@ function files(dir: string): string[] {
 }
 
 describe("D-026 guard", () => {
-  it("no file outside under-the-hood.ts uses runReadOnlyQuery", () => {
-    const root = process.cwd();
-    const offenders = files(join(root, "src"))
-      .filter((f) => /\.(ts|tsx)$/.test(f))
-      .map((f) => relative(root, f))
-      .filter((f) => f !== ALLOWED)
-      .filter((f) => readFileSync(join(root, f), "utf8").includes("runReadOnlyQuery"));
-    expect(offenders).toEqual([]);
-  });
+  it.each(["runReadOnlyQuery", "inReadOnlyTransaction"])(
+    "no file outside under-the-hood.ts uses %s",
+    (name) => {
+      const root = process.cwd();
+      const offenders = files(join(root, "src"))
+        .filter((f) => /\.(ts|tsx)$/.test(f))
+        .map((f) => relative(root, f))
+        .filter((f) => f !== ALLOWED)
+        .filter((f) => readFileSync(join(root, f), "utf8").includes(name));
+      expect(offenders).toEqual([]);
+    },
+  );
 });
