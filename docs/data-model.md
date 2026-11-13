@@ -403,9 +403,22 @@ Definitions in `rpt_squad_headcount`:
 - **Fill rate** = filled seats (employee + contingent) divided by approved seats, a fraction rounded
   to 4 decimals; null when approved seats is zero.
 - The plan is the squad's `app.headcount_plan` row for the quarter containing the report date.
-- Seat counts are the live `app.seats` state, because the app keeps no seat history yet. Every report
-  date therefore shows the same current counts, and `is_latest_report` marks the date they are current for.
+- Seat counts are as of each report date (D-036). `int_seat_state_as_of` (one row per seat per report
+  date) starts from live `app.seats` and rewinds every `app.seat_changes` row whose `effective_date`
+  is after the report date, using its `from_*` columns, in `(effective_date, change_id)` order.
+  `int_squad_seat_counts` counts those states per squad and report date. A move effective after a
+  report date is therefore not in that date's row. `is_latest_report` only marks the newest report.
+- `dim_people` starts from reports: a worker who holds a seat but appears in no report is absent.
+
+Intermediate models: `int_worker_latest_report` (one row per worker), `int_seat_state_as_of`,
+`int_squad_seat_counts`, and `int_seat_occupancy` (who held which seat when, half-open periods,
+ordered by `(effective_date, change_id)`; D-037 makes that agree with save order).
 
 Custom tests (`analytics/tests/`): `no_double_seating` (error; no worker holds two seats in
 overlapping periods, built from `app.seat_changes` in `int_seat_occupancy`), `squad_not_over_plan`
-(error), and `assert_squad_headcount_matches_live_seats` (latest-report counts equal live `app.seats`).
+(error), `assert_squad_headcount_matches_live_seats` (latest-report counts equal live `app.seats`
+when no change is effective after the latest report; squads with no seats count as 0), and
+`assert_seat_changes_effective_dates_in_save_order` (warn; backstop for the move service's
+effective-date rule, D-037). dbt unit tests in `analytics/models/intermediate/_unit_tests.yml` cover
+the seat-state and occupancy models and the missing-worker case with hand-made rows, because the
+seed has no `seat_changes`.
