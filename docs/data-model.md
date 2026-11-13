@@ -28,6 +28,7 @@ exist. Change the schema and this file in the same little rock.
 | `app.seats` | One approved seat in a squad, filled or not; the row the board shows, with an optimistic-lock `version`. |
 | `app.seat_changes` | Append-only audit log: one row per seat change; a move is two rows sharing `move_id`. |
 | `app.headcount_plan` | Approved seat count per squad per quarter (the plan the HRIS is reconciled against). |
+| `app.demo_reset_state` | One row: when "Reset demo data" last ran, for the one-per-minute throttle (demo only). |
 | `workday.workers` | Current typed view of Workday: one row per worker ever seen in an accepted report (upsert-only). |
 | `workday.raw_worker_report` | Every row of every accepted Workday report, as text, exactly as the file had it. |
 | `workday.ingest_runs` | One row per ingest attempt: loaded, skipped (same file hash) or rejected. |
@@ -103,6 +104,10 @@ erDiagram
         int squad_id PK
         date quarter_start PK
         int approved_seats
+    }
+    demo_reset_state {
+        int id PK
+        timestamptz last_reset_at
     }
     workers {
         text worker_id PK
@@ -252,6 +257,18 @@ Approved seats per squad per quarter.
 | `squad_id` | integer | no | PK part; FK → `app.squads` |
 | `quarter_start` | date | no | PK part; must be Jan 1, Apr 1, Jul 1 or Oct 1 |
 | `approved_seats` | integer | no | never negative |
+
+### `app.demo_reset_state`
+Demo only (LR-04-01). One row (`id = 1`) holding when "Reset demo data" last ran. It is in the
+database so the one-reset-per-minute throttle holds across serverless instances. It is not seed
+data and not in the seed checksum; `pnpm db:seed` clears it. The reset itself empties and reloads
+the other `app` tables (including `app.seat_changes`, through the guarded TRUNCATE the seed also
+uses) and never touches `workday`.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| `id` | integer | no | PK; always 1 (check constraint) |
+| `last_reset_at` | timestamptz | no | |
 
 ### `workday.workers`
 The current, typed view of Workday: one row per worker ever seen in an accepted report. Written only

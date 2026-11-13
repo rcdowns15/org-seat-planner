@@ -184,6 +184,19 @@ export const seatChanges = app.table(
   ],
 );
 
+// One row, id = 1: when "Reset demo data" last ran (LR-04-01). It lives in the database, not in
+// process memory, so the one-per-minute throttle holds across serverless instances. It is not
+// seed data: the reset and the seed checksum leave it alone, and only a full `pnpm db:seed`
+// clears it.
+export const demoResetState = app.table(
+  "demo_reset_state",
+  {
+    id: integer("id").primaryKey(),
+    lastResetAt: timestamp("last_reset_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [check("demo_reset_state_single_row_check", sql`${t.id} = 1`)],
+);
+
 // Approved seats per squad per quarter (the leaders' plan).
 export const headcountPlan = app.table(
   "headcount_plan",

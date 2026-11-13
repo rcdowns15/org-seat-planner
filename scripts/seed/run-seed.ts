@@ -2,15 +2,14 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { sql } from "drizzle-orm";
-import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { AnyPgColumn, PgTable } from "drizzle-orm/pg-core";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { divisions, groups, headcountPlan, leaders, seats, squads } from "../../db/schema/app";
 import { ingestReport } from "../ingest/load";
 import { CsvFileReader } from "../ingest/reader";
+import { insertAppRows, toRows, truncateAppTables } from "./app-rows";
 import { seedChecksum } from "./checksum";
 import { NEXT_REPORT_DATE, SEED_DATE } from "./config";
-import { generateSeedData, type SeedData } from "./generate";
+import { generateSeedData } from "./generate";
 import { buildReportCsv, reportFileName } from "./workday-reports";
 
 export const DEFAULT_REPORT_DIR = path.join("data", "workday");
@@ -20,64 +19,6 @@ export type SeedResult = {
   counts: Record<string, number>;
   reports: { file: string; sha256: string }[];
 };
-
-// Postgres allows 65,535 bind parameters per statement: batches of 1,000 rows stay far below that
-// even for the widest table here (16 columns).
-const BATCH_SIZE = 1000;
-
-function chunk<T>(rows: T[]): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) out.push(rows.slice(i, i + BATCH_SIZE));
-  return out;
-}
-
-// Inserts rows in order and checks the database handed out ids 1..n in that order. The seed
-// refers to parents by array position, so this is what keeps the foreign keys right.
-async function insertInOrder(
-  tx: NodePgDatabase,
-  table: PgTable,
-  idColumn: AnyPgColumn,
-  rows: Record<string, unknown>[],
-): Promise<void> {
-  let expected = 1;
-  for (const batch of chunk(rows)) {
-    // Every row value is bound as a parameter by Drizzle. `never` because `table` is generic here.
-    const inserted = await tx
-      .insert(table)
-      .values(batch as never)
-      .returning({ id: idColumn });
-    for (const { id } of inserted) {
-      if (id !== expected++) throw new Error(`Unexpected id ${String(id)} in ${idColumn.name}`);
-    }
-  }
-}
-
-function toRows(data: SeedData) {
-  const { org } = data;
-  return {
-    divisions: org.divisions.map((d) => ({ name: d.name })),
-    groups: org.groups.map((g) => ({ divisionId: g.divisionIndex + 1, name: g.name })),
-    squads: org.squads.map((s) => ({ groupId: s.groupIndex + 1, name: s.name })),
-    leaders: data.leaders.map((l) => ({
-      workerId: l.workerId,
-      displayName: l.displayName,
-      scopeType: l.scopeType,
-      divisionId: l.divisionIndex === null ? null : l.divisionIndex + 1,
-      groupId: l.groupIndex === null ? null : l.groupIndex + 1,
-    })),
-    seats: data.seats.map((s) => ({
-      squadId: s.squadIndex + 1,
-      seatType: s.seatType,
-      status: s.status,
-      workerId: s.workerId,
-    })),
-    plan: data.plan.map((p) => ({
-      squadId: p.squadIndex + 1,
-      quarterStart: p.quarterStart,
-      approvedSeats: p.approvedSeats,
-    })),
-  };
-}
 
 // Wipes and reseeds app + workday in one transaction, then writes both report CSVs.
 export async function runSeed(
@@ -90,21 +31,14 @@ export async function runSeed(
   try {
     const db = drizzle(pool);
     await db.transaction(async (tx) => {
-      // app.seat_changes is append-only; its TRUNCATE guard (migration 0002) only lets the
-      // transaction through after this setting, which ends with the transaction.
-      await tx.execute(sql`SET LOCAL app.allow_seat_changes_reset = 'on'`);
+      await truncateAppTables(tx);
+      // Workday tables and the demo reset throttle are wiped by the full seed only.
       await tx.execute(sql`
-        TRUNCATE app.seat_changes, app.seats, app.leaders, app.headcount_plan, app.squads,
-                 app.groups, app.divisions, workday.workers,
-                 workday.raw_worker_report, workday.ingest_runs
+        TRUNCATE app.demo_reset_state, workday.workers, workday.raw_worker_report,
+                 workday.ingest_runs
         RESTART IDENTITY
       `);
-      await insertInOrder(tx, divisions, divisions.divisionId, rows.divisions);
-      await insertInOrder(tx, groups, groups.groupId, rows.groups);
-      await insertInOrder(tx, squads, squads.squadId, rows.squads);
-      await insertInOrder(tx, leaders, leaders.leaderId, rows.leaders);
-      await insertInOrder(tx, seats, seats.seatId, rows.seats);
-      for (const batch of chunk(rows.plan)) await tx.insert(headcountPlan).values(batch);
+      await insertAppRows(tx, rows);
     });
 
     await mkdir(reportDir, { recursive: true });
