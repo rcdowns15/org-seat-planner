@@ -3,12 +3,12 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-13 · #16 (LR-02-08), #17 (LR-02-05), #18 (LR-03-04) merged; main CI green; D-034 tripwire met (orchestrator)
-- **Milestone:** M2 (BR-02): 7 of 8 cut-line LRs done; LR-02-06 ready. M3 (BR-03): 5 of 6 done; LR-03-05 ready. Cut line overall: 22 of 27 (81%).
+- **Last updated:** 2026-11-13 · navigator check-in after the orchestrator report (#16, #17, #18 merged; D-023 clarified; LR-04-01 ready)
+- **Milestone:** M2 (BR-02): 7 of 8 cut-line LRs done; LR-02-06 ready. M3 (BR-03): 5 of 6 done; LR-03-05 ready. M4 (BR-04): 0 of 4; LR-04-01 ready. Cut line overall: 22 of 27 (81%), about a day ahead of the day-by-day plan.
 - **In flight:** none. No open PRs.
-- **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034) met early: LR-02-08 and LR-03-04 both merged 2026-11-13, so "Last save: SQL executed" stays above the cut line.
-- **Waiting on Rob:** paste the next orchestrator brief (fresh session).
-- **Next:** LR-02-06 seat history panel (Sonnet; branch from main; criteria include the `seat_changes(seat_id)` index and two seat-card P3s from the LR-02-08 review) and LR-03-05 `pnpm pipeline` + Neon + SQL panel presets (Sonnet; touches `under-the-hood.ts`/`sql-panel.tsx`, and LR-02-06 touches board components, so check overlap; one Playwright run at a time on port 3000). Databases `seatplanner_lr0206` exists; create one for LR-03-05.
+- **Blocked:** none. D-034 tripwire met early (LR-02-08 and LR-03-04 merged 2026-11-13); "Last save: SQL executed" stays above the cut line.
+- **Waiting on Rob:** commit the doc changes; paste the next orchestrator brief (fresh session); later, trigger or approve the `pipeline.yml` run against Neon for LR-03-05.
+- **Next:** one orchestrator brief for LR-02-06 (seat history), LR-03-05 (`pnpm pipeline`, Neon, presets) and LR-04-01 (demo reset and banner), all Sonnet, branched from main, one database each, one Playwright run at a time on port 3000. Then LR-04-02 and LR-04-03 once LR-03-05 merges.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +22,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13: Navigator, from the orchestrator report: D-023 clarification recorded in `DECISIONS.md` (404 from routes/pages, `NOT_FOUND` result from server actions, applies to every demo action). LR-04-01 → `ready` (LR-02-05 merged); its reset criterion now says `NOT_FOUND` result instead of 404. Master plan rollup: BR-02 7/8, BR-03 5/6. The LR-03-04 Rob decisions (all 8 hiring-gap groups listed; a seated + missing worker produces only `seated_missing_from_report`) are criteria-level and already in the spec, so they get no D-entry. Process lessons for `code/LESSONS.md` (don't close an orchestrator with agents running; stacked branches + merge commits work) are handed to Rob.
 - 2026-11-13: LR-02-08 (PR #16), LR-03-04 (PR #18) and LR-02-05 (PR #17) are done; main CI green on the #17 merge. D-034 tripwire met. LR-03-05 is now `ready` (deps LR-03-04, LR-02-08, LR-01-09 all done). Cut line: 22 of 27.
 - 2026-11-13: Rob approved the D-023 wording: demo-only actions return 404 from routes/pages and a `NOT_FOUND` result from server actions. `CLAUDE.md` project rule and the LR-02-05 criterion updated. Navigator: add a `docs/DECISIONS.md` note under D-023.
 - 2026-11-13: Cleanup: superseded branch `lr/LR-03-04-exceptions` deleted (local and remote); all 40 stale agent worktrees removed (every commit on them was already on main, checked with `git cherry`); merged local branches deleted.

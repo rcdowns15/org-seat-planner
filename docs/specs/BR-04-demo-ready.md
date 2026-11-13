@@ -24,13 +24,13 @@ smoke workflow.
 ## Little rocks
 Parallel: LR-04-02 and LR-04-03 together once BR-02 and BR-03 are merged.
 
-### LR-04-01 · Demo mode: reset and fictional-data banner · status: todo · depends: LR-02-05 · owner: agent · executor model: sonnet
+### LR-04-01 · Demo mode: reset and fictional-data banner · status: ready · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
 With `DEMO_MODE=true`: a site-wide banner ("Second Republic Bank is fictional; all data is
 generated") and a "Reset demo data" action that restores the `app` tables to the seed (one
 transaction; Workday tables are untouched because the app never writes them). Throttle resets to one
 per minute. `db-deploy` with `reseed: true` remains the full reset.
 - [ ] DB test: after several moves, reset returns the `app` checksum to the baseline
-- [ ] DB test: reset returns 404 without `DEMO_MODE`; a second reset within a minute is refused
+- [ ] DB test: without `DEMO_MODE`, the reset server action returns a `NOT_FOUND` result and writes nothing (D-023 clarification); a second reset within a minute is refused
 - [ ] e2e: the banner is visible on every page
 Likely files: `src/server/actions/demo.ts`, `scripts/seed/index.ts`, `src/components/demo-banner.tsx`, `src/components/demo-toolbar.tsx`, `tests/db/reset.test.ts`.
 

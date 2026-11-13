@@ -132,6 +132,11 @@ tests run on Docker locally and a service container in CI. `pnpm test` stays dat
 "reset demo". They must not exist in a non-demo deployment, and the simulated edit is written to
 the audit log like any other change.
 **Alternatives:** separate admin pages without a flag (easy to forget in production).
+**Clarified (Rob, 2026-11-13, from the LR-02-05 review):** with `DEMO_MODE` unset, a demo-only
+route or page returns 404, and a demo-only server action returns a typed `NOT_FOUND` result (the
+server action's form of 404, following the mutation result convention). Either way, nothing is
+written. This applies to every demo action: LR-02-05's simulated edit, LR-04-01's reset, and
+BR-07's refresh button. The `CLAUDE.md` project rule says the same.
 
 ### D-024 · 2026-11-11 · accepted (Rob, 2026-11-11) · Version pins: Node in `.nvmrc`, pnpm in `packageManager`, Python in `analytics/.python-version`, dbt in `analytics/uv.lock`
 **Why:** one place per tool (harness rule). CI reads the same pins.
