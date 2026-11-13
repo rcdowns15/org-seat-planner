@@ -2,6 +2,7 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import {
+  Check,
   CircleDashed,
   HardHat,
   MoveRight,
@@ -29,6 +30,9 @@ type Props = {
   // A leader is selected: filled cards offer "Move to…" (the server still checks permission).
   canMoveTo: boolean;
   onMoveTo: (seatId: number) => void;
+  // The board-level selection (?seat=<id>): this card is the selected seat, and how to (de)select.
+  selected: boolean;
+  onSelect: (seatId: number) => void;
 };
 
 export function seatDndId(seatId: number): string {
@@ -39,7 +43,7 @@ export function parseSeatDndId(id: string | number): number {
   return Number(String(id).replace("seat-", ""));
 }
 
-export function SeatCard({ seat, editable, canMoveTo, onMoveTo }: Props) {
+export function SeatCard({ seat, editable, canMoveTo, onMoveTo, selected, onSelect }: Props) {
   const state = cardState(seat.status, seat.seatType);
   const Icon = ICONS[state];
   const filled = seat.status === "filled";
@@ -69,13 +73,34 @@ export function SeatCard({ seat, editable, canMoveTo, onMoveTo }: Props) {
       data-state={state}
       data-seat-id={seat.seatId}
       data-draggable={editable && filled ? "true" : undefined}
-      className={`bg-card relative rounded-md border p-2 text-sm ${
+      data-selected={selected ? "true" : undefined}
+      // A click on the card selects it. The drag sensor needs a 6px move, so a plain click never
+      // starts a drag. Clicks on the "Move to…" button are that button's own.
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("[data-testid=move-to-button]")) return;
+        onSelect(seat.seatId);
+      }}
+      className={`bg-card relative rounded-md p-2 text-sm ${
+        selected ? "border-primary border-2" : "border"
+      } ${
         editable && filled ? "cursor-grab touch-none" : ""
       } ${dragging ? "z-20 shadow-lg" : ""} ${drop.isOver ? "ring-primary ring-2" : ""}`}
     >
       <div className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
         <Icon aria-hidden className="size-3.5" />
         <span data-testid="seat-state-label">{cardStateLabel(state)}</span>
+        {/* The keyboard path to selection; the whole card is also clickable. The "Selected" text
+            and check icon mean selection is never shown by the border color alone. */}
+        <button
+          type="button"
+          aria-pressed={selected}
+          aria-label={`Select seat ${seat.seatId}`}
+          data-testid="select-seat-button"
+          className="ml-auto inline-flex items-center gap-1 rounded border px-1 py-0.5 text-xs"
+        >
+          {selected ? <Check aria-hidden className="size-3" /> : null}
+          {selected ? "Selected" : "Select"}
+        </button>
       </div>
       {filled ? (
         <div className="mt-1">

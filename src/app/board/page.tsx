@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BoardView } from "@/components/board/board-view";
 import { defaultGroupIdForLeader, parseGroupParam } from "@/lib/board";
+import { SqlPanel } from "@/components/sql-panel";
+import { parseSeatParam } from "@/lib/schemas/sql-panel";
+import { getUnderTheHood } from "@/server/queries/under-the-hood";
 import { moveWorkerFromBoard } from "@/server/actions/board-move";
 import { getActingLeader } from "@/server/auth/acting-leader";
 import { getBoard, listGroups } from "@/server/queries/board";
@@ -13,9 +16,11 @@ export const dynamic = "force-dynamic";
 export default async function BoardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ group?: string | string[] }>;
+  searchParams: Promise<{ group?: string | string[]; seat?: string | string[] }>;
 }) {
-  const groupId = parseGroupParam((await searchParams).group);
+  const params = await searchParams;
+  const groupId = parseGroupParam(params.group);
+  const selectedSeatId = parseSeatParam(params.seat);
   if (groupId === "invalid") notFound();
   const leader = await getActingLeader();
   // No ?group=: open on the acting leader's scope; with no leader, getBoard uses the demo group.
@@ -27,6 +32,11 @@ export default async function BoardPage({
   const editable =
     leader !== null &&
     scopeAllows(leader, { groupId: board.group.groupId, divisionId: board.group.divisionId });
+
+  const underTheHood = await getUnderTheHood({
+    seatId: selectedSeatId,
+    groupId: board.group.groupId,
+  });
 
   const divisions = [...new Set(board.groups.map((g) => g.divisionName))];
 
@@ -71,7 +81,15 @@ export default async function BoardPage({
         editable={editable}
         canMoveTo={leader !== null}
         move={moveWorkerFromBoard}
+        selectedSeatId={selectedSeatId}
       />
+
+      <SqlPanel data={underTheHood} />
+      <p className="mt-2 text-sm">
+        <Link href={selectedSeatId ? `/sql?seat=${selectedSeatId}` : "/sql"} className="underline">
+          Open the SQL panel on its own page
+        </Link>
+      </p>
     </main>
   );
 }
