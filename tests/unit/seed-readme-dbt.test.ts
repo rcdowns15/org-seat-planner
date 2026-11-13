@@ -23,10 +23,12 @@ const sorted = (rows: string[][]) => rows.map((r) => r.join("|")).sort();
 describe("dbt seed-list tests agree with scripts/seed/README.md", () => {
   it("lists the documented reconciliation exceptions in assert_reconciliation_exceptions_match_seed_readme", () => {
     const sqlRows = expectedValues("assert_reconciliation_exceptions_match_seed_readme.sql");
+    // The SQL list carries seat_id as text, '' for a hiring_gap (no seat).
     const readmeRows = documentedExceptions().map((e) => [
       e.exceptionType,
       e.subjectId,
       e.severity,
+      e.seatId === null ? "" : String(e.seatId),
     ]);
     expect(readmeRows.length).toBeGreaterThan(0);
     expect(sorted(sqlRows)).toEqual(sorted(readmeRows));

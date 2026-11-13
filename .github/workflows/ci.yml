@@ -127,3 +127,8 @@ jobs:
         working-directory: analytics
       - run: uv run dbt build
         working-directory: analytics
+      # These two are warn-level so a used local database still builds. On this freshly seeded
+      # database a warning means the 11-15 report didn't load or the seed-list tests skipped, so
+      # --warn-error turns it into a failure.
+      - run: uv run dbt --warn-error test --select assert_next_report_is_loaded assert_seed_list_tests_are_active
+        working-directory: analytics

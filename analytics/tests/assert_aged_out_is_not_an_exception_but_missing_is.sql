@@ -6,16 +6,15 @@
 --     `missing` in rpt_workday_changes and IS in rpt_reconciliation_exceptions, once, as
 --     `seated_missing_from_report` (a seated worker doesn't also get
 --     `missing_without_termination`: Rob's decision on LR-03-04, option b).
--- Returns one row per broken expectation. Checks only once the 11-15 report is ingested.
+-- Returns one row per broken expectation. Checks only in the seed state
+-- (macros/seed_list_tests_active.sql: latest report is 2026-11-15 and no seat change saved), so
+-- vacating seat 955 or loading a third report skips it instead of failing it;
+-- assert_seed_list_tests_are_active warns then.
 
-with report_loaded as (
+with seed_state as (
 
     select 1 as one
-    where exists (
-        select 1
-        from {{ ref('stg_workday__worker_report') }}
-        where report_date = date '2026-11-15'
-    )
+    where {{ seed_list_tests_active() }}
 
 ),
 
@@ -82,4 +81,4 @@ problems as (
 
 select problems.*
 from problems
-cross join report_loaded
+cross join seed_state

@@ -2,8 +2,11 @@
 -- scripts/seed/README.md ("Changes in the 11-15 report"), row for row. The README's `leave` kind is
 -- `leave_start` here (the README's report has only Active -> On Leave moves).
 -- Returns rows that are expected but missing ('missing_from_mart') or present but not expected
--- ('unexpected_in_mart'). Checks only the 11-15 report, and only once it is ingested: `pnpm db:seed`
--- loads 11-01 alone, and the comparison needs both reports (CI ingests 11-15 before dbt build).
+-- ('unexpected_in_mart'). Checks only the 11-15 report, and only in the seed state
+-- (macros/seed_list_tests_active.sql: latest report is 2026-11-15 and no seat change saved).
+-- `pnpm db:seed` loads 11-01 alone and the comparison needs both reports (CI ingests 11-15 before
+-- dbt build); a third report would make 11-15 no longer the latest. When the gate is closed the
+-- test skips and assert_seed_list_tests_are_active warns.
 
 with expected (worker_id, change_type) as (
 
@@ -34,14 +37,10 @@ with expected (worker_id, change_type) as (
 
 ),
 
-report_loaded as (
+seed_state as (
 
     select 1 as one
-    where exists (
-        select 1
-        from {{ ref('stg_workday__worker_report') }}
-        where report_date = date '2026-11-15'
-    )
+    where {{ seed_list_tests_active() }}
 
 ),
 
@@ -67,4 +66,4 @@ differences as (
 
 select differences.*
 from differences
-cross join report_loaded
+cross join seed_state

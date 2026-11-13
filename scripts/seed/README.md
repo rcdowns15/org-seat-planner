@@ -170,9 +170,12 @@ holds exactly these 38 rows and nothing else: 8 `terminated_seated`, 1 `seated_m
 21 `on_leave_seated` and 8 `hiring_gap`. The seed has no `worker_type_mismatch` and no
 `missing_without_termination` (100878 is seated, so it gets only `seated_missing_from_report`).
 The dbt test `analytics/tests/assert_reconciliation_exceptions_match_seed_readme.sql` compares the
-mart with this list both ways, and `tests/unit/seed-readme-dbt.test.ts` checks that the test's list
-and this table agree. Subject is the worker ID, or the group ID for `hiring_gap`; Seat is the seat
-in `app.seats`, empty for a group.
+mart with this list both ways (type, subject, severity and seat), and
+`tests/unit/seed-readme-dbt.test.ts` checks that the test's list and this table agree. Subject is
+the worker ID, or the group ID for `hiring_gap`; Seat is the seat in `app.seats`, empty for a
+group. The list holds only in the seed state: once a seat change is saved (a move, an undo, a demo
+edit) or a report after 11-15 is loaded, the seed-list dbt tests skip and
+`assert_seed_list_tests_are_active` warns instead (CI runs it with `--warn-error`).
 
 The hiring-gap rule flags every group whose `offer_accepted` seats outnumber its future-dated hires
 in the latest report. Only three groups have a future hire (see "Future-dated hires"), so six groups

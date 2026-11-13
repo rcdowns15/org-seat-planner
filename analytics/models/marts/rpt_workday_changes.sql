@@ -7,8 +7,10 @@
 --
 -- Dropping off a report is `aged_out` when the worker was terminated before the report's
 -- termination window (the report date minus window - 1 days through the report date, inclusive,
--- the rule the mock reports follow), and `missing` otherwise. `missing` is an exception
--- (rpt_reconciliation_exceptions); `aged_out` is not.
+-- the rule the mock reports follow), and `missing` otherwise. A `missing` worker is an exception
+-- in rpt_reconciliation_exceptions only when they hold a seat (`seated_missing_from_report`) or
+-- were active or on leave in the previous report (`missing_without_termination`); `aged_out` is
+-- not an exception.
 
 {% set window_days = var('workday_termination_window_days') %}
 

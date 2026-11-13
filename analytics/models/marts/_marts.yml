@@ -276,6 +276,9 @@ models:
       hires in the latest report, matched by cost center name because seats aren't linked to
       positions, D-029). Worker checks on status and type look only at workers in the latest
       report; a seated worker missing from it gets `seated_missing_from_report` instead.
+      `missing_without_termination` compares only the latest report with the previous one, so an
+      unseated worker who stays missing drops out of this report one report later (they are no
+      longer in the previous report either). Revisit when a third report exists.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
