@@ -78,6 +78,15 @@ describe("runReadOnlyQuery", () => {
     expect(result.rows).toHaveLength(ROW_LIMIT);
   });
 
+  it("reports truncation only past the cap: 201 rows truncate, 200 do not", async () => {
+    const over = await runReadOnlyQuery("select g from generate_series(1, $1::int) g", [201]);
+    expect(over).toMatchObject({ ok: true, truncated: true });
+    if (!over.ok) throw new Error("unreachable");
+    expect(over.rows).toHaveLength(ROW_LIMIT);
+    const exact = await runReadOnlyQuery("select g from generate_series(1, $1::int) g", [200]);
+    expect(exact).toMatchObject({ ok: true, truncated: false });
+  });
+
   it("leaves the connection usable after a failure (pool is not poisoned)", async () => {
     await runReadOnlyQuery("select * from no_such_table", []);
     expect(await runReadOnlyQuery("select 1 as one", [])).toMatchObject({
@@ -124,6 +133,58 @@ describe("getUnderTheHood", () => {
       worker_id: WORKER_ON_LEAVE,
       status: "leave",
     });
+  });
+});
+
+describe("plan_gaps preset", () => {
+  it("open, backfill, plan and variance match an independent count per squad", async () => {
+    const [group] = await query<{ group_id: number }>(
+      "select group_id from app.leaders where worker_id = $1",
+      [GROUP_LEADER_WORKER],
+    );
+    const now = new Date();
+    const quarterStart = new Date(
+      Date.UTC(now.getUTCFullYear(), Math.floor(now.getUTCMonth() / 3) * 3, 1),
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    const { sections } = await getUnderTheHood({ seatId: null, groupId: group.group_id });
+    const rows = rowsOf(section(sections, "plan_gaps"));
+    const squads = await query<{ squad_id: number }>(
+      "select squad_id from app.squads where group_id = $1",
+      [group.group_id],
+    );
+    expect(rows).toHaveLength(squads.length);
+    expect(rows.length).toBeGreaterThan(0);
+
+    let checked = 0;
+    for (const { squad_id } of squads) {
+      const [expected] = await query<{
+        open_seats: number;
+        backfill_seats: number;
+        committed: number;
+        plan: number | null;
+      }>(
+        `select
+           (select count(*) from app.seats where squad_id = $1 and status = 'open')::int as open_seats,
+           (select count(*) from app.seats where squad_id = $1 and status = 'backfill')::int as backfill_seats,
+           (select count(*) from app.seats where squad_id = $1
+              and status in ('filled', 'offer_accepted'))::int as committed,
+           (select approved_seats from app.headcount_plan
+              where squad_id = $1 and quarter_start = $2::date) as plan`,
+        [squad_id, quarterStart],
+      );
+      const row = rows.find((r) => r.squad_id === String(squad_id))!;
+      expect(Number(row.open_seats)).toBe(expected.open_seats);
+      expect(Number(row.backfill_seats)).toBe(expected.backfill_seats);
+      if (expected.plan !== null) {
+        expect(Number(row.approved_plan)).toBe(expected.plan);
+        expect(Number(row.variance)).toBe(expected.committed - expected.plan);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(0); // at least one squad has a current-quarter plan
   });
 });
 
@@ -237,5 +298,71 @@ describe("Impact of last move", () => {
       expect(Number(pick(squadId, "before").variance)).toBe(committed(b) - plan);
       expect(Number(pick(squadId, "after").variance)).toBe(committed(a) - plan);
     }
+  });
+
+  it("within-squad move into a backfill seat: 1 squad, before equals the pre-move snapshot", async () => {
+    const [leaderRow] = await query<{ leader_id: number; group_id: number }>(
+      "select leader_id, group_id from app.leaders where worker_id = $1",
+      [GROUP_LEADER_WORKER],
+    );
+    const leader = (await findLeader(leaderRow.leader_id)) as Leader;
+
+    // A squad in the group with an active employee in a filled seat and a second employee seat
+    // that is open or backfill. Force it to backfill so the test is deterministic.
+    const [pair] = await query<{ from_seat: number; to_seat: number; squad_id: number }>(
+      `select f.seat_id as from_seat, t.seat_id as to_seat, f.squad_id
+       from app.seats f
+       join app.squads q on q.squad_id = f.squad_id
+       join workday.workers w on w.worker_id = f.worker_id
+       join app.seats t on t.squad_id = f.squad_id and t.seat_type = 'employee'
+         and t.status in ('open', 'backfill')
+       where q.group_id = $1 and f.seat_type = 'employee' and f.status = 'filled'
+         and w.status = 'active' and w.worker_type = 'employee'
+       order by f.seat_id, t.seat_id limit 1`,
+      [leaderRow.group_id],
+    );
+    await query("update app.seats set status = 'backfill' where seat_id = $1", [pair.to_seat]);
+    const [mover] = await query<{ version: number; worker_id: string }>(
+      "select version, worker_id from app.seats where seat_id = $1",
+      [pair.from_seat],
+    );
+    const [target] = await query<{ version: number }>(
+      "select version from app.seats where seat_id = $1",
+      [pair.to_seat],
+    );
+
+    const before = await snapshot(pair.squad_id);
+    const result = await moveWorker(
+      {
+        workerId: mover.worker_id,
+        fromSeatId: pair.from_seat,
+        toSeatId: pair.to_seat,
+        effectiveDate: addUtcDays(utcToday(), 3),
+        fromSeatVersion: mover.version,
+        toSeatVersion: target.version,
+      },
+      leader,
+    );
+    expect(result.ok).toBe(true);
+    const after = await snapshot(pair.squad_id);
+
+    const { sections } = await getUnderTheHood({ seatId: null, groupId: null });
+    const impact = rowsOf(section(sections, "last_move_impact"));
+    expect(impact).toHaveLength(2); // one squad x before/after
+    const pick = (phase: string) => impact.find((r) => r.phase === phase)!;
+    expect(countsOf(pick("before"))).toEqual(before);
+    expect(countsOf(pick("after"))).toEqual(after);
+
+    // Filled is unchanged. The vacated seat becomes backfill and the target leaves backfill, so
+    // backfill and open counts are unchanged too, but the two seats swapped roles.
+    expect(after.filled_employee).toBe(before.filled_employee);
+    expect(after.backfill_seats).toBe(before.backfill_seats);
+    expect(after.open_seats).toBe(before.open_seats);
+    const [seats] = await query<{ from_status: string; to_status: string }>(
+      `select (select status from app.seats where seat_id = $1) as from_status,
+              (select status from app.seats where seat_id = $2) as to_status`,
+      [pair.from_seat, pair.to_seat],
+    );
+    expect(seats).toEqual({ from_status: "backfill", to_status: "filled" });
   });
 });

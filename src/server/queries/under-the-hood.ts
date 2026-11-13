@@ -24,42 +24,74 @@ function cell(value: unknown): string {
   return String(value);
 }
 
-// Runs one fixed query with bound values inside a READ ONLY transaction (Postgres itself refuses
-// any write, SQLSTATE 25006), with a 2 s statement timeout, and keeps at most 200 rows. The
-// transaction is always rolled back. Exported for the tests; code outside this file should use
-// getUnderTheHood, and the text passed here must always be a constant.
-export async function runReadOnlyQuery(text: string, values: unknown[]): Promise<QueryResult> {
-  const client: PoolClient = await getPool().connect();
+type Runner = (text: string, values: unknown[]) => Promise<QueryResult>;
+type Failure = Extract<QueryResult, { ok: false }>;
+
+function toFailure(err: unknown): Failure {
+  const e = err as { code?: string; message?: string };
+  if (e.code === "25006") {
+    return { ok: false, code: "READ_ONLY_VIOLATION", message: "Writes are not allowed here." };
+  }
+  if (e.code === "57014") {
+    return { ok: false, code: "TIMEOUT", message: `Query stopped after ${STATEMENT_TIMEOUT}.` };
+  }
+  return { ok: false, code: "QUERY_ERROR", message: e.message ?? "Query failed." };
+}
+
+// Opens one connection and one READ ONLY transaction (Postgres itself refuses any write, SQLSTATE
+// 25006) with a 2 s statement timeout, hands `work` a runner, and always rolls back. Every query
+// run through the runner sees the same snapshot. Each query gets its own savepoint: when one
+// fails (timeout, error, refused write) Postgres aborts the transaction, so we roll back to the
+// savepoint and the next query still works. Connection failures come back as a failure result
+// instead of throwing, so a database hiccup can't take down the page that renders the panel.
+async function inReadOnlyTransaction<T>(
+  work: (run: Runner) => Promise<T>,
+): Promise<{ ok: true; value: T } | Failure> {
+  let client: PoolClient | null = null;
   try {
+    client = await getPool().connect();
     await client.query("begin read only");
     await client.query(`set local statement_timeout = '${STATEMENT_TIMEOUT}'`); // constant, no input
-    const res = await client.query({ text, values, rowMode: "array" });
-    const all = res.rows as unknown[][];
-    return {
-      ok: true,
-      columns: res.fields.map((f) => f.name),
-      rows: all.slice(0, ROW_LIMIT).map((r) => r.map(cell)),
-      truncated: all.length > ROW_LIMIT,
+    const conn = client;
+    const run: Runner = async (text, values) => {
+      await conn.query("savepoint preset");
+      try {
+        const res = await conn.query({ text, values, rowMode: "array" });
+        await conn.query("release savepoint preset");
+        const all = res.rows as unknown[][];
+        return {
+          ok: true,
+          columns: res.fields.map((f) => f.name),
+          rows: all.slice(0, ROW_LIMIT).map((r) => r.map(cell)),
+          truncated: all.length > ROW_LIMIT,
+        };
+      } catch (err) {
+        await conn.query("rollback to savepoint preset");
+        return toFailure(err);
+      }
     };
+    return { ok: true, value: await work(run) };
   } catch (err) {
-    const e = err as { code?: string; message?: string };
-    if (e.code === "25006") {
-      return { ok: false, code: "READ_ONLY_VIOLATION", message: "Writes are not allowed here." };
-    }
-    if (e.code === "57014") {
-      return { ok: false, code: "TIMEOUT", message: `Query stopped after ${STATEMENT_TIMEOUT}.` };
-    }
-    return { ok: false, code: "QUERY_ERROR", message: e.message ?? "Query failed." };
+    return toFailure(err);
   } finally {
-    // The transaction may be aborted; rollback is valid either way. If even that fails, destroy
-    // the connection instead of returning a broken one to the pool.
-    try {
-      await client.query("rollback");
-      client.release();
-    } catch {
-      client.release(true);
+    if (client) {
+      // If rollback itself fails, destroy the connection instead of returning it to the pool.
+      try {
+        await client.query("rollback");
+        client.release();
+      } catch {
+        client.release(true);
+      }
     }
   }
+}
+
+// Runs one fixed query with bound values in its own READ ONLY transaction, keeping at most 200
+// rows (a 201st row only sets `truncated`). Exported for the tests; code outside this file must
+// use getUnderTheHood, and the text passed here must always be a constant (D-026).
+export async function runReadOnlyQuery(text: string, values: unknown[]): Promise<QueryResult> {
+  const out = await inReadOnlyTransaction((run) => run(text, values));
+  return out.ok ? out.value : out;
 }
 
 export const PRESET_KEYS = [
@@ -134,7 +166,7 @@ left join app.headcount_plan pl
 where q.group_id = $1
 group by q.squad_id, q.name, pl.approved_seats
 order by q.name, q.squad_id
-limit 200`,
+limit 201`,
     emptyMessage: "No squads in this group.",
   },
   last_move_impact: {
@@ -187,7 +219,7 @@ left join app.headcount_plan pl
  and pl.quarter_start = date_trunc('quarter', now() at time zone 'utc')::date
 group by q.squad_id, q.name, p.phase, pl.approved_seats
 order by q.name, q.squad_id, p.phase desc
-limit 200`,
+limit 201`,
     emptyMessage: "No move yet. Move a worker and this table shows its effect on both squads.",
   },
 };
@@ -204,7 +236,7 @@ export type PanelSection = {
 };
 
 // Runs one preset with already-validated IDs.
-export async function runPreset(key: PresetKey, ids: PanelParams): Promise<PanelSection> {
+async function runPreset(key: PresetKey, ids: PanelParams, run: Runner): Promise<PanelSection> {
   const preset = PRESETS[key];
   const base = { key, title: preset.title, description: preset.description, sql: preset.sql };
   const bound = preset.needs === null ? null : ids[preset.needs];
@@ -212,9 +244,22 @@ export async function runPreset(key: PresetKey, ids: PanelParams): Promise<Panel
     return { ...base, params: [], empty: preset.emptyMessage, result: null };
   }
   const params = bound === null ? [] : [bound];
-  const result = await runReadOnlyQuery(preset.sql, params);
+  const result = await run(preset.sql, params);
   const empty = result.ok && result.rows.length === 0 ? preset.emptyMessage : null;
   return { ...base, params, empty, result };
+}
+
+function failedSection(key: PresetKey, result: Failure): PanelSection {
+  const p = PRESETS[key];
+  return {
+    key,
+    title: p.title,
+    description: p.description,
+    sql: p.sql,
+    params: [],
+    empty: null,
+    result,
+  };
 }
 
 export type UnderTheHood = {
@@ -226,7 +271,14 @@ export type UnderTheHood = {
 // can't reach a query.
 export async function getUnderTheHood(rawParams: unknown): Promise<UnderTheHood> {
   const ids = panelParamsSchema.parse(rawParams);
-  const sections = await Promise.all(PRESET_KEYS.map((key) => runPreset(key, ids)));
+  // One connection, one snapshot, presets run one after another (a single client can't run
+  // queries in parallel anyway).
+  const out = await inReadOnlyTransaction(async (run) => {
+    const done: PanelSection[] = [];
+    for (const key of PRESET_KEYS) done.push(await runPreset(key, ids, run));
+    return done;
+  });
+  const sections = out.ok ? out.value : PRESET_KEYS.map((key) => failedSection(key, out)); // could not connect
   return { sections, lastSave: lastSave() };
 }
 

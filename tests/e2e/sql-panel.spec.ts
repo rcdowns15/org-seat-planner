@@ -243,13 +243,18 @@ test.describe("Under the hood panel", () => {
       .getByTestId("sql-last-save-statement")
       .locator("pre")
       .allTextContents();
+    // A move updates two seats, each guarded by the optimistic-lock version check.
     const updates = statements.filter((s) => /^update "app"\."seats"/i.test(s));
-    expect(updates.length).toBeGreaterThanOrEqual(1);
-    for (const u of updates) expect(u).toMatch(/"version" = /);
-    expect(updates.some((u) => /"version" = \$\d+/.test(u))).toBe(true); // the lock check
+    expect(updates).toHaveLength(2);
+    for (const u of updates) expect(u).toMatch(/where .*"version" = \$\d+/is);
     const inserts = statements.filter((s) => /^insert into "app"\."seat_changes"/i.test(s));
     expect(inserts).toHaveLength(2);
-    await expect(page.getByTestId("sql-last-save")).toContainText("Values:");
+    // The bound values must include this test's target seat id, so an earlier save can't pass.
+    const saved = page.getByTestId("sql-last-save");
+    await expect(saved).toContainText("Values:");
+    const text = (await saved.textContent()) ?? "";
+    const values = text.slice(text.indexOf("Values:"));
+    expect(values).toMatch(new RegExp(`(^|[^0-9])${pick.to.seatId}([^0-9]|$)`));
   });
 
   test("the panel has no free-text input, and /sql shows the same presets", async ({
