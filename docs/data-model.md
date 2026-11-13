@@ -457,13 +457,15 @@ moved to a new manager in the same report is one `termination` row whose manager
 `rpt_reconciliation_exceptions` compares the latest report with the live seat plan (`app.seats`
 as saved now, the seats `dim_people` shows), so a fix a leader saves clears the exception on the
 next build. Status and type checks look only at workers in the latest report; a seated worker
-missing from it gets `seated_missing_from_report` instead.
+missing from it gets `seated_missing_from_report` instead, and only that row (one problem, one
+row: an unseated worker who drops off gets `missing_without_termination`). `seat_id` is the seat in
+the saved plan, which includes moves saved with a future effective date.
 
 | Exception type | Subject | Severity | Rule |
 |---|---|---|---|
 | `terminated_seated` | worker | error | In the latest report as terminated and holds a seat. |
 | `seated_missing_from_report` | worker | error | Holds a seat, not in the latest report (even if aged out, or never in any report). |
-| `missing_without_termination` | worker | warning | `active` or `leave` in the previous report, missing from the latest. |
+| `missing_without_termination` | worker | warning | Holds no seat; `active` or `leave` in the previous report, missing from the latest. |
 | `worker_type_mismatch` | worker | error | Worker type differs from seat type. |
 | `on_leave_seated` | worker | info | On leave and holds a seat (allowed; listed for awareness). |
 | `hiring_gap` | group | info | The group's `offer_accepted` seats outnumber its future-dated hires in the latest report, matched by cost center name (D-029). |
@@ -471,7 +473,13 @@ missing from it gets `seated_missing_from_report` instead.
 Tests: `assert_workday_changes_match_seed_readme` (the 11-15 change list in
 `scripts/seed/README.md`, row for row), `assert_terminated_seated_workers_are_exceptions` (error:
 every seated worker whose latest status is terminated is in the exceptions report),
-`assert_aged_out_is_not_an_exception_but_missing_is`, and dbt unit tests in
-`analytics/models/marts/_unit_tests.yml` for the change types and exception types the seed doesn't
-produce and for the window boundary. The two seed-list tests check the 11-15 report only once it
-is ingested (`pnpm db:seed` loads 11-01 alone; CI ingests 11-15 before `dbt build`).
+`assert_aged_out_is_not_an_exception_but_missing_is`,
+`assert_reconciliation_exceptions_match_seed_readme` (the exceptions list in
+`scripts/seed/README.md`, both ways: each seeded exception once and nothing else), and dbt unit
+tests in `analytics/models/marts/_unit_tests.yml` for the change types and exception types the seed
+doesn't produce and for the window boundary. `tests/unit/seed-readme-dbt.test.ts` checks that the
+`VALUES` lists in the two seed-list tests match the README tables. The seed-list tests check the
+11-15 report only once it is ingested (`pnpm db:seed` loads 11-01 alone; CI ingests 11-15 before
+`dbt build`); `assert_next_report_is_loaded` warns when it isn't, so a vacuous pass is visible.
+The `cost_center_name` relationships test to groups is `warn`: a real report can carry a cost
+center that isn't a group.
