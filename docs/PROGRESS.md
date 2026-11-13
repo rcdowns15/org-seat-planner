@@ -3,16 +3,16 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-13 · LR-02-08 PR #16 open; LR-02-05 and LR-03-04 in fix rounds (orchestrator)
+- **Last updated:** 2026-11-13 · PRs #16 (LR-02-08) and #17 (LR-02-05) open; LR-03-04 in fix round 2 (orchestrator)
 - **Milestone:** M2 (BR-02): 5 of 8 cut-line LRs done, LR-02-08 in review, LR-02-05 in progress, LR-02-06 ready. M3 (BR-03): 4 of 6 done, LR-03-04 in progress. Cut line overall: 19 of 27.
 - **In flight:**
   - LR-02-08 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/16 (Sonnet, build + 2 fix rounds; final review pass, no P1/P2). Merge first; LR-02-05 is stacked on it.
-  - LR-02-05: built (verified at eb5c16c on `lr/LR-02-05-conflict-simulate`, rebased on #16 tip 9cccff9: unit 94, db 156, e2e 22/22). Review 1: pass with one P2 (audit note must name the initiating leader) + P3s; fix round 1 (Sonnet) running on `lr/LR-02-05-fix1` from eb5c16c. One retry left after this.
-  - LR-03-04: Rob decided (all 8 hiring-gap groups listed; option b). Fix round 1 (Opus) running on `lr/LR-03-04-fix1` from 6fe5aa6 (original build rebased onto main). Database `seatplanner_lr0304`. Next: verify (dbt build), re-review, PR.
+  - LR-02-05 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/17, stacked on #16 (Sonnet, build + 1 fix round; review 2 pass, 3 P3s noted; e2e 22/22). Merge after #16.
+  - LR-03-04: fix round 1 verified (db1e81d, dbt PASS=252); re-review pass with one P2 (seed-list tests fail after live edits or a third report; would break LR-03-05 on Neon). Fix round 2 (Opus, last retry) running on `lr/LR-03-04-fix2` from db1e81d. Then verify, re-review, PR.
   - LR-02-06: ready; dispatch after LR-02-05 (shares `board-view.tsx`/`seat-card.tsx`), stacked on the LR-02-05 tip. Its criteria include two seat-card P3s from the LR-02-08 review and the `seat_changes(seat_id)` index.
 - **Blocked:** none. Tripwire Sat 11/14 18:00 (D-034): #16 (LR-02-08) and LR-03-04 must both be merged.
 - **Waiting on Rob:**
-  - Review and merge #16 (tripwire).
+  - Review and merge #16 (tripwire), then #17.
   - Decision (navigator): the D-023 rule and the LR-02-05 criterion say "return 404"; a server action can only return a `NOT_FOUND` result. Proposed wording: "404 for routes, a `NOT_FOUND` result for server actions" (LR-02-05 review P3).
 - **Next:** verify and review the LR-02-05 and LR-03-04 fix rounds and open their PRs, then dispatch LR-02-06. One executor at a time on port 3000; per-executor databases `seatplanner_lr02NN`/`lr0304`.
 
@@ -28,6 +28,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13 — LR-02-05 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/17, stacked on #16 (Sonnet, build + 1 fix round; review 1 P2 + six P3s fixed, 404 wording routed to navigator; review 2 pass, 3 P3s noted).
+- 2026-11-13 — LR-03-04 fix round 1 verified (dbt PASS=252); re-review P2 (gate seed-list tests on seed state); fix round 2 dispatched (Opus).
 - 2026-11-13 — LR-02-08 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/16 (Sonnet, build + 2 fix rounds; review 1 two P2s + four P3s fixed, two P3s routed to LR-02-06, one note to LR-02-07; review 2 one P2 + three P3s fixed; review 3 pass; e2e 19/19).
 - 2026-11-13 — LR-02-05 built and verified (e2e 22/22); review 1 pass with one P2; fix round 1 dispatched (Sonnet).
 - 2026-11-13 — LR-03-04: Rob decided (list all 8 hiring-gap groups; seated + missing = one `seated_missing_from_report` row only). Unblocked → `in-progress`, fix round 1 (Opus) on `lr/LR-03-04-fix1`, rebased onto main. This orchestrator session takes over LR-03-04 from the earlier one.

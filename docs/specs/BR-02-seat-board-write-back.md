@@ -104,7 +104,7 @@ filled card also has a "Move to…" menu (keyboard accessible) that opens the sa
 - [ ] The dialog shows the result's `message` for any failure code, with no per-code text in the UI, so LR-02-10's `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` shows without a UI change (reviewer check; added 2026-11-13 from the LR-02-10 review)
 Likely files: `src/components/board/*`, `src/components/move-dialog.tsx`, `src/app/board/page.tsx`, `tests/e2e/move.spec.ts`.
 
-### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: in-progress (stacked on LR-02-08) · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-05 · Conflict handling and "simulate another leader's edit" · status: review (https://github.com/rcdowns15/org-seat-planner/pull/17, stacked on #16) · depends: LR-02-04 · owner: agent · executor model: sonnet
 A `CONFLICT` result shows "This seat changed since you loaded it" with a Refresh button that
 reloads the board and keeps the dialog's selection when it's still valid. A "Simulate another
 leader's edit" button (shown only when `DEMO_MODE=true`) lets you pick a seat on screen. The server
