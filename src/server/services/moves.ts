@@ -260,22 +260,23 @@ async function runMove(
 
 // The latest effective_date (YYYY-MM-DD, or null when none) already recorded in app.seat_changes
 // for the worker, the source seat and the target seat. Cast to text so the driver doesn't turn
-// the date into a JS Date in the server's time zone.
+// the date into a JS Date in the server's time zone. The worker subject matches worker_id,
+// from_worker_id and to_worker_id, so writers that set only the from/to columns are still caught.
 async function latestEffectiveDates(tx: Tx, input: MoveInput) {
+  const workerMatch = or(
+    eq(seatChanges.workerId, input.workerId),
+    eq(seatChanges.fromWorkerId, input.workerId),
+    eq(seatChanges.toWorkerId, input.workerId),
+  );
   const latestWhere = (condition: SQL) =>
     sql<string | null>`(max(${seatChanges.effectiveDate}) filter (where ${condition}))::text`;
   const [row] = await tx
     .select({
-      worker: latestWhere(sql`${seatChanges.workerId} = ${input.workerId}`),
+      worker: latestWhere(sql`${workerMatch}`),
       fromSeat: latestWhere(sql`${seatChanges.seatId} = ${input.fromSeatId}`),
       toSeat: latestWhere(sql`${seatChanges.seatId} = ${input.toSeatId}`),
     })
     .from(seatChanges)
-    .where(
-      or(
-        eq(seatChanges.workerId, input.workerId),
-        inArray(seatChanges.seatId, [input.fromSeatId, input.toSeatId]),
-      ),
-    );
+    .where(or(workerMatch, inArray(seatChanges.seatId, [input.fromSeatId, input.toSeatId])));
   return row;
 }

@@ -158,7 +158,7 @@ beforeAll(async () => {
   );
 
   expect(movers.length).toBeGreaterThanOrEqual(7);
-  expect(openTargets.length).toBeGreaterThanOrEqual(4);
+  expect(openTargets.length).toBeGreaterThanOrEqual(5);
   expect(outsideMovers).toHaveLength(3);
   for (const s of [
     backfillTarget,
@@ -731,7 +731,9 @@ describe("EFFECTIVE_DATE_BEFORE_PENDING_CHANGE", () => {
 
   it("allows the same effective date as the latest pending change", async () => {
     const [mover, target] = [freeMovers[3], freeTargets[1]];
-    await recordPending(mover.seat_id, "999999", pending());
+    // Pending changes on all three subjects, all at the same date the move uses.
+    await recordPending(mover.seat_id, mover.worker_id!, pending());
+    await recordPending(target.seat_id, "999999", pending());
     const result = await moveWorker(
       moveOf(mover, target, { effectiveDate: pending() }),
       groupLeader,
