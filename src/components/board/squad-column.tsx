@@ -8,9 +8,18 @@ type Props = {
   editable: boolean;
   canMoveTo: boolean;
   onMoveTo: (seatId: number) => void;
+  selectedSeatId: number | null;
+  onSelectSeat: (seatId: number) => void;
 };
 
-export function SquadColumn({ squad, editable, canMoveTo, onMoveTo }: Props) {
+export function SquadColumn({
+  squad,
+  editable,
+  canMoveTo,
+  onMoveTo,
+  selectedSeatId,
+  onSelectSeat,
+}: Props) {
   return (
     <section
       data-testid="squad-column"
@@ -31,6 +40,8 @@ export function SquadColumn({ squad, editable, canMoveTo, onMoveTo }: Props) {
             editable={editable}
             canMoveTo={canMoveTo}
             onMoveTo={onMoveTo}
+            selected={seat.seatId === selectedSeatId}
+            onSelect={onSelectSeat}
           />
         ))}
       </ul>

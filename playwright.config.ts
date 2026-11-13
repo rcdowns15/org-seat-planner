@@ -5,6 +5,9 @@ const isCI = !!process.env.CI;
 export default defineConfig({
   testDir: "tests/e2e",
   forbidOnly: isCI,
+  // One worker: the SQL panel specs read "the last move" and "the last save", which are global, so
+  // specs that move workers must not run at the same time.
+  workers: 1,
   retries: isCI ? 1 : 0,
   // CI also writes an HTML report so the failure-artifact upload has something to send.
   reporter: isCI ? [["list"], ["html", { open: "never" }]] : "list",

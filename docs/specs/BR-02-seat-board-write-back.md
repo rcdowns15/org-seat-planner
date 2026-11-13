@@ -159,12 +159,12 @@ undo (from LR-02-03's ring buffer), with their bound values, so a viewer sees th
 `UPDATE ... WHERE version = $n` and the audit `INSERT`s. Queries take only typed IDs as bound
 parameters and run in a `READ ONLY` transaction with a 2-second `statement_timeout` and a 200-row
 limit.
-- [ ] e2e: make a move, open the panel: the seat row shows the incremented `version` and the latest `seat_changes` row is the move
-- [ ] e2e: after moving a worker from squad A to an open seat in squad B, "Impact of last move" shows A's filled count down by 1 and backfill up by 1, and B's filled up by 1 and open down by 1, with variance recomputed against the plan
-- [ ] DB test: the "before" numbers equal a snapshot of both squads' counts taken just before the move
-- [ ] e2e: "Last save" shows an `UPDATE` containing `version =` and two `INSERT INTO app.seat_changes` statements
-- [ ] DB test: the panel's query runner rejects a write (run inside the `READ ONLY` transaction) and stops a slow query at the timeout
-- [ ] No free-text SQL input exists anywhere in the UI or the server actions (reviewer check)
+- [x] e2e: make a move, open the panel: the seat row shows the incremented `version` and the latest `seat_changes` row is the move
+- [x] e2e: after moving a worker from squad A to an open seat in squad B, "Impact of last move" shows A's filled count down by 1 and backfill up by 1, and B's filled up by 1 and open down by 1, with variance recomputed against the plan
+- [x] DB test: the "before" numbers equal a snapshot of both squads' counts taken just before the move
+- [x] e2e: "Last save" shows an `UPDATE` containing `version =` and two `INSERT INTO app.seat_changes` statements
+- [x] DB test: the panel's query runner rejects a write (run inside the `READ ONLY` transaction) and stops a slow query at the timeout
+- [x] No free-text SQL input exists anywhere in the UI or the server actions (reviewer check)
 Likely files: `src/server/queries/under-the-hood.ts`, `src/server/sql-log.ts`, `src/components/sql-panel.tsx`, `src/app/sql/page.tsx`, `tests/db/sql-panel.test.ts`, `tests/e2e/sql-panel.spec.ts`.
 
 ### LR-02-09 · Org-wide audit log page (after the interview) · status: todo · depends: LR-02-06 · owner: agent · executor model: sonnet

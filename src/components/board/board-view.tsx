@@ -8,6 +8,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { BoardSquad } from "@/lib/board";
 import type { MoveResult } from "@/lib/schemas/move";
@@ -22,12 +23,28 @@ type Props = {
   // Some leader is selected, so "Move to…" is offered (the server decides if it is allowed).
   canMoveTo: boolean;
   move: (input: unknown) => Promise<MoveResult>;
+  // The board-level selected seat (?seat=<id> in the URL), or null. Other panels (SQL panel,
+  // seat history) read the same URL parameter on the server.
+  selectedSeatId: number | null;
 };
 
 type DialogState = { fromSeatId: number; toSeatId: number | null };
 
-export function BoardView({ squads, editable, canMoveTo, move }: Props) {
+export function BoardView({ squads, editable, canMoveTo, move, selectedSeatId }: Props) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Selecting is a URL change, so the server re-renders the page with the new selection.
+  // Selecting the selected seat again clears it.
+  function selectSeat(seatId: number) {
+    const next = new URLSearchParams(searchParams.toString());
+    if (seatId === selectedSeatId) next.delete("seat");
+    else next.set("seat", String(seatId));
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   // A distance threshold means a plain click (e.g. on "Move to…") never starts a drag.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -66,6 +83,8 @@ export function BoardView({ squads, editable, canMoveTo, move }: Props) {
             editable={editable}
             canMoveTo={canMoveTo}
             onMoveTo={(seatId) => setDialog({ fromSeatId: seatId, toSeatId: null })}
+            selectedSeatId={selectedSeatId}
+            onSelectSeat={selectSeat}
           />
         ))}
       </div>
