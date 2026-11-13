@@ -3,12 +3,22 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-12 · orchestrator report processed: LR-03-01 done (#9 merged); BR-02 and BR-03 rolled up to in-progress (navigator)
-- **Milestone:** M1 done. M2 (BR-02): 2 of 7 cut-line LRs done (LR-02-01, LR-02-02). M3 (BR-03): 1 of 5 done (LR-03-01); LR-03-02 in review.
-- **In flight:** PR #10 LR-03-02 (https://github.com/rcdowns15/org-seat-planner/pull/10). CI green (checks, db, dbt, Vercel); the last one-line fix was verified by the orchestrator, not re-reviewed.
-- **Blocked:** none. LR-03-06 is now above the cut line (D-034) and `ready`; it dispatches after #10 merges. Tripwire: Sat 11/14 18:00.
-- **Waiting on Rob:** merge #10; paste the orchestrator brief (LR-02-03, then LR-03-03 and LR-03-06).
-- **Next:** dispatch LR-02-03 (Opus) now; LR-03-03 and LR-03-06 after #10 merges. After #10 merges, remove the worktrees `code/v0201`, `v0202`, `v0301`, `v0302` and the local DBs `seatplanner_lr0201/_lr0202/_lr0301/_lr0302`.
+- **Last updated:** 2026-11-12 · orchestrator handoff at the context budget (LR-02-03 / LR-03-03 / LR-03-06 brief)
+- **Milestone:** M1 done. M2 (BR-02): 2 of 7 cut-line LRs done; LR-02-03 in review. M3 (BR-03): 2 of 6 done (LR-03-01, LR-03-02); LR-03-06 in review; LR-03-03 needs a decision.
+- **In flight:**
+  - PR #11 LR-02-03 (https://github.com/rcdowns15/org-seat-planner/pull/11): CI green; review pass after 1 fix round.
+  - PR #12 LR-03-06 (https://github.com/rcdowns15/org-seat-planner/pull/12): review pass; checks and Vercel green; db and dbt CI still running at handoff.
+  - LR-03-03 is built on `lr/LR-03-03-marts` @ cdaf6bf (not pushed; local checks green, dbt PASS=185). Review 1 is changes required: 1 P1, 3 P2s; findings are in the spec.
+- **Blocked:** LR-03-03 fix round 1 waits on a navigator/Rob call. Choose P1 option 1 (rebuild seat state as of each report date; restate criterion 2) or option 2 (approve the live-count shortcut). Decide the effective-date ordering rule (the move service rejects backwards effective dates, or the model orders by `created_at`). Tripwire Sat 11/14 18:00: LR-03-04 depends on LR-03-03.
+- **Waiting on Rob:**
+  - Merge #11, then #12 (either order works: no migration collision, no shared files).
+  - OK the LR-02-03 behaviour change: CONFLICT is now also checked right after FORBIDDEN.
+  - Push local `main`: the orchestrator's doc commits aren't on origin because auto mode blocks pushes to `main`.
+  - Decide the LR-03-03 questions.
+- **Next:**
+  - LR-03-03 fix round 1: a fresh executor branched from cdaf6bf, own DB `seatplanner_lr0303`, then re-review.
+  - After #11 merges: LR-02-04 (thin slice complete).
+  - After LR-03-03 merges: LR-03-04 (Opus).
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +32,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-12 — LR-03-03 built (Sonnet, `lr/LR-03-03-marts` @ cdaf6bf, dbt PASS=185). Review 1: changes required (P1: live counts stamped on every report date; P2s: effective-date ordering, missing unit tests). Findings recorded in the spec; the fix round waits on a navigator/Rob call. No PR yet.
 - 2026-11-12 — LR-03-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/12 (Sonnet, one pass; review pass, 3 P3s noted). Migration 0004 drops `workers_position_id_active_key`; dbt test `assert_one_current_holder_per_position` on the latest report.
 - 2026-11-12 — LR-02-03 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/11 (Opus build + 1 fix round; review 1 P1 source-squad permission test and P2 early version check fixed, review 2 pass; P3s noted). Needs Rob: CONFLICT now also checked right after FORBIDDEN.
 - 2026-11-12 — LR-03-02 done (PR #10 merged). LR-03-03 and LR-03-06 → `in-progress` (Sonnet, in parallel; LR-03-06 owns a separate singular dbt test so the two touch no shared analytics file). LR-02-03 → `in-progress` (Opus; built and verified, in review).

@@ -90,6 +90,22 @@ tests: `no_double_seating` (error), `squad_not_over_plan` (error: filled + offer
 - [ ] Singular test: `rpt_squad_headcount` totals for the latest report equal live counts from `app.seats`
 - [ ] Each custom test fails on a hand-made bad row (show the failing run in the PR) and passes on the seed
 Likely files: `analytics/models/intermediate/**`, `analytics/models/marts/dim_squads.sql`, `analytics/models/marts/dim_people.sql`, `analytics/models/marts/rpt_squad_headcount.sql`, `analytics/models/marts/_marts.yml`, `analytics/tests/**`.
+**Review 1 (2026-11-12, orchestrator; branch `lr/LR-03-03-marts` @ cdaf6bf): changes required. Fix round 1 waits on a navigator/Rob call.**
+- **P1:** `rpt_squad_headcount` stamps today's live `app.seats` counts on every report date. The stated premise, "no seat history", is false: `app.seat_changes` has `from_*`/`to_*`/`effective_date`.
+  - Historical rows are wrong.
+  - The latest row counts future-dated moves.
+  - `squad_not_over_plan` can falsely fail across a quarter boundary.
+  - Option 1 (orchestrator recommends): rebuild seat state as of each report date from `seat_changes` (`int_seat_state_as_of`). Restate criterion 2 as "latest-report totals equal live `app.seats` counts when no seat change is effective after the report date".
+  - Option 2: Rob approves the live-count shortcut in DECISIONS. Correct the wording and limit `squad_not_over_plan` to `is_latest_report`.
+- **P2 (needs a domain rule):** `int_seat_occupancy` orders by `effective_date`, but the app applies changes in save order. A later-saved move with an earlier effective date (allowed by LR-02-03) makes `no_double_seating` fail on legitimate use.
+  - Decide: either the move service rejects an effective date earlier than the worker's or seat's latest pending change (a new BR-02 little rock), or the model orders by `created_at`.
+  - Either way, add a warn-level test for backwards effective dates.
+- **P2:** add dbt `unit_tests:` for `int_seat_occupancy`: a same-day double hop, a move pair, a seat that never changed, a planted overlap. The seed has 0 `seat_changes`, so `no_double_seating` proves nothing on it.
+- **P2:** add a dbt unit test showing a worker missing from a later report stays in `int_worker_latest_report`/`dim_people` with `is_in_latest_report = false`.
+- **P3s:**
+  - The live-seats test gives a false failure for a squad with no seats (coalesce `live` to 0).
+  - The `dim_people` description should say seated workers never seen in a report are absent.
+  - The `is_latest_report` wording overstates what it means.
 
 ### LR-03-04 · Refresh changes and reconciliation exceptions · status: todo · depends: LR-03-01, LR-03-03 · owner: agent · executor model: opus
 `rpt_workday_changes` (grain: worker × report date): what changed between consecutive reports
