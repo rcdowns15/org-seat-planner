@@ -65,6 +65,7 @@ describe("moveInputSchema", () => {
       "SEAT_NOT_AVAILABLE",
       "SEAT_TYPE_MISMATCH",
       "INVALID_EFFECTIVE_DATE",
+      "EFFECTIVE_DATE_BEFORE_PENDING_CHANGE",
       "CONFLICT",
     ]);
   });

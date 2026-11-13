@@ -158,7 +158,7 @@ beforeAll(async () => {
   );
 
   expect(movers.length).toBeGreaterThanOrEqual(7);
-  expect(openTargets.length).toBeGreaterThanOrEqual(5);
+  expect(openTargets.length).toBeGreaterThanOrEqual(4);
   expect(outsideMovers).toHaveLength(3);
   for (const s of [
     backfillTarget,
@@ -659,3 +659,83 @@ async function freshMover(): Promise<SeatRow> {
   }
   throw new Error("no unmoved mover left");
 }
+
+// D-037: a move can't take effect before a change already recorded for its worker, source seat or
+// target seat. Last in the file because the pending changes it records stay in the database
+// (seat_changes is append-only); the file's afterAll reseeds.
+describe("EFFECTIVE_DATE_BEFORE_PENDING_CHANGE", () => {
+  let freeMovers: SeatRow[];
+  let freeTargets: SeatRow[];
+
+  // A seat_changes row for `seatId` about `workerId`, effective `date`: a stand-in for a change
+  // saved earlier (it doesn't touch app.seats, so the move's other checks still pass).
+  async function recordPending(seatId: number, workerId: string, date: string) {
+    await query(
+      `insert into app.seat_changes
+         (seat_id, change_type, worker_id, from_status, to_status, to_worker_id, actor_leader_id, effective_date)
+       values ($1, 'fill', $2, 'open', 'filled', $2, $3, $4)`,
+      [seatId, workerId, groupLeader.leaderId, date],
+    );
+  }
+
+  beforeAll(async () => {
+    // Fresh reads: earlier tests moved some of the fixture seats. Only seats with no audit rows.
+    const freeSeats = (status: string, filled: boolean) =>
+      query<SeatRow>(
+        `select s.seat_id, s.status, s.worker_id, s.version
+         from app.seats s
+         join app.squads q on q.squad_id = s.squad_id
+         ${filled ? "join workday.workers w on w.worker_id = s.worker_id" : ""}
+         where q.group_id = $1 and s.status = $2 and s.seat_type = 'employee'
+           ${filled ? "and w.status = 'active' and w.worker_type = 'employee'" : ""}
+           and not exists (select 1 from app.seat_changes c where c.seat_id = s.seat_id)
+         order by s.seat_id`,
+        [groupLeader.groupId, status],
+      );
+    freeMovers = await freeSeats("filled", true);
+    freeTargets = await freeSeats("open", false);
+    expect(freeMovers.length).toBeGreaterThanOrEqual(4);
+    expect(freeTargets.length).toBeGreaterThanOrEqual(4);
+  });
+
+  const pending = () => addUtcDays(today(), 20);
+  const earlier = () => addUtcDays(today(), 10);
+
+  async function expectRejected(mover: SeatRow, target: SeatRow, subject: string) {
+    const result = await expectNothingWritten(
+      () => moveWorker(moveOf(mover, target, { effectiveDate: earlier() }), groupLeader),
+      [mover.seat_id, target.seat_id],
+    );
+    expect(result).toMatchObject({ ok: false, code: "EFFECTIVE_DATE_BEFORE_PENDING_CHANGE" });
+    expect(result.ok === false && result.message).toContain(`The ${subject} already has`);
+    expect(result.ok === false && result.message).toContain(pending());
+  }
+
+  it("rejects a date earlier than the worker's latest change", async () => {
+    const [mover, target, elsewhere] = [freeMovers[0], freeTargets[0], freeTargets[1]];
+    await recordPending(elsewhere.seat_id, mover.worker_id!, pending());
+    await expectRejected(mover, target, "worker");
+  });
+
+  it("rejects a date earlier than the source seat's latest change", async () => {
+    const [mover, target] = [freeMovers[1], freeTargets[2]];
+    await recordPending(mover.seat_id, "999999", pending());
+    await expectRejected(mover, target, "source seat");
+  });
+
+  it("rejects a date earlier than the target seat's latest change", async () => {
+    const [mover, target] = [freeMovers[2], freeTargets[3]];
+    await recordPending(target.seat_id, "999999", pending());
+    await expectRejected(mover, target, "target seat");
+  });
+
+  it("allows the same effective date as the latest pending change", async () => {
+    const [mover, target] = [freeMovers[3], freeTargets[1]];
+    await recordPending(mover.seat_id, "999999", pending());
+    const result = await moveWorker(
+      moveOf(mover, target, { effectiveDate: pending() }),
+      groupLeader,
+    );
+    expect(result).toMatchObject({ ok: true });
+  });
+});
