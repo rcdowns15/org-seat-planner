@@ -91,7 +91,7 @@ one seat on every date" true in the data, so dbt's seat history (D-036) can't do
 - [ ] The LR-02-04 dialog shows this code's message (if LR-02-04 has merged; otherwise note it for LR-02-04)
 Likely files: `src/server/services/moves.ts`, `src/lib/results.ts`, `tests/db/moves.test.ts`.
 
-### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: in-progress · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
+### LR-02-04 · Drag-and-drop move with save dialog (thin slice complete) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/15) · depends: LR-02-02, LR-02-03 · owner: agent · executor model: sonnet
 With dnd-kit, a filled card can be dragged onto an `open` or `backfill` card the leader can edit.
 Dropping opens a dialog: who moves, from where, to where, an effective-date picker (default today),
 Save and Cancel. Save calls the move action; a failure shows its message in the dialog and the
