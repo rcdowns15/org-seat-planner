@@ -80,8 +80,8 @@ export function generateAppRows(): AppRows {
 // app.demo_reset_state is deliberately not here: the reset throttle must survive a reset.
 export async function truncateAppTables(tx: NodePgDatabase): Promise<void> {
   await tx.execute(sql`SET LOCAL app.allow_seat_changes_reset = 'on'`);
-  // Lock seats before seat_changes: a move updates seats, then inserts into seat_changes, so
-  // taking the locks in the same order means a reset and a move cannot deadlock.
+  // Lock seats before seat_changes: a move updates seats, then inserts into seat_changes. Every
+  // writer locks seats first, so the order is safe; at worst Postgres aborts one (reset: FAILED).
   await tx.execute(sql`LOCK TABLE app.seats, app.seat_changes IN ACCESS EXCLUSIVE MODE`);
   await tx.execute(sql`
     TRUNCATE app.seat_changes, app.seats, app.leaders, app.headcount_plan, app.squads,

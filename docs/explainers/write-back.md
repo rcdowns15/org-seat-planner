@@ -11,7 +11,7 @@ inserted above them; when in doubt, open the file.)
 Read them in this order. If you can explain these eight spots, you can explain the write path.
 
 1. `src/lib/schemas/move.ts:11`: the move input. No leader field, two seat versions, and the
-   list of failure codes at `src/lib/schemas/move.ts:28`. The list follows the check order except
+   list of failure codes at `src/lib/schemas/move.ts:29`. The list follows the check order except
    for `CONFLICT`, which sits once at the end but is checked twice (right after `FORBIDDEN`, and
    again at write); see section 3.
 2. `src/server/actions/run-mutation.ts:14`: the front half of every mutation: Zod parse, then the
@@ -35,7 +35,7 @@ Read them in this order. If you can explain these eight spots, you can explain t
 ### In the browser
 
 1. The board page is a server component. It reads the acting leader, loads the board, and passes
-   the move server action down as a prop (`src/app/board/page.tsx:94`). Client code never imports
+   the move server action down as a prop (`src/app/board/page.tsx:95`). Client code never imports
    `src/server/`; it only receives functions the server hands it. A unit test checks that rule
    (`tests/unit/client-boundary.test.ts:18`).
 2. Every seat on the board carries its `version`, read straight from `app.seats`
@@ -79,7 +79,7 @@ Read them in this order. If you can explain these eight spots, you can explain t
     Throwing makes Drizzle roll the transaction back; the catch at
     `src/server/services/moves.ts:81` turns it back into a typed result value. Anything else (the
     database is down) is rethrown as a real error. Callers only ever see
-    `{ ok: true, ... } | { ok: false, code, message }` (`src/lib/results.ts:2`).
+    `{ ok: true, ... } | { ok: false, code, message }` (`src/lib/results.ts:3`).
 14. On success: two version-checked `UPDATE`s (source seat, then target), two audit `INSERT`s, and
     the result carries the seats' new versions so the client could keep editing without a reload
     (`src/server/services/moves.ts:244`).
@@ -108,7 +108,7 @@ whose group is in their division; a group leader edits only their group's squads
 **Both squads.** A move touches two squads: the one it leaves and the one it joins.
 `requireEditSquads` (`src/server/services/permissions.ts:48`) needs permission on every squad in
 the list, looks each one up through the caller's transaction, and fails closed on an empty list or
-an unknown squad (`src/server/services/permissions.ts:62`; an unknown squad id finds no row, so
+an unknown squad (`src/server/services/permissions.ts:61`; an unknown squad id finds no row, so
 `canEditSquad`'s `rows.length === 1` at `src/server/services/permissions.ts:43` is false). The
 move service passes both squad ids (`src/server/services/moves.ts:121`). An unknown seat id has no
 squad to authorize against, so it is also `FORBIDDEN` (`src/server/services/moves.ts:120`) rather
@@ -279,8 +279,9 @@ shared helper), and it is a deliberate, written-down exception to two project ru
   (`scripts/seed/app-rows.ts:82`), so it adds no new bypass and leaves the trigger unchanged.
   Inserting reversing rows instead would mean thousands of rows and a board that never returns to
   the seed state. The helper also locks `app.seats` then `app.seat_changes` first
-  (`scripts/seed/app-rows.ts:85`), the same order a move takes them, so a reset and a move can't
-  deadlock.
+  (`scripts/seed/app-rows.ts:85`), the same order a move takes them. Every writer locks seats first, so the order is safe; the
+  worst case is Postgres aborting one of two overlapping transactions, and then the reset returns
+  `FAILED`.
 
 The throttle (one reset per minute) is one atomic `INSERT ... ON CONFLICT DO UPDATE ... WHERE` on a
 database row, so two simultaneous clicks can't both pass
@@ -323,7 +324,7 @@ dialog and a toolbar offer "Simulate another leader's edit" (LR-02-05).
 | Audit is append-only | Triggers (migration 0002); grants from BR-07 | No `UPDATE`/`DELETE` in code |
 | A change is undone at most once | Unique `reverses_change_id` (`db/schema/app.ts:161`) | (LR-02-07) |
 | Move rows carry a `move_id` | `CHECK` (`db/schema/app.ts:180`) | Service generates one per move |
-| No lost updates | The `UPDATE ... WHERE version` row lock | `CONFLICT` result and Refresh |
+| No lost updates | Row lock makes each version-checked `UPDATE` atomic, but nothing forces the check (section 11, attempt 8b) | `WHERE version = $n` on every seat update; zero rows is a `CONFLICT` result and Refresh |
 | Permission on both squads | Not yet (row-level security is a production step) | `requireEditSquads` |
 | Worker active, type match, receiving status | No (Workday status lives in another schema and changes on ingest) | Service checks 5 to 8 |
 | Effective-date window and no backdating | No (depends on the clock and on other rows) | Service checks 9 and 10; dbt has a warn-level backstop test |
@@ -354,7 +355,7 @@ double-seating, both layers check.
 ## 9. The seat history panel (LR-02-06)
 
 Clicking a seat card selects it (`?seat=<id>` in the URL), and the board page renders that seat's
-audit rows beside the board (`src/app/board/page.tsx:102`).
+audit rows beside the board (`src/app/board/page.tsx:103`).
 
 - **A read, not a mutation.** `getSeatHistory` (`src/server/queries/history.ts:36`) parses the seat
   id with Zod and returns no rows for an invalid one (`src/server/queries/history.ts:38`). The seat
@@ -421,3 +422,60 @@ audit rows beside the board (`src/app/board/page.tsx:102`).
 12. **What would you change for production?** SSO for identity, row-level security so permission
     lives in the database too, restricted database roles, approvals for big moves, and an outbox
     table to push changes downstream reliably.
+
+## 11. Try to break it (LR-04-07)
+
+`scripts/demo/break-it.sql` attacks the write path straight in SQL, bypassing the app, and shows
+what the database itself rejects and what only the app enforces (`scripts/demo/break-it.sql:1`).
+It is a talking-point tool for the interview, and it is **local only**.
+
+**How to run it.** Start the database and seed it (`docker compose up -d db`, `pnpm db:migrate`,
+`pnpm db:seed`), then either:
+
+```
+psql -h localhost -U seatplanner -d seatplanner -f scripts/demo/break-it.sql
+docker exec -i org-seat-planner-db-1 psql -U seatplanner -d seatplanner < scripts/demo/break-it.sql
+```
+
+The second form is for a machine without `psql`: it uses the one inside the Postgres container.
+
+- **Local only.** The script holds no connection string. It checks psql's `:HOST` variable
+  (`scripts/demo/break-it.sql:30`) and quits before touching anything unless the host is
+  `localhost`, `127.0.0.1`, `::1` or a local socket (`docker exec` connects over one, so its host
+  is a path starting with `/`).
+- **It writes nothing.** Everything runs inside one transaction that ends in `ROLLBACK`
+  (`scripts/demo/break-it.sql:137`). Run it twice and `pnpm db:seed:check` prints the same
+  checksum.
+- **One error doesn't stop the rest.** A failed statement aborts a Postgres transaction, so each
+  attempt runs after its own `SAVEPOINT` and ends with `ROLLBACK TO SAVEPOINT`.
+- **Fixtures.** It uses the named fixtures in `scripts/seed/README.md`: seat 28 (worker 100042),
+  seat 39 (worker 100052), open seat 206, leader 100002. The seeded `app.seat_changes` table is
+  empty, so a setup step inserts one audit row to attack (inserting is allowed).
+
+| # | Attempt | Expected result | Who stops it |
+|---|---|---|---|
+| 1 | `UPDATE app.seat_changes` | `ERROR: app.seat_changes is append-only: UPDATE is not allowed` | Trigger `seat_changes_no_update_delete` (`db/migrations/0002_seat_changes_append_only.sql:12`) |
+| 2 | `DELETE FROM app.seat_changes` | Same trigger, `DELETE is not allowed` | Same trigger |
+| 3 | `TRUNCATE app.seat_changes` | `ERROR: ... TRUNCATE is only allowed for the seed reset` | Trigger `seat_changes_no_truncate` (`db/migrations/0002_seat_changes_append_only.sql:32`), unless `SET LOCAL app.allow_seat_changes_reset` |
+| 4 | Seat worker 100042 in a second seat | `ERROR: duplicate key ... "seats_worker_id_key"` | Partial unique index (`db/schema/app.ts:123`) |
+| 5 | Put worker 100052 (already in seat 39) into seat 28 | Same unique-index error | Same index |
+| 6 | `status = 'filled'` with no worker | `ERROR: ... violates check constraint "seats_filled_has_worker_check"` | `CHECK` constraint |
+| 7 | Overwrite seat 28 with a worker who holds no seat | `UPDATE 1`, **succeeds**: the old occupant vanishes and nothing is audited | Only the app (`SEAT_NOT_AVAILABLE`, audit rows, worker status and type checks) |
+| 8 | Leader A saves with the app's shape, then B with the stale version | A: `UPDATE 1`; B: `UPDATE 0` (the app turns zero rows into `CONFLICT`) | The statement shape in the app (`src/server/services/moves.ts:200`) |
+| 8b | A raw `UPDATE app.seats` with no version check | `UPDATE 1`, **succeeds** and overwrites A | Nothing in the database: every writer must use the version check |
+
+What this demonstrates, by layer:
+
+| Guarantee | Database enforces it | Only the app enforces it |
+|---|---|---|
+| History is append-only | Yes (triggers) | |
+| A worker holds at most one seat | Yes (unique index) | Also `NOT_IN_SEAT` |
+| A filled seat has a worker | Yes (`CHECK`) | |
+| A seat only receives a worker if open/backfill, type matches, worker is active | No (attempt 7 shows the open/backfill gap; worker status and seat-type matching are likewise unchecked) | Yes (checks 5 to 8) |
+| Moves are audited | No | Yes (same-transaction insert into `app.seat_changes`) |
+| No lost updates | No (attempt 8b) | Yes (`WHERE version = $n`) |
+| Who may edit a squad | No | Yes (`requireEditSquads`) |
+
+The honest summary for the interview: the database guards structure and history, and the app guards
+everything that needs context or a version. That is why production adds restricted database roles
+and row-level security (section 8), so even a connection that skips the app can do less.

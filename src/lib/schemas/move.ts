@@ -23,8 +23,9 @@ export const moveInputSchema = z.object({
 });
 export type MoveInput = z.infer<typeof moveInputSchema>;
 
-// Every way a move can fail, in the order the service checks them. READ_ONLY means no acting
-// leader is selected (from the shared mutation helper).
+// Every way a move can fail. The service checks in this order: INVALID_INPUT, READ_ONLY,
+// FORBIDDEN, CONFLICT (stale versions), then the domain checks; CONFLICT is also the last write.
+// READ_ONLY means no acting leader is selected (from the shared mutation helper).
 export const MOVE_FAILURE_CODES = [
   "INVALID_INPUT",
   "READ_ONLY",
