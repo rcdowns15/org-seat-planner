@@ -30,6 +30,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-14 — LR-02-06 → `done` (PR #19 merged). Rob runs `db-deploy` on main with `reseed: false` for migration 0005.
 - 2026-11-14 — LR-02-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/19 (Sonnet build; e2e 26/26 today; review pass, 6 P3s noted). Step 0 done: D-039 carve-out and `pnpm run pipeline` in `CLAUDE.md` (82d4cf0). `db-deploy` (reseed skipped) ran green; LR-03-05 Neon run re-run green (43530897148, attempt 2, dbt PASS=253).
 - 2026-11-14: Rob ran `db-deploy` on main (`reseed: false`): green. LR-03-05's Neon blocker cleared; the orchestrator re-runs the pipeline job. Runbook: merging a migration doesn't migrate Neon; run `db-deploy` after each.
 - 2026-11-14: D-039 accepted (medium): the demo reset is a recorded exception to the permission and append-only rules; LR-07-01 gains a criterion to keep a narrow reset path under `seat_app`; LR-04-01 pending items turned into pre-PR criteria (CLAUDE.md carve-out, migration 0006); LR-04-03 explainer covers D-039. LR-03-05 deviations approved (small): `pnpm run pipeline`, analytics presets on `/sql` only, `ci.yml` runs the pipeline before e2e; BR-03/BR-04 criteria now say `pnpm run pipeline`; LR-04-02 gains a criterion that the demo script matches production after the 11-15 report. No timeline impact.
