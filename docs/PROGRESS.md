@@ -7,9 +7,9 @@ Newest first. Navigator updates "Where we stand" at each check-in.
 - **Milestone:** M2 (BR-02): cut line complete, big-rock review pass with P2s (11-14). M3 (BR-03): done (big-rock review pass with P2s, 11-14). M4 (BR-04): 4 of 6 (LR-04-01, 04-03, 04-06, 04-07 done; LR-04-02 ready, LR-04-04 Rob). Cut line overall: 28 of 30 (93%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
 - **In flight:** nothing. No open PRs.
-- **Ready, not yet dispatched:** LR-04-07 ("try to break it" + two comment fixes), LR-04-02 (README). Both are queued in the running Sunday session.
+- **Ready, not yet dispatched:** LR-04-02 (README).
 - **Blocked:** nothing.
-- **Waiting on Rob:** merge PRs as soon as they open (freeze is Sun noon); paste the lessons into `code/LESSONS.md`.
+- **Waiting on Rob:** restore `DATABASE_URL`/`DBT_*` in the main checkout's `.env.local` (overwritten, only `VERCEL_OIDC_TOKEN` left); start a fresh orchestrator session for LR-04-02; paste the lessons into `code/LESSONS.md`.
 - **Next:** LR-04-02 (README, Sonnet; not yet dispatched) in a fresh orchestrator session, including the orchestrator's fresh-clone quickstart run. Then Rob's LR-04-04 rehearsal and the `v0.1-interview` tag.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
