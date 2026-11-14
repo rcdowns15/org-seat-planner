@@ -174,7 +174,7 @@ with each move shown as one line (grouped by `move_id`).
 - [ ] e2e: after a move, the audit page's first row describes it
 Likely files: `src/server/queries/audit.ts`, `src/app/audit/page.tsx`, `tests/db/audit.test.ts`, `tests/e2e/audit.spec.ts`.
 
-### LR-02-11 · Board readability: seat labels and open seats first · status: review (https://github.com/rcdowns15/org-seat-planner/pull/24) · depends: LR-02-06 (merged, #19) · owner: agent · executor model: sonnet · cut line: yes (D-040)
+### LR-02-11 · Board readability: seat labels and open seats first · status: done (https://github.com/rcdowns15/org-seat-planner/pull/24) · depends: LR-02-06 (merged, #19) · owner: agent · executor model: sonnet · cut line: yes (D-040)
 Added 2026-11-14 from Rob's hands-on use: cards don't say which seat they are, so the history panel's "Seat 72" title comes out of nowhere, and open seats are hard to find as drop targets. Every seat card shows its seat label, the same one the history panel title and "Move to…" options use. Within each squad column, seats that can receive a move (`open`, `backfill`) sort first, then `offer_accepted`, then filled seats; the order is stable (by seat label) inside each group.
 - [ ] e2e: a seat card's visible label matches the title of the history panel it opens
 - [ ] Unit test: the column sort puts `open`/`backfill` first, then `offer_accepted`, then filled, and is stable by seat label
