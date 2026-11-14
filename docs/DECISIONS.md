@@ -116,6 +116,7 @@ with a "release seat" action that goes through the normal audited write path.
 
 ### D-020 · 2026-11-11 · accepted (Rob, 2026-11-11) · Orchestration: `pnpm pipeline` (ingest → dbt build) + a manual GitHub Actions workflow, scheduled in BR-07, instead of Airflow
 **Why:** two steps don't justify running Airflow. `docs/orchestration.md` maps each step to the Airflow task it would be.
+**Note (2026-11-14):** the command is `pnpm run pipeline`; pnpm 12 reserves `pnpm pipeline` (LR-03-05 deviation, approved 2026-11-14). The decision is unchanged.
 **Alternatives:** Airflow in Docker (heavy), Dagster (another tool to learn this week).
 
 ### D-021 · 2026-11-11 · accepted (Rob, 2026-11-11) · Quality: ESLint + Prettier, `tsc --noEmit`, Vitest (unit + real-Postgres DB tests), Playwright smoke tests, dbt build in CI

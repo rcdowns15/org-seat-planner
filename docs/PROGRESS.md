@@ -3,14 +3,14 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-14 evening · orchestrator (Saturday brief complete: LR-02-06, LR-04-03, LR-04-01, LR-03-05 all merged)
+- **Last updated:** 2026-11-14 evening · navigator (Saturday report triaged; Sunday brief written)
 - **Milestone:** M2 (BR-02): 8 of 9 cut-line LRs done (LR-02-11 open). M3 (BR-03): 6 of 6 done, big-rock review pending. M4 (BR-04): 2 of 6 (LR-04-03, LR-04-01 done). Cut line overall: 25 of 30 (83%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
 - **In flight:** nothing. No open PRs.
-- **Ready, not yet dispatched:** LR-02-11 (board readability), LR-04-07 ("try to break it"), LR-04-02 (README) and LR-04-06 (pipeline explainer); the last two were unblocked by #22.
+- **Ready, not yet dispatched:** LR-02-11 (board readability), LR-04-06 (pipeline explainer), LR-04-07 ("try to break it" + two comment fixes), LR-04-02 (README).
 - **Blocked:** nothing.
-- **Waiting on Rob:** start a fresh orchestrator session with the next brief.
-- **Next:** next brief: LR-02-11, LR-04-07, LR-04-02, LR-04-06 (at most two executors at once); BR-03 big-rock review (all its cut-line LRs are merged); BR-02 big-rock review once LR-02-11 merges.
+- **Waiting on Rob:** commit these docs; paste the Sunday brief into a fresh orchestrator session; paste the lessons into `code/LESSONS.md`; merge PRs the same day they open.
+- **Next:** Sunday brief, in order: BR-03 big-rock review and LR-04-06 ∥ LR-02-11 → LR-04-07 → LR-04-02 → BR-02 big-rock review (at most two executors at once). Then Rob's LR-04-04 rehearsal Sun afternoon.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -25,6 +25,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-14 — Navigator (small, triage; Rob approved): LR-04-07 gains a criterion to fix two misleading comments (the "can't deadlock" wording in `app-rows.ts` plus the write-back explainer, and the stale check-order comment at `move.ts:26`). The other P3s and the possibly flaky CLI guard test are parked as one post-interview cleanup little rock. Symbol-based citations parked; until then the reviewer checks explainer citations into files a little rock changes. Brief order: LR-04-06 ∥ LR-02-11 → LR-04-07 → LR-04-02; BR-03 big-rock review now, BR-02's after LR-02-11. No timeline impact.
+- 2026-11-14 — Navigator, from the orchestrator's Saturday report (small, bookkeeping): LR-04-02, LR-04-06, LR-04-07 → `ready` in the spec; BR-04 header and master plan rollup updated (BR-03 6/6, review pending; BR-04 2/6). LR-04-02 gains a quickstart criterion (`uv sync && uv run dbt deps` before the first pipeline run; keep `DBT_USER`/`DBT_PASSWORD`). Stale `pnpm pipeline` wording fixed in the master plan and BR-04 spec; D-020 gets a note. No timeline impact.
 - 2026-11-14 — LR-03-05 → `done` (PR #22 merged). BR-03 cut-line LRs all merged; its big-rock review goes in the next brief. LR-04-02 and LR-04-06 unblocked.
 - 2026-11-14 — LR-04-01 → `done` (PR #21 merged). `db-deploy` 43640253414 green (migrate ok, reseed skipped): Neon through 0006; production health ok (2202 seats). #22 rebased onto main (run-seed.ts import conflict resolved; the obsolete citation commit was dropped because main now cites `app-rows.ts`).
 - 2026-11-14: Navigator (small, triage): cost-aware planning (dollar budgets, standard cost by level/location, over-budget warning on moves) parked; LR-04-02 gains a roadmap criterion naming it as Planned. No timeline impact.

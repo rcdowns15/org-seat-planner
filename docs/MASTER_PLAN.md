@@ -84,7 +84,7 @@ below the cut line automatically. This is the price of adding LR-03-06 with no s
 **Before the interview (must):**
 - BR-01: all (LR-01-01…09)
 - BR-02: LR-02-01…06, LR-02-08, LR-02-10 and LR-02-11 (board, move, validation, locking, conflict demo, history, SQL panel, effective-date ordering split from LR-02-03 per D-037, board readability per D-040)
-- BR-03: all (LR-03-01…06): ingestion, staging, headcount vs. plan, changes, exceptions, `pnpm pipeline`, position-backfill fix (D-034)
+- BR-03: all (LR-03-01…06): ingestion, staging, headcount vs. plan, changes, exceptions, `pnpm run pipeline`, position-backfill fix (D-034)
 - BR-04: LR-04-01…04, LR-04-06 and LR-04-07 (demo reset, README, write-back explainer, pipeline explainer split out of LR-04-03 on 2026-11-13, rehearsal, "try to break it" script per D-040)
 
 **After the interview:** LR-02-07 (undo), LR-02-09 (audit log page), LR-04-05 (prod smoke workflow),
@@ -96,8 +96,8 @@ reconciliation, exceptions UI, roles), BR-08 (dashboard).
 |---|---|---|---|---|---|
 | BR-01 | [Foundations](specs/BR-01-foundations.md) | — | App scaffold, CI, Postgres + migrations, deterministic seed + mock Workday reports, hello-world on Vercel + Neon | done (10/10 LRs; big-rock review 2026-11-12: pass, no P1) | Thu · cut line |
 | BR-02 | [Seat board and write-back](specs/BR-02-seat-board-write-back.md) | BR-01 | Board, drag-and-drop move, server validation, optimistic locking, conflict demo, history, read-only SQL panel | in-progress (8/9 cut-line LRs done; LR-02-11 ready, D-040) | Fri–Sat · cut line (undo and audit page after) |
-| BR-03 | [Workday ingestion and reconciliation](specs/BR-03-workday-ingestion-reconciliation.md) | BR-01 | Validated report ingest, dbt staging, headcount vs. plan, refresh changes, reconciliation exceptions, `pnpm pipeline` | in-progress (5/6 done; LR-03-05 in progress) | Fri–Sat · cut line |
-| BR-04 | [Demo-ready: README, explainers, rehearsal](specs/BR-04-demo-ready.md) | BR-02, BR-03 | Demo reset, README case study, two explainers, rehearsed five-minute demo | in-progress (0/6; LR-04-01 and LR-04-03 in progress; LR-04-07 added, D-040) | Sat–Sun · cut line (prod smoke after) |
+| BR-03 | [Workday ingestion and reconciliation](specs/BR-03-workday-ingestion-reconciliation.md) | BR-01 | Validated report ingest, dbt staging, headcount vs. plan, refresh changes, reconciliation exceptions, `pnpm run pipeline` | in-progress (6/6 done; big-rock review pending) | Fri–Sat · cut line |
+| BR-04 | [Demo-ready: README, explainers, rehearsal](specs/BR-04-demo-ready.md) | BR-02, BR-03 | Demo reset, README case study, two explainers, rehearsed five-minute demo | in-progress (2/6 cut-line LRs done: LR-04-01, LR-04-03; LR-04-02, 04-06, 04-07 ready) | Sat–Sun · cut line (prod smoke after) |
 | BR-05 | [Pipeline depth: history, SCD2, daily headcount](specs/BR-05-pipeline-history.md) | BR-03 | 18 months of reports, SCD2 from extracts, daily seat and headcount facts | todo | After |
 | BR-06 | [Semantic layer](specs/BR-06-semantic-layer.md) | BR-05 | MetricFlow models, six metrics with point-in-time handling, CI validation | todo | After |
 | BR-07 | [Workday API path, multi-source reconciliation](specs/BR-07-workday-api-multi-source.md) | BR-03 | API reader, TA + FP&A feeds, exceptions UI with resolution, DB roles, scheduled pipeline | todo | After |

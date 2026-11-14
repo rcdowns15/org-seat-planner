@@ -1,6 +1,6 @@
 # BR-04 — Demo-ready: README, explainers, rehearsal
 
-**Status:** todo · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
+**Status:** in-progress (2/6 cut-line LRs done) · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
 
 ## Goal
 The deployed demo holds up when strangers click around (a reset, a banner saying the data is
@@ -37,7 +37,7 @@ Likely files: `src/server/actions/demo.ts`, `scripts/seed/index.ts`, `src/compon
 - [x] The `CLAUDE.md` project rules carry the D-039 carve-out (the reviewer checks against it) (82d4cf0)
 - [x] The migration is renumbered 0006: stack on LR-02-06 and regenerate it with `pnpm db:generate` (custom SQL in a custom migration); 0005 stays LR-02-06's
 
-### LR-04-02 · README v1: the case study · status: todo · depends: LR-03-05, LR-04-01 · owner: agent · executor model: sonnet
+### LR-04-02 · README v1: the case study · status: ready · depends: LR-03-05 (merged, #22), LR-04-01 (merged, #21) · owner: agent · executor model: sonnet
 Rewrite `README.md`: what it is and why (one paragraph, fictional-company notice); live demo link;
 architecture diagram (Mermaid: Workday report → ingest → `workday` raw/current → dbt staging →
 marts; browser → server actions → `app` seats + audit; marts compare `app` with `workday`); data
@@ -47,12 +47,13 @@ active, on leave, and terminated within 30 days); a sentence on why squads live 
 Workday (supervisory orgs follow the manager tree); what's tested and how to run it; a
 **five-minute demo script** using seeded fixtures (move → forbidden move → conflict → history →
 SQL panel → reconciliation exceptions after the 11-15 report); a **production mapping** table with a
-**Built / Planned** column (CSV report → Workday RaaS/API; `pnpm pipeline` + GitHub Actions →
+**Built / Planned** column (CSV report → Workday RaaS/API; `pnpm run pipeline` + GitHub Actions →
 Airflow; Postgres `analytics` → Snowflake; dbt Core → dbt Cloud; MetricFlow → dbt Cloud Semantic
 Layer; SQL panel and future dashboard → Tableau / Sheets; mock auth → SSO); a roadmap linking the
 BR-05…BR-08 specs, which names the TA offers feed (LR-07-04) as the next step after today's
 hiring-gap check (D-033); local quickstart.
 - [ ] The orchestrator follows the quickstart in a fresh clone (clean directory) and reaches a working board and a green `pnpm run pipeline`; the PR shows the commands and output
+- [ ] The quickstart includes `cd analytics && uv sync && uv run dbt deps` before the first `pnpm run pipeline` (a fresh clone fails without it; LR-03-05 report, 2026-11-14), and says `.env.local` needs `DBT_USER`/`DBT_PASSWORD` from `.env.example`
 - [ ] The demo script's reconciliation step matches production, where the pipeline has already loaded the 11-15 report (see the LR-03-05 demo note); the SQL panel analytics presets are on `/sql`, not on the board
 - [ ] Every production-mapping row says Built or Planned, and every Built row links to code
 - [ ] The roadmap names cost-aware planning as a Planned next layer (added 2026-11-14): today's constraint is approved seats (a headcount budget); next comes standard cost by job level and location, quarterly budgets per cost center from FP&A, and an over-budget warning on moves, with individual pay never shown to leaders (see `docs/PARKING_LOT.md`)
@@ -78,12 +79,12 @@ second. Add `pnpm docs:check`, a script that checks every `path:line` reference 
 - [ ] A "read these first" list at the top: the 5–8 `path:line` spots Rob must be able to explain, in reading order
 Likely files: `docs/explainers/write-back.md`, `scripts/docs-check.ts`, `tests/unit/docs-check.test.ts`, `.github/workflows/ci.yml`, `package.json`.
 
-### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: todo · depends: LR-03-05, LR-04-03 (`docs:check`) · owner: agent · executor model: opus
+### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: ready · depends: LR-03-05 (merged, #22), LR-04-03 (merged, #20) · owner: agent · executor model: opus
 `docs/explainers/pipeline.md`, citing code as `path:line`: the ingest contract (validate the whole
 file, then load; raw vs. current; idempotency by hash); each Workday transform in staging; every
 mart's grain; headcount rebuilt as of each report date (D-036); how the reconciliation rules work
 and how they'd extend to TA and FP&A feeds (starting from the hiring-gap check, which works without
-a TA feed, D-033); `pnpm pipeline` mapped to Airflow; what moves to Workday API + Airflow +
+a TA feed, D-033); `pnpm run pipeline` mapped to Airflow; what moves to Workday API + Airflow +
 Snowflake in production. It ends with 10–12 likely interview questions and short answers, and has
 the same "read these first" list as LR-04-03.
 - [ ] `pnpm docs:check` passes with the new file
@@ -100,13 +101,14 @@ bug (new LR), or "fine". Reset the demo, then tag `v0.1-interview`.
 - [ ] Gaps logged; any P1 bug fixed, or the demo script routed around it
 - [ ] `git tag v0.1-interview` pushed; production reset to the seed
 
-### LR-04-07 · "Try to break it" SQL script · status: todo · depends: LR-04-03 · owner: agent · executor model: sonnet · cut line: yes (D-040)
+### LR-04-07 · "Try to break it" SQL script · status: ready · depends: LR-04-03 (merged, #20) · owner: agent · executor model: sonnet · cut line: yes (D-040)
 Added 2026-11-14 instead of a writable SQL console (D-026 stands, D-040). `scripts/demo/break-it.sql`, run by Rob with `psql` against the **local** database during the interview, attacks the write path directly and shows what stops it. Every statement runs inside one transaction that ends in `ROLLBACK`, so the script changes nothing. Attempts, each with a comment saying what should happen and why: `DELETE` and `UPDATE` on `app.seat_changes` (append-only trigger rejects); seating a second worker in a filled seat or one worker in two seats (whatever constraint exists rejects it, or the comment says honestly that only the app enforces it); a raw `UPDATE app.seats` with no version check (succeeds: locking lives in the app's statement shape, which is the talking point). Use `SAVEPOINT`s so one rejected statement doesn't abort the rest. Add a "Try to break it" section to `docs/explainers/write-back.md`: how to run it, each attempt's expected result, and the database-vs-app enforcement table it demonstrates.
 - [ ] The script runs end to end on a freshly seeded local DB, and every attempt's actual result matches its comment (PR shows the output)
 - [ ] Running it twice leaves `pnpm db:seed:check` unchanged (it writes nothing)
 - [ ] It refuses to run against a non-local host, or the explainer and the script header both say "local only" and it carries no connection string
 - [ ] `pnpm docs:check` passes with the new explainer section
-Likely files: `scripts/demo/break-it.sql`, `docs/explainers/write-back.md`.
+- [ ] Two misleading comments fixed (Rob 2026-11-14, from the LR-04-01/LR-03-05 P3s): (1) the lock comment in `scripts/seed/app-rows.ts` and the matching write-back explainer sentence no longer say a reset and a move "can't deadlock"; they say it's safe because every writer locks seats first, and the worst case is Postgres aborting one transaction so the reset returns `FAILED`; (2) the "check order" comment at `src/lib/schemas/move.ts:26` matches the current order after D-037 part 2 (`FORBIDDEN`, then `CONFLICT`, then the domain checks). Comment and doc text only, no behavior change.
+Likely files: `scripts/demo/break-it.sql`, `docs/explainers/write-back.md`, `scripts/seed/app-rows.ts`, `src/lib/schemas/move.ts`.
 
 ### LR-04-05 · Production smoke test workflow (after the interview) · status: todo · depends: LR-04-01 · owner: agent · executor model: sonnet
 `e2e-prod.yml` (manual, plus after each production deploy via `deployment_status`) runs a tagged
