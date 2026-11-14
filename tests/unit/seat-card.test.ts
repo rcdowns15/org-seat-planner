@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CARD_STATES, cardState, cardStateLabel } from "@/lib/seat-card";
+import { CARD_STATES, cardState, cardStateLabel, seatDescription } from "@/lib/seat-card";
 
 describe("seat card states", () => {
   it("maps status and seat type to one of five states", () => {
@@ -8,6 +8,13 @@ describe("seat card states", () => {
     expect(cardState("open", "employee")).toBe("open");
     expect(cardState("backfill", "contingent")).toBe("backfill");
     expect(cardState("offer_accepted", "employee")).toBe("offer_accepted");
+  });
+
+  it("describes a seat in words for the Select button's accessible name", () => {
+    expect(seatDescription(206, "open", null)).toBe("Open seat 206");
+    expect(seatDescription(12, "filled_employee", "Jane Doe")).toBe(
+      "Filled (employee) seat 12, Jane Doe",
+    );
   });
 
   it("gives every state its own non-empty text label", () => {

@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cardState, cardStateLabel, type CardState } from "@/lib/seat-card";
+import { cardState, cardStateLabel, seatDescription, type CardState } from "@/lib/seat-card";
 import { workerStatusLabel, type BoardSeat } from "@/lib/board";
 
 const ICONS: Record<CardState, LucideIcon> = {
@@ -94,12 +94,17 @@ export function SeatCard({ seat, editable, canMoveTo, onMoveTo, selected, onSele
         <button
           type="button"
           aria-pressed={selected}
-          aria-label={`Select seat ${seat.seatId}`}
           data-testid="select-seat-button"
           className="ml-auto inline-flex items-center gap-1 rounded border px-1 py-0.5 text-xs"
         >
           {selected ? <Check aria-hidden className="size-3" /> : null}
           {selected ? "Selected" : "Select"}
+          {/* No aria-label: the name is the visible word plus this hidden description, so it
+              starts with what is on screen (WCAG label in name) and says which seat it is. */}
+          <span className="sr-only">
+            {" "}
+            {seatDescription(seat.seatId, state, filled ? seat.workerName : null)}
+          </span>
         </button>
       </div>
       {filled ? (

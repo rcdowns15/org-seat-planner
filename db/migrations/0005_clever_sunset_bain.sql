@@ -1,0 +1,1 @@
+CREATE INDEX "seat_changes_seat_id_idx" ON "app"."seat_changes" USING btree ("seat_id");

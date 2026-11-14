@@ -4,6 +4,7 @@ import {
   check,
   date,
   foreignKey,
+  index,
   integer,
   pgSchema,
   primaryKey,
@@ -158,6 +159,8 @@ export const seatChanges = app.table(
     }),
     // A change can be reversed at most once (undoing twice is rejected).
     unique("seat_changes_reverses_change_id_key").on(t.reversesChangeId),
+    // The seat history panel reads one seat's rows (src/server/queries/history.ts).
+    index("seat_changes_seat_id_idx").on(t.seatId),
     check("seat_changes_change_type_check", inList(t.changeType, CHANGE_TYPES)),
     check("seat_changes_from_status_check", inList(t.fromStatus, SEAT_STATUSES)),
     check("seat_changes_to_status_check", inList(t.toStatus, SEAT_STATUSES)),

@@ -236,6 +236,9 @@ the target) sharing a `move_id`; undo inserts reversing rows. Rows are never upd
 | `reverses_change_id` | bigint | yes | FK → `app.seat_changes`; set if and only if `change_type = 'undo'`; unique, so a change is reversed at most once |
 | `note` | text | yes | free text |
 
+Indexes: the PK, the unique `reverses_change_id`, and `seat_changes_seat_id_idx` on `(seat_id)`
+(migration 0005), which the seat history panel's query (`src/server/queries/history.ts`) uses.
+
 Change types: `move_out` / `move_in` (the two halves of a move), `fill` (a worker takes an open,
 backfill or reserved seat, e.g. a new hire), `vacate` (a worker leaves a seat, e.g. a termination),
 `reserve` (an accepted offer holds a seat), `release` (a leader frees a terminated worker's seat,
