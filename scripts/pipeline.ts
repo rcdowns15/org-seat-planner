@@ -1,4 +1,4 @@
-// `pnpm pipeline [--report <file>]`: ingest Workday report CSVs, then `dbt build`, and print a
+// `pnpm run pipeline [--report <file>]`: ingest Workday report CSVs, then `dbt build`, and print a
 // summary. With --report it ingests that one file; without it, every
 // data/workday/worker_report_*.csv in date order (the seed writes both). It stops at the first
 // failure (a rejected report, a dbt model or test error) and exits 1.
@@ -74,7 +74,7 @@ function runDbtBuild(): Promise<{ code: number; output: string }> {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if ("error" in args) {
-    console.error(`pipeline: ${args.error} Usage: pnpm pipeline [--report <file>]`);
+    console.error(`pipeline: ${args.error} Usage: pnpm run pipeline [--report <file>]`);
     process.exit(1);
   }
   const source = process.env.DATABASE_URL_UNPOOLED ? "DATABASE_URL_UNPOOLED" : "DATABASE_URL";

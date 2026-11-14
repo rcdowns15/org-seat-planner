@@ -1,4 +1,4 @@
-// Pure helpers for `pnpm pipeline` (scripts/pipeline.ts): the step runner, the dbt output parser
+// Pure helpers for `pnpm run pipeline` (scripts/pipeline.ts): the step runner, the dbt output parser
 // and the summary text. No I/O here, so unit tests can drive them with stubbed steps.
 
 export type StepOutcome = {

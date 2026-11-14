@@ -5,9 +5,6 @@ name: pipeline
 # a leader's live edits in the app tables survive. Run db-deploy first if the schema is new.
 on:
   workflow_dispatch:
-  # TEMPORARY (LR-03-05): lets the branch run before the workflow exists on main. Removed before merge.
-  push:
-    branches: [lr/LR-03-05-pipeline]
 
 permissions:
   contents: read
