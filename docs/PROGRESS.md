@@ -3,14 +3,14 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-14 afternoon · orchestrator (LR-04-07 PR #25 open)
-- **Milestone:** M2 (BR-02): cut line complete, big-rock review pass with P2s (11-14). M3 (BR-03): done (big-rock review pass with P2s, 11-14). M4 (BR-04): 3 of 6 (LR-04-03, LR-04-01, LR-04-06 done). Cut line overall: 27 of 30 (90%). Feature freeze Sun 11/15 noon.
+- **Last updated:** 2026-11-14 evening · orchestrator (#25 merged; session stopped for usage limit before LR-04-02)
+- **Milestone:** M2 (BR-02): cut line complete, big-rock review pass with P2s (11-14). M3 (BR-03): done (big-rock review pass with P2s, 11-14). M4 (BR-04): 4 of 6 (LR-04-01, 04-03, 04-06, 04-07 done; LR-04-02 ready, LR-04-04 Rob). Cut line overall: 28 of 30 (93%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
-- **In flight:** PR #25 LR-04-07 "try to break it" (review 2 pass; awaiting Rob). LR-04-02 (README) starts when #25 merges.
+- **In flight:** nothing. No open PRs.
 - **Ready, not yet dispatched:** LR-04-07 ("try to break it" + two comment fixes), LR-04-02 (README). Both are queued in the running Sunday session.
 - **Blocked:** nothing.
 - **Waiting on Rob:** merge PRs as soon as they open (freeze is Sun noon); paste the lessons into `code/LESSONS.md`.
-- **Next:** the running Sunday session continues in order: LR-04-06 ∥ LR-02-11 (with the BR-03 review) → LR-04-07 → LR-04-02 → BR-02 big-rock review once LR-02-11 merges (at most two executors at once). Then Rob's LR-04-04 rehearsal Sun afternoon.
+- **Next:** LR-04-02 (README, Sonnet; not yet dispatched) in a fresh orchestrator session, including the orchestrator's fresh-clone quickstart run. Then Rob's LR-04-04 rehearsal and the `v0.1-interview` tag.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -25,6 +25,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-14 — LR-04-07 → `done` (PR #25 merged). Orchestrator stopped for the usage limit; LR-04-02 not dispatched.
 - 2026-11-14 — LR-04-07 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/25 (Sonnet: build + 1 fix round; review 1 one P2 (section 7 vs section 11 on lost updates) + three P3s fixed; review 2 pass; also carries the BR-03 page.tsx and BR-02 results/permissions citation fixes).
 - 2026-11-14 — BR-02 big-rock review (cut line): pass with P2s, no P1. P2 fixed by rewording exit 1 (the `/audit` page is LR-02-09, after the interview; evidence is the drag e2e plus both history panels). Two write-back citation P3s go onto the LR-04-07 branch; other P3s recorded in the BR-02 spec. BR-02 stays `in-progress` only for LR-02-07/09.
 - 2026-11-14 — LR-02-11 → `done` (PR #24 merged). BR-02 cut-line LRs all merged; big-rock review started. LR-04-07 → `in-progress`.

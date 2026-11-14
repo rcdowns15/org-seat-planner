@@ -1,6 +1,6 @@
 # BR-04 — Demo-ready: README, explainers, rehearsal
 
-**Status:** in-progress (3/6 cut-line LRs done) · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
+**Status:** in-progress (4/6 cut-line LRs done) · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
 
 ## Goal
 The deployed demo holds up when strangers click around (a reset, a banner saying the data is
@@ -102,7 +102,7 @@ bug (new LR), or "fine". Reset the demo, then tag `v0.1-interview`.
 - [ ] Gaps logged; any P1 bug fixed, or the demo script routed around it
 - [ ] `git tag v0.1-interview` pushed; production reset to the seed
 
-### LR-04-07 · "Try to break it" SQL script · status: review (https://github.com/rcdowns15/org-seat-planner/pull/25) · depends: LR-04-03 (merged, #20) · owner: agent · executor model: sonnet · cut line: yes (D-040)
+### LR-04-07 · "Try to break it" SQL script · status: done (https://github.com/rcdowns15/org-seat-planner/pull/25) · depends: LR-04-03 (merged, #20) · owner: agent · executor model: sonnet · cut line: yes (D-040)
 Added 2026-11-14 instead of a writable SQL console (D-026 stands, D-040). `scripts/demo/break-it.sql`, run by Rob with `psql` against the **local** database during the interview, attacks the write path directly and shows what stops it. Every statement runs inside one transaction that ends in `ROLLBACK`, so the script changes nothing. Attempts, each with a comment saying what should happen and why: `DELETE` and `UPDATE` on `app.seat_changes` (append-only trigger rejects); seating a second worker in a filled seat or one worker in two seats (whatever constraint exists rejects it, or the comment says honestly that only the app enforces it); a raw `UPDATE app.seats` with no version check (succeeds: locking lives in the app's statement shape, which is the talking point). Use `SAVEPOINT`s so one rejected statement doesn't abort the rest. Add a "Try to break it" section to `docs/explainers/write-back.md`: how to run it, each attempt's expected result, and the database-vs-app enforcement table it demonstrates.
 - [ ] The script runs end to end on a freshly seeded local DB, and every attempt's actual result matches its comment (PR shows the output)
 - [ ] Running it twice leaves `pnpm db:seed:check` unchanged (it writes nothing)
