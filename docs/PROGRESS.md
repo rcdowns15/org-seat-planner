@@ -8,13 +8,13 @@ Newest first. Navigator updates "Where we stand" at each check-in.
 - **In flight (built, not verified or reviewed; no PRs):**
   - LR-02-06 on `lr/LR-02-06-seat-history` @ e9cccb6, not pushed. Only e2e left to verify. Owns migration 0005.
   - LR-04-01 on `lr/LR-04-01-demo-reset` @ 21f249f, not pushed. Design accepted (D-039). Must stack on LR-02-06 and regenerate its migration as 0006.
-  - LR-03-05 on `lr/LR-03-05-pipeline` @ 67e79c0, pushed. Deviations approved. Neon run red until `db-deploy`; temporary `push:` trigger to remove.
+  - LR-03-05 on `lr/LR-03-05-pipeline` @ 67e79c0, pushed. Deviations approved. `db-deploy` (reseed false) ran green on main 11-14; the Neon pipeline job needs a re-run; temporary `push:` trigger to remove.
   - LR-04-03 (write-back explainer, Opus) is `ready`, in today's brief.
-- **Blocked:** LR-03-05's Neon criterion, until Rob runs `db-deploy` on main with `reseed: false`.
+- **Blocked:** nothing. (If the Neon pipeline re-run still can't find `workday.ingest_runs`, check that the `DBT_*` secrets point at the same Neon database as `NEON_DATABASE_URL_UNPOOLED`.)
 - **Waiting on Rob:**
   1. Commit and push docs (pushes 307d77c, efc324d and this checkpoint).
-  2. Run `db-deploy` on main with `reseed: false`.
-  3. Paste the Saturday brief into a fresh orchestrator session; review and merge PRs as they open.
+  2. Paste the Saturday brief into a fresh orchestrator session; review and merge PRs as they open.
+  3. After merging LR-02-06 (migration 0005) and LR-04-01 (0006), run `db-deploy` again with `reseed: false` so Neon has the new schema.
 - **Next:** orchestrator: CLAUDE.md step 0 (D-039 carve-out, `pnpm run pipeline`), then LR-02-06 → LR-04-01 (stacked, 0006) → LR-03-05, verified one at a time, plus LR-04-03 in parallel; at most two executors. Then LR-04-02 and LR-04-06 once LR-03-05 merges.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
@@ -26,9 +26,11 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 ## Runbook
 - Neon cold start → first request after idle takes a few seconds → load the board once before demoing.
 - Demo data messed up by visitors → board looks wrong → "Reset demo data" button, or run `db-deploy` with `reseed: true`.
+- Merged a PR with a migration → live app errors on missing tables/columns → run `db-deploy` on main with `reseed: false` (merging doesn't migrate Neon).
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-14: Rob ran `db-deploy` on main (`reseed: false`): green. LR-03-05's Neon blocker cleared; the orchestrator re-runs the pipeline job. Runbook: merging a migration doesn't migrate Neon; run `db-deploy` after each.
 - 2026-11-14: D-039 accepted (medium): the demo reset is a recorded exception to the permission and append-only rules; LR-07-01 gains a criterion to keep a narrow reset path under `seat_app`; LR-04-01 pending items turned into pre-PR criteria (CLAUDE.md carve-out, migration 0006); LR-04-03 explainer covers D-039. LR-03-05 deviations approved (small): `pnpm run pipeline`, analytics presets on `/sql` only, `ci.yml` runs the pipeline before e2e; BR-03/BR-04 criteria now say `pnpm run pipeline`; LR-04-02 gains a criterion that the demo script matches production after the 11-15 report. No timeline impact.
 - 2026-11-13 night: Navigator, from the orchestrator report. It stopped partway: three parallel executors with dev servers plus its own checks ran the machine out of memory, and Claude Code killed the check runs. All three LRs (02-06, 04-01, 03-05) are built; none is verified, reviewed or in a PR. Blockers: Neon schema behind migrations (needs `db-deploy`, `reseed: false`); push of docs commit 307d77c to main denied. The LR-04-01 migration number collides with LR-02-06 (both 0005). Pending Rob: LR-04-01 reset design, LR-03-05 deviations (`pnpm run pipeline`, presets on `/sql` only, `ci.yml` change). Process: verify one LR at a time, at most two executors at once. A stale e2e lock was cleared by the orchestrator. The LR-04-03 addendum never reached the session.
 - 2026-11-13: Navigator (small change, split): LR-04-03 split into LR-04-03 (write-back explainer + `pnpm docs:check`, `ready` now) and LR-04-06 (pipeline explainer, waits for LR-03-05). Reason: Rob has been merging PRs without reading them, so the explainers become his main way to learn the code, and the write-back half can start a day early. Both explainers gain a "read these first" list; LR-04-04 gains a code walkthrough drill. Remaining PRs carry a "read these spots" section. Cut line now 28 LRs (+~0.25 Rob-hours, absorbed by the day's lead); recount 21 of 28 done (LR-01-10 was wrongly counted before).
