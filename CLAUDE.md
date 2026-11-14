@@ -55,7 +55,7 @@ Rules:
 - **Mock data:** deterministic TypeScript generator using `@faker-js/faker` with a fixed seed.
 - **Analytics:** dbt-core + dbt-postgres in `analytics/`, managed with uv. MetricFlow semantic layer (`dbt-metricflow`).
 - **Ingestion:** TypeScript script that validates and loads mock biweekly Workday custom-report CSVs into raw and current tables, behind a reader interface so an API reader can replace it.
-- **Orchestration:** `pnpm pipeline` (Workday ingest → dbt build) plus a GitHub Actions workflow standing in for Airflow.
+- **Orchestration:** `pnpm run pipeline` (Workday ingest → dbt build) plus a GitHub Actions workflow standing in for Airflow.
 - **Quality:** ESLint + Prettier, `tsc --noEmit`, Vitest (unit and database tests), Playwright smoke tests, `dbt build` and `mf validate-configs` in CI.
 
 ## Repo layout (target; BR-01 creates it)
@@ -86,7 +86,7 @@ docker-compose.yml    local Postgres
 - `pnpm db:generate` / `pnpm db:migrate`: generate / apply Drizzle migrations.
 - `pnpm db:seed`: wipe and reseed `app` + `workday` from the fixed seed. `pnpm db:seed:check` prints the seed checksum.
 - `pnpm workday:ingest <file>`: validate and load one Workday report CSV (BR-03).
-- `pnpm pipeline [--report <file>]`: ingest → `dbt build`, with a summary (BR-03).
+- `pnpm run pipeline [--report <file>]`: ingest → `dbt build`, with a summary (BR-03). Use `pnpm run`: pnpm 12 reserves `pnpm pipeline`.
 - `cd analytics && uv run dbt build`: build and test all dbt models.
 - `cd analytics && uv run mf query --metrics headcount --group-by metric_time__month`: query a metric (BR-06).
 
@@ -132,9 +132,9 @@ fails with a path-length error, run it from a short path (see `code/README.md`) 
 The reviewer checks every one of these on every little rock. Add a rule when a decision creates
 one, and cite the decision ID. Domain edge cases worth testing also go here.
 - **Parameterized queries only.** No string-built SQL: use Drizzle's query builder or its `sql` tagged template with bound values. No `sql.raw()` with any value derived from input.
-- **Every mutation is validated server-side**: a Zod schema plus a permission check of the acting leader against every squad the mutation touches (D-005, D-013).
+- **Every mutation is validated server-side**: a Zod schema plus a permission check of the acting leader against every squad the mutation touches (D-005, D-013). One recorded exception (D-039): the demo reset server action skips the leader permission check; it still checks `DEMO_MODE` on the server and the one-per-minute throttle.
 - **Every seat update uses the optimistic-lock version check** and fails with `CONFLICT` on a stale version (D-011).
-- **`app.seat_changes` is append-only.** No `UPDATE` or `DELETE` in code; a database trigger and grants enforce it too. Undo is a reversing insert (D-010).
+- **`app.seat_changes` is append-only.** No `UPDATE` or `DELETE` in code; a database trigger and grants enforce it too. Undo is a reversing insert (D-010). One recorded exception (D-039): the demo reset server action may clear `seat_changes` through the migration 0002 escape hatch (`SET LOCAL app.allow_seat_changes_reset`). No other code under `src/` may use that hatch.
 - **No backdated audit rows.** Every insert into `app.seat_changes` (moves, simulated edits, undo, any future writer) has an `effective_date` no earlier than the latest one already recorded for the same seat or worker; equal is allowed. Moves fail with `EFFECTIVE_DATE_BEFORE_PENDING_CHANGE` (D-037, D-038).
 - **The app never writes `workday` tables.** Only `scripts/ingest/` and `scripts/seed/` write them. Nothing under `src/` issues `INSERT`/`UPDATE`/`DELETE` against `workday`; from BR-07 on, the app's database role can't (D-015).
 - **Ingestion validates the whole file before loading anything**, loads raw rows unchanged, and is idempotent by file hash (D-028). Cleaning happens in dbt staging, not in the loader.
