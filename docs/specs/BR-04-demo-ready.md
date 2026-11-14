@@ -1,6 +1,6 @@
 # BR-04 — Demo-ready: README, explainers, rehearsal
 
-**Status:** in-progress (2/6 cut-line LRs done) · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
+**Status:** in-progress (3/6 cut-line LRs done) · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
 
 ## Goal
 The deployed demo holds up when strangers click around (a reset, a banner saying the data is
@@ -80,7 +80,7 @@ second. Add `pnpm docs:check`, a script that checks every `path:line` reference 
 - [ ] A "read these first" list at the top: the 5–8 `path:line` spots Rob must be able to explain, in reading order
 Likely files: `docs/explainers/write-back.md`, `scripts/docs-check.ts`, `tests/unit/docs-check.test.ts`, `.github/workflows/ci.yml`, `package.json`.
 
-### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/23) · depends: LR-03-05 (merged, #22), LR-04-03 (merged, #20) · owner: agent · executor model: opus
+### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: done (https://github.com/rcdowns15/org-seat-planner/pull/23) · depends: LR-03-05 (merged, #22), LR-04-03 (merged, #20) · owner: agent · executor model: opus
 `docs/explainers/pipeline.md`, citing code as `path:line`: the ingest contract (validate the whole
 file, then load; raw vs. current; idempotency by hash); each Workday transform in staging; every
 mart's grain; headcount rebuilt as of each report date (D-036); how the reconciliation rules work
