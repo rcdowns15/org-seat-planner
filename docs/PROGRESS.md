@@ -3,19 +3,18 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-14 morning · navigator (D-039 accepted, LR-03-05 deviations approved, Saturday brief handed off)
-- **Milestone:** M2 (BR-02): 7 of 8 cut-line LRs done. M3 (BR-03): 5 of 6 done. M4 (BR-04): 0 of 5. Cut line overall: 21 of 28 (75%). Feature freeze Sun 11/15 noon. D-034 tripwire already met.
-- **In flight (built, not verified or reviewed; no PRs):**
-  - LR-02-06 on `lr/LR-02-06-seat-history` @ e9cccb6, not pushed. Only e2e left to verify. Owns migration 0005.
-  - LR-04-01 on `lr/LR-04-01-demo-reset` @ 21f249f, not pushed. Design accepted (D-039). Must stack on LR-02-06 and regenerate its migration as 0006.
-  - LR-03-05 on `lr/LR-03-05-pipeline` @ 67e79c0, pushed. Deviations approved. `db-deploy` (reseed false) ran green on main 11-14; the Neon pipeline job needs a re-run; temporary `push:` trigger to remove.
-  - LR-04-03 (write-back explainer, Opus) is `ready`, in today's brief.
-- **Blocked:** nothing. (If the Neon pipeline re-run still can't find `workday.ingest_runs`, check that the `DBT_*` secrets point at the same Neon database as `NEON_DATABASE_URL_UNPOOLED`.)
+- **Last updated:** 2026-11-14 midday · navigator (LR-02-06 merged as #19; LR-03-05 Neon run green)
+- **Milestone:** M2 (BR-02): 8 of 8 cut-line LRs done (big-rock review pending). M3 (BR-03): 5 of 6 done. M4 (BR-04): 0 of 5. Cut line overall: 22 of 28 (79%). Feature freeze Sun 11/15 noon.
+- **Production (https://org-seat-planner.vercel.app):** Vercel deploys `main` on every merge, so it should be running main with seat history (#19). Neon has the 11-15 report loaded and the marts built by the LR-03-05 Neon run. Not live yet: demo reset + banner (LR-04-01) and the `/sql` analytics presets (LR-03-05).
+- **In flight (Saturday brief, orchestrator running):**
+  - LR-04-01: restack on main (LR-02-06 merged) with migration 0006, then verify, review, PR.
+  - LR-03-05 on `lr/LR-03-05-pipeline`: Neon run 43530897148 attempt 2 green (dbt PASS=253); remove the temporary `push:` trigger, then verify, review, PR.
+  - LR-04-03 (write-back explainer, Opus).
+- **Blocked:** nothing.
 - **Waiting on Rob:**
-  1. Commit and push docs (pushes 307d77c, efc324d and this checkpoint).
-  2. Paste the Saturday brief into a fresh orchestrator session; review and merge PRs as they open.
-  3. After merging LR-02-06 (migration 0005) and LR-04-01 (0006), run `db-deploy` again with `reseed: false` so Neon has the new schema.
-- **Next:** orchestrator: CLAUDE.md step 0 (D-039 carve-out, `pnpm run pipeline`), then LR-02-06 → LR-04-01 (stacked, 0006) → LR-03-05, verified one at a time, plus LR-04-03 in parallel; at most two executors. Then LR-04-02 and LR-04-06 once LR-03-05 merges.
+  1. Confirm `db-deploy` (`reseed: false`) ran after #19 for migration 0005 (index only; the app works without it).
+  2. Review and merge PRs as they open; run `db-deploy` again after LR-04-01 merges (migration 0006), or the live reset fails.
+- **Next:** orchestrator finishes LR-04-01, LR-03-05, LR-04-03 PRs. Then the next brief: LR-04-02 and LR-04-06, plus the BR-02 and BR-03 big-rock reviews.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -25,7 +24,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 
 ## Runbook
 - Neon cold start → first request after idle takes a few seconds → load the board once before demoing.
-- Demo data messed up by visitors → board looks wrong → "Reset demo data" button, or run `db-deploy` with `reseed: true`.
+- Demo data messed up by visitors → board looks wrong → "Reset demo data" button (once LR-04-01 is merged), or run `db-deploy` with `reseed: true`.
 - Merged a PR with a migration → live app errors on missing tables/columns → run `db-deploy` on main with `reseed: false` (merging doesn't migrate Neon).
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
