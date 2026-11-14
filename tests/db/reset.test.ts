@@ -158,6 +158,7 @@ describe("reset demo data", () => {
 
 describe("resetDemoDataAction: DEMO_MODE gate (D-023)", () => {
   it("returns NOT_FOUND without DEMO_MODE, and writes nothing", async () => {
+    vi.stubEnv("DEMO_MODE", "");
     delete process.env.DEMO_MODE;
     await makeSeveralChanges();
     const checksumBefore = await checkSeed(process.env.DATABASE_URL!);

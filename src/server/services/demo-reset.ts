@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { RESET_THROTTLE_SECONDS, type ResetDemoResult } from "@/lib/schemas/demo";
 import { getPool } from "@/server/db";
-import { generateAppRows, insertAppRows, truncateAppTables } from "../../../scripts/seed/app-rows";
 
 // Restores the `app` tables to the seed (LR-04-01), in one transaction. The caller (the action)
 // has already checked DEMO_MODE (D-023).
@@ -31,8 +30,11 @@ class Throttled extends Error {
 export async function resetDemoData(options: { now?: Date } = {}): Promise<ResetDemoResult> {
   const now = options.now ?? new Date();
   const cutoff = new Date(now.getTime() - RESET_THROTTLE_SECONDS * 1000);
-  const rows = generateAppRows();
+  // Lazy import: the seed builders pull in faker, which no page should load (only a reset does).
+  const { generateAppRows, insertAppRows, truncateAppTables } =
+    await import("../../../scripts/seed/app-rows");
   const db = drizzle(getPool());
+  let seatCount = 0;
   try {
     await db.transaction(async (tx) => {
       const claimed = await tx.execute(sql`
@@ -51,6 +53,9 @@ export async function resetDemoData(options: { now?: Date } = {}): Promise<Reset
         const wait = Math.ceil((lastMs + RESET_THROTTLE_SECONDS * 1000 - now.getTime()) / 1000);
         throw new Throttled(Math.max(1, wait));
       }
+      // Built only after the claim, so a throttled click costs nothing.
+      const rows = generateAppRows();
+      seatCount = rows.seats.length;
       await truncateAppTables(tx);
       await insertAppRows(tx, rows);
     });
@@ -69,5 +74,5 @@ export async function resetDemoData(options: { now?: Date } = {}): Promise<Reset
       message: "Could not reset the demo data. Nothing was changed.",
     };
   }
-  return { ok: true, seats: rows.seats.length, resetAt: now.toISOString() };
+  return { ok: true, seats: seatCount, resetAt: now.toISOString() };
 }
