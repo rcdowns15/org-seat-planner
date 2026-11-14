@@ -79,7 +79,7 @@ Read them in this order. If you can explain these eight spots, you can explain t
     Throwing makes Drizzle roll the transaction back; the catch at
     `src/server/services/moves.ts:81` turns it back into a typed result value. Anything else (the
     database is down) is rethrown as a real error. Callers only ever see
-    `{ ok: true, ... } | { ok: false, code, message }` (`src/lib/results.ts:2`).
+    `{ ok: true, ... } | { ok: false, code, message }` (`src/lib/results.ts:3`).
 14. On success: two version-checked `UPDATE`s (source seat, then target), two audit `INSERT`s, and
     the result carries the seats' new versions so the client could keep editing without a reload
     (`src/server/services/moves.ts:244`).
@@ -108,7 +108,7 @@ whose group is in their division; a group leader edits only their group's squads
 **Both squads.** A move touches two squads: the one it leaves and the one it joins.
 `requireEditSquads` (`src/server/services/permissions.ts:48`) needs permission on every squad in
 the list, looks each one up through the caller's transaction, and fails closed on an empty list or
-an unknown squad (`src/server/services/permissions.ts:62`; an unknown squad id finds no row, so
+an unknown squad (`src/server/services/permissions.ts:61`; an unknown squad id finds no row, so
 `canEditSquad`'s `rows.length === 1` at `src/server/services/permissions.ts:43` is false). The
 move service passes both squad ids (`src/server/services/moves.ts:121`). An unknown seat id has no
 squad to authorize against, so it is also `FORBIDDEN` (`src/server/services/moves.ts:120`) rather
