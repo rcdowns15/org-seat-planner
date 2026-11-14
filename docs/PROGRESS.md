@@ -3,12 +3,21 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-13 · navigator check-in after the orchestrator report (#16, #17, #18 merged; D-023 clarified; LR-04-01 ready)
-- **Milestone:** M2 (BR-02): 7 of 8 cut-line LRs done; LR-02-06 ready. M3 (BR-03): 5 of 6 done; LR-03-05 ready. M4 (BR-04): 0 of 4; LR-04-01 ready. Cut line overall: 22 of 27 (81%), about a day ahead of the day-by-day plan.
-- **In flight:** none. No open PRs.
-- **Blocked:** none. D-034 tripwire met early (LR-02-08 and LR-03-04 merged 2026-11-13); "Last save: SQL executed" stays above the cut line.
-- **Waiting on Rob:** commit the doc changes; paste the next orchestrator brief (fresh session); later, trigger or approve the `pipeline.yml` run against Neon for LR-03-05.
-- **Next:** one orchestrator brief for LR-02-06 (seat history), LR-03-05 (`pnpm pipeline`, Neon, presets) and LR-04-01 (demo reset and banner), all Sonnet, branched from main, one database each, one Playwright run at a time on port 3000. Then LR-04-02 and LR-04-03 once LR-03-05 merges.
+- **Last updated:** 2026-11-13 night · navigator, from the orchestrator report (it stopped partway: low memory killed its check runs; no PRs opened)
+- **Milestone:** M2 (BR-02): 7 of 8 cut-line LRs done. M3 (BR-03): 5 of 6 done. M4 (BR-04): 0 of 5. Cut line overall: 21 of 28 (75%). Still about half a day ahead: Saturday's plan was these same little rocks.
+- **In flight (built, not verified or reviewed; no PRs):**
+  - LR-02-06 on `lr/LR-02-06-seat-history` @ e9cccb6, not pushed. Every check re-run by the orchestrator is green except e2e (killed after 8 of 20). Adds migration 0005 (`seat_changes(seat_id)` index).
+  - LR-04-01 on `lr/LR-04-01-demo-reset` @ 21f249f, not pushed. The executor says green; the orchestrator's re-run was killed. Its migration is also 0005, which collides with LR-02-06: plan is to stack it on LR-02-06 and regenerate it as 0006.
+  - LR-03-05 on `lr/LR-03-05-pipeline` @ 67e79c0, pushed. The executor says green; not re-run. The Neon run 43530897148 is red because Neon's schema is behind the migrations.
+  - LR-04-03 (write-back explainer, Opus) is `ready`. The addendum didn't reach that session, so it goes in the next brief.
+- **Blocked:** LR-03-05's Neon criterion, until `db-deploy` runs on main with `reseed: false` (the executor's attempt was denied by permissions).
+- **Waiting on Rob (morning):**
+  1. Commit and push docs; that also pushes the orchestrator's local commit 307d77c.
+  2. Run `db-deploy` on main with `reseed: false`.
+  3. Decide the LR-04-01 reset design (no leader permission check; clears `seat_changes` through the TRUNCATE escape hatch; new `app.demo_reset_state` table). Navigator recommends accepting it as a recorded exception (D-039).
+  4. OK or reject the LR-03-05 deviations: the command is `pnpm run pipeline` (pnpm 12 reserves `pipeline`); analytics presets only on `/sql`, not the board panel; `ci.yml` runs the pipeline before e2e.
+  5. Start a fresh orchestrator session with the morning brief: verify one little rock at a time, at most two executors at once.
+- **Next:** the morning orchestrator brief: (a) LR-02-06 e2e, review, PR; (b) follow-up executor stacks LR-04-01 on LR-02-06 with migration 0006, then verify, review, PR; (c) after `db-deploy`, re-run the Neon job, remove the temporary `push:` trigger from `pipeline.yml`, then verify, review, PR; (d) LR-04-03 once memory allows. Then LR-04-02 and LR-04-06 after LR-03-05 merges.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -22,6 +31,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-13 night: Navigator, from the orchestrator report. It stopped partway: three parallel executors with dev servers plus its own checks ran the machine out of memory, and Claude Code killed the check runs. All three LRs (02-06, 04-01, 03-05) are built; none is verified, reviewed or in a PR. Blockers: Neon schema behind migrations (needs `db-deploy`, `reseed: false`); push of docs commit 307d77c to main denied. The LR-04-01 migration number collides with LR-02-06 (both 0005). Pending Rob: LR-04-01 reset design, LR-03-05 deviations (`pnpm run pipeline`, presets on `/sql` only, `ci.yml` change). Process: verify one LR at a time, at most two executors at once. A stale e2e lock was cleared by the orchestrator. The LR-04-03 addendum never reached the session.
+- 2026-11-13: Navigator (small change, split): LR-04-03 split into LR-04-03 (write-back explainer + `pnpm docs:check`, `ready` now) and LR-04-06 (pipeline explainer, waits for LR-03-05). Reason: Rob has been merging PRs without reading them, so the explainers become his main way to learn the code, and the write-back half can start a day early. Both explainers gain a "read these first" list; LR-04-04 gains a code walkthrough drill. Remaining PRs carry a "read these spots" section. Cut line now 28 LRs (+~0.25 Rob-hours, absorbed by the day's lead); recount 21 of 28 done (LR-01-10 was wrongly counted before).
 - 2026-11-13 — LR-02-06, LR-03-05, LR-04-01 → `in-progress` (Sonnet, in parallel). Split by file ownership: LR-04-01 puts its reset button in the layout banner, not on the board page. One database each; e2e runs one at a time behind a lock on port 3000.
 - 2026-11-13: Navigator, from the orchestrator report: D-023 clarification recorded in `DECISIONS.md` (404 from routes/pages, `NOT_FOUND` result from server actions, applies to every demo action). LR-04-01 → `ready` (LR-02-05 merged); its reset criterion now says `NOT_FOUND` result instead of 404. Master plan rollup: BR-02 7/8, BR-03 5/6. The LR-03-04 Rob decisions (all 8 hiring-gap groups listed; a seated + missing worker produces only `seated_missing_from_report`) are criteria-level and already in the spec, so they get no D-entry. Process lessons for `code/LESSONS.md` (don't close an orchestrator with agents running; stacked branches + merge commits work) are handed to Rob.
 - 2026-11-13: LR-02-08 (PR #16), LR-03-04 (PR #18) and LR-02-05 (PR #17) are done; main CI green on the #17 merge. D-034 tripwire met. LR-03-05 is now `ready` (deps LR-03-04, LR-02-08, LR-01-09 all done). Cut line: 22 of 27.

@@ -1,6 +1,6 @@
 # BR-04 — Demo-ready: README, explainers, rehearsal
 
-**Status:** todo · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04; LR-04-05 after the interview
+**Status:** todo · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04 and LR-04-06 (split from LR-04-03); LR-04-05 after the interview
 
 ## Goal
 The deployed demo holds up when strangers click around (a reset, a banner saying the data is
@@ -22,7 +22,7 @@ smoke workflow.
 - Rob runs the demo script on production in five minutes or less, twice.
 
 ## Little rocks
-Parallel: LR-04-02 and LR-04-03 together once BR-02 and BR-03 are merged.
+Parallel: LR-04-03 (write-back explainer) runs now, alongside LR-02-06, LR-03-05 and LR-04-01. LR-04-02 and LR-04-06 run together once LR-03-05 is merged.
 
 ### LR-04-01 · Demo mode: reset and fictional-data banner · status: in-progress · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
 With `DEMO_MODE=true`: a site-wide banner ("Second Republic Bank is fictional; all data is
@@ -33,6 +33,12 @@ per minute. `db-deploy` with `reseed: true` remains the full reset.
 - [ ] DB test: without `DEMO_MODE`, the reset server action returns a `NOT_FOUND` result and writes nothing (D-023 clarification); a second reset within a minute is refused
 - [ ] e2e: the banner is visible on every page
 Likely files: `src/server/actions/demo.ts`, `scripts/seed/index.ts`, `src/components/demo-banner.tsx`, `src/components/demo-toolbar.tsx`, `tests/db/reset.test.ts`.
+**Built 2026-11-13 (`lr/LR-04-01-demo-reset` @ 21f249f, not verified). Pending Rob decision before the PR:**
+- The reset has no leader permission check, only `DEMO_MODE` and the one-per-minute throttle. That's an exception to the "permission check on every mutation" project rule.
+- It clears `app.seat_changes` through the TRUNCATE escape hatch from migration 0002 (the one the seed uses). The trigger is unchanged. That's an exception to "append-only".
+- It adds an `app.demo_reset_state` table for the throttle.
+- Navigator's recommendation: accept, and record it as D-039 with a project-rule carve-out. BR-07's LR-07-01 role design must then keep a path for the reset.
+- Its migration must be renumbered 0006: stack on LR-02-06 and regenerate.
 
 ### LR-04-02 · README v1: the case study · status: todo · depends: LR-03-05, LR-04-01 · owner: agent · executor model: sonnet
 Rewrite `README.md`: what it is and why (one paragraph, fictional-company notice); live demo link;
@@ -54,30 +60,44 @@ hiring-gap check (D-033); local quickstart.
 - [ ] The demo script names only seeded fixtures that exist (checked against `scripts/seed/README.md`)
 Likely files: `README.md`.
 
-### LR-04-03 · Explainers for interview prep · status: todo · depends: LR-02-08, LR-03-05 · owner: agent · executor model: opus
-Two docs written for Rob to learn from, each citing code as `path:line`:
-- `docs/explainers/write-back.md`: the life of a move from drag to commit; why each validation
-  exists and where it runs; optimistic vs. pessimistic locking; why `seat_changes` is append-only;
-  what the database enforces vs. the app; what changes in production (SSO, row-level security,
-  approvals, an outbox to push changes downstream).
-- `docs/explainers/pipeline.md`: the ingest contract (validate the whole file, then load; raw vs.
-  current; idempotency by hash); each Workday transform in staging; every mart's grain; how the
-  reconciliation rules work and how they'd extend to TA and FP&A feeds (starting from the hiring-gap
-  check, which works without a TA feed, D-033); what moves to Workday API +
-  Airflow + Snowflake in production.
-Each ends with 10–12 likely interview questions and short answers. Add `pnpm docs:check`, a script
-that verifies every `path:line` reference in `README.md` and `docs/explainers/` points to an
-existing file and line, and run it in CI.
+### LR-04-03 · Write-back explainer and `pnpm docs:check` · status: ready · depends: LR-02-08 (merged, #16), LR-02-05 (merged, #17) · owner: agent · executor model: opus
+Split on 2026-11-13 so Rob can study the write-back path a day early, because he hasn't been
+reading the PRs line by line. The pipeline explainer moved to LR-04-06.
+`docs/explainers/write-back.md`, written for Rob to learn from and citing code as `path:line`: the
+life of a move from drag to commit; the acting-leader cookie and the permission check on both
+squads; why each validation exists, where it runs, and in what order (`FORBIDDEN`, then `CONFLICT`,
+then the domain checks, D-037); optimistic vs. pessimistic locking; why `seat_changes` is
+append-only (trigger, grants, two rows per move, no backdating, D-038); the conflict demo; what the
+database enforces vs. the app; what changes in production (SSO, row-level security, approvals, an
+outbox to push changes downstream). It ends with 10–12 likely interview questions and short
+answers. The seat history panel (LR-02-06) gets a short section in whichever of the two merges
+second. Add `pnpm docs:check`, a script that checks every `path:line` reference in `README.md` and
+`docs/explainers/` points to an existing file and line, and run it in CI.
 - [ ] `pnpm docs:check` passes, and fails on a deliberately broken reference (test)
-- [ ] Every move failure code and every reconciliation exception type is explained, with its test named
-- [ ] Each explainer has at least 10 interview questions
-Likely files: `docs/explainers/write-back.md`, `docs/explainers/pipeline.md`, `scripts/docs-check.ts`, `tests/unit/docs-check.test.ts`, `.github/workflows/ci.yml`, `package.json`.
+- [ ] Every move failure code is explained, with its test named
+- [ ] At least 10 interview questions
+- [ ] A "read these first" list at the top: the 5–8 `path:line` spots Rob must be able to explain, in reading order
+Likely files: `docs/explainers/write-back.md`, `scripts/docs-check.ts`, `tests/unit/docs-check.test.ts`, `.github/workflows/ci.yml`, `package.json`.
 
-### LR-04-04 · Rehearsal and interview tag · status: todo · depends: LR-04-02, LR-04-03 · owner: rob · executor model: —
+### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: todo · depends: LR-03-05, LR-04-03 (`docs:check`) · owner: agent · executor model: opus
+`docs/explainers/pipeline.md`, citing code as `path:line`: the ingest contract (validate the whole
+file, then load; raw vs. current; idempotency by hash); each Workday transform in staging; every
+mart's grain; headcount rebuilt as of each report date (D-036); how the reconciliation rules work
+and how they'd extend to TA and FP&A feeds (starting from the hiring-gap check, which works without
+a TA feed, D-033); `pnpm pipeline` mapped to Airflow; what moves to Workday API + Airflow +
+Snowflake in production. It ends with 10–12 likely interview questions and short answers, and has
+the same "read these first" list as LR-04-03.
+- [ ] `pnpm docs:check` passes with the new file
+- [ ] Every reconciliation exception type is explained, with its test named
+- [ ] At least 10 interview questions and a "read these first" list
+Likely files: `docs/explainers/pipeline.md`.
+
+### LR-04-04 · Rehearsal and interview tag · status: todo · depends: LR-04-02, LR-04-03, LR-04-06 · owner: rob · executor model: —
 Sun 11/15 afternoon. Run the README demo script on production with a timer, twice. Explain the move
 path and the pipeline aloud from the explainers, then without them. Log every gap as a docs fix, a
 bug (new LR), or "fine". Reset the demo, then tag `v0.1-interview`.
 - [ ] Two timed runs at five minutes or less, recorded in `docs/PROGRESS.md`
+- [ ] Code walkthrough drill: with only the code open (no explainer), Rob walks the move service and one dbt mart aloud, then answers five explainer interview questions without looking. Misses go in the gap log.
 - [ ] Gaps logged; any P1 bug fixed, or the demo script routed around it
 - [ ] `git tag v0.1-interview` pushed; production reset to the seed
 
