@@ -58,7 +58,7 @@ hiring-gap check (D-033); local quickstart.
 - [ ] The demo script names only seeded fixtures that exist (checked against `scripts/seed/README.md`)
 Likely files: `README.md`.
 
-### LR-04-03 · Write-back explainer and `pnpm docs:check` · status: review (https://github.com/rcdowns15/org-seat-planner/pull/20) · depends: LR-02-08 (merged, #16), LR-02-05 (merged, #17) · owner: agent · executor model: opus
+### LR-04-03 · Write-back explainer and `pnpm docs:check` · status: done (https://github.com/rcdowns15/org-seat-planner/pull/20) · depends: LR-02-08 (merged, #16), LR-02-05 (merged, #17) · owner: agent · executor model: opus
 Split on 2026-11-13 so Rob can study the write-back path a day early, because he hasn't been
 reading the PRs line by line. The pipeline explainer moved to LR-04-06.
 `docs/explainers/write-back.md`, written for Rob to learn from and citing code as `path:line`: the
