@@ -29,6 +29,7 @@ export async function simulateAnotherLeaderEditAction(input: unknown): Promise<S
 // input and no leader: it resets the whole shared demo, so it is not tied to anyone's scope; the
 // throttle (one per minute, kept in the database) is its guard. On success every page is
 // revalidated so open boards show the restored seed.
+// D-039 exception: no leader permission check (see also demo-reset.ts for the seat_changes one).
 export async function resetDemoDataAction(): Promise<ResetDemoResult> {
   "use server";
   if (!isDemoMode()) return { ok: false, code: "NOT_FOUND", message: "Not found." };

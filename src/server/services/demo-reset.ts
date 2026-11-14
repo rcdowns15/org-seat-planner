@@ -15,6 +15,7 @@ import { generateAppRows, insertAppRows, truncateAppTables } from "../../../scri
 //   (inside truncateAppTables). This is the one sanctioned exception to "never delete audit
 //   rows": demo-only, behind DEMO_MODE, shared with the seed, and never UPDATE or DELETE.
 //   The trigger and BR-07's grants are unchanged.
+//   Sanctioned by D-039 (also see its first exception: this action has no leader permission check).
 // - Throttle: one reset per RESET_THROTTLE_SECONDS. The last-reset time is a row in the database
 //   (app.demo_reset_state) rather than a variable in memory, because on Vercel each request may
 //   run on a different serverless instance and memory is not shared. The claim is one atomic
