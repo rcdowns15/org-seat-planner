@@ -14,6 +14,10 @@ import path from "node:path";
 // host:port pairs like `localhost:3000` or `127.0.0.1:5432` (no `/`, no known extension), text
 // that isn't in backticks, and anything inside a fenced code block (``` lines), where commands
 // and SQL live.
+//
+// Limitation: only three-backtick fences (```) are recognised. `~~~` fences aren't fences here,
+// so references inside them are checked. Nested longer fences aren't handled either: any line
+// starting with ``` toggles the fence, so a ``` line inside a ```` block ends it early.
 
 export type Reference = {
   path: string;
