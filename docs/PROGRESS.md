@@ -3,7 +3,7 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-14 night · navigator (block resynced with specs: LR-04-06 and LR-02-11 in progress)
+- **Last updated:** 2026-11-15 · orchestrator (BR-03 big-rock review done; LR-04-06 and LR-02-11 in progress)
 - **Milestone:** M2 (BR-02): 8 of 9 cut-line LRs done (LR-02-11 open). M3 (BR-03): done (big-rock review pass with P2s, 11-15). M4 (BR-04): 2 of 6 (LR-04-03, LR-04-01 done). Cut line overall: 25 of 30 (83%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
 - **In flight:** LR-04-06 (Opus) and LR-02-11 (Sonnet) executors running. BR-03 big-rock review done: pass with P2s, BR-03 `done`.
