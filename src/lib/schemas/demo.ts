@@ -29,3 +29,14 @@ export type SimulateEditSuccess = {
   actorName: string; // the seeded "Another leader"
 };
 export type SimulateEditResult = ActionResult<SimulateEditSuccess, SimulateEditFailureCode>;
+
+// "Reset demo data" (LR-04-01). No input: it takes no arguments, so there is nothing to parse.
+// NOT_FOUND: DEMO_MODE is not on (D-023). THROTTLED: it already ran within the last minute.
+// FAILED: the transaction rolled back (the database was unreachable or refused); nothing changed.
+export const RESET_DEMO_FAILURE_CODES = ["NOT_FOUND", "THROTTLED", "FAILED"] as const;
+export type ResetDemoFailureCode = (typeof RESET_DEMO_FAILURE_CODES)[number];
+export type ResetDemoSuccess = { seats: number; resetAt: string }; // ISO timestamp
+export type ResetDemoResult = ActionResult<ResetDemoSuccess, ResetDemoFailureCode>;
+
+// One reset per minute, to protect a shared demo from a click-happy stranger.
+export const RESET_THROTTLE_SECONDS = 60;

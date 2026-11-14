@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import "./globals.css";
+import { DemoBanner } from "@/components/demo-banner";
 import { LeaderSwitcher } from "@/components/leader-switcher";
 import {
   getActingLeader as getActingLeaderUncached,
   listLeaderOptions,
 } from "@/server/auth/acting-leader";
 import { setActingLeader } from "@/server/actions/acting-as";
+import { resetDemoDataAction } from "@/server/actions/demo";
+import { isDemoMode } from "@/server/demo-mode";
 
 // Once per request, even if several server components ask.
 const getActingLeader = cache(getActingLeaderUncached);
@@ -36,6 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en">
       <body>
+        {isDemoMode() && <DemoBanner reset={resetDemoDataAction} />}
         <header className="flex items-center justify-between border-b px-8 py-3">
           <span className="font-medium">Org Seat Planner</span>
           <LeaderSwitcher

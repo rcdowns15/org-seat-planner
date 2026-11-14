@@ -262,23 +262,35 @@ latest recorded date (`src/server/services/demo-touch.ts:88`). An equal date is 
 **The escape hatch.** The `TRUNCATE` trigger lets one thing through: a transaction that first runs
 `SET LOCAL app.allow_seat_changes_reset = 'on'`
 (`db/migrations/0002_seat_changes_append_only.sql:25`). `SET LOCAL` lasts only until that
-transaction ends. The seed uses it to wipe and reload the demo data
-(`scripts/seed/run-seed.ts:95`). The setting does not loosen the row-level trigger: `UPDATE` and
+transaction ends. The seed and the demo reset share one helper that sets it, takes the table locks,
+and truncates (`scripts/seed/app-rows.ts:82`, `scripts/seed/app-rows.ts:86`). The setting does not loosen the row-level trigger: `UPDATE` and
 `DELETE` still raise. It guards against accidents, not a database owner who could drop the trigger;
 that is what BR-07's grants are for.
 
 **The one recorded exception: the demo reset (D-039).** LR-04-01 adds a "Reset demo data" action
-for the public demo. It is the only code under `src/` allowed to use the escape hatch, and it is a
-deliberate, written-down exception to two project rules:
+for the public demo. It is the only code under `src/` that reaches the escape hatch (through the
+shared helper), and it is a deliberate, written-down exception to two project rules:
 
 - *No leader permission check.* A reset restores the whole demo for every visitor, so a check scoped
-  to one leader's squads doesn't fit (and any visitor can pick any leader anyway). Instead it is
-  gated by `DEMO_MODE=true`, checked on the server, and throttled to one reset per minute.
-- *It clears `app.seat_changes`* through the same `SET LOCAL` + `TRUNCATE` path the seed uses, so it
-  adds no new bypass and leaves the trigger unchanged. Inserting reversing rows instead would mean
-  thousands of rows and a board that never returns to the seed state.
+  to one leader's squads doesn't fit (and any visitor can pick any leader anyway). Instead the action
+  checks `DEMO_MODE=true` on the server first and returns `NOT_FOUND` otherwise, then calls the
+  service with no leader (`src/server/actions/demo.ts:35`, `src/server/actions/demo.ts:36`).
+- *It clears `app.seat_changes`* through the same `SET LOCAL` + `TRUNCATE` path the seed uses
+  (`scripts/seed/app-rows.ts:82`), so it adds no new bypass and leaves the trigger unchanged.
+  Inserting reversing rows instead would mean thousands of rows and a board that never returns to
+  the seed state. The helper also locks `app.seats` then `app.seat_changes` first
+  (`scripts/seed/app-rows.ts:85`), the same order a move takes them, so a reset and a move can't
+  deadlock.
 
-The reset code is on the LR-04-01 branch (PR pending), not on `main` yet, so it isn't cited here.
+The throttle (one reset per minute) is one atomic `INSERT ... ON CONFLICT DO UPDATE ... WHERE` on a
+database row, so two simultaneous clicks can't both pass
+(`src/server/services/demo-reset.ts:40`; a failed claim becomes `THROTTLED` at
+`src/server/services/demo-reset.ts:47`). Tests in `tests/db/reset.test.ts`: "returns the app tables
+to the seed checksum after several changes, leaving workday alone", "still refuses TRUNCATE of
+seat_changes outside the reset (the trigger is unchanged)", "refuses a second reset within a minute,
+and allows one after a minute", "lets only one of two simultaneous resets through", and "returns
+NOT_FOUND without DEMO_MODE, and writes nothing".
+
 When BR-07 introduces a restricted app role, the reset needs its own narrow path (D-039
 consequences).
 
@@ -287,7 +299,7 @@ consequences).
 A real conflict needs two people. The demo fakes the second one. With `DEMO_MODE=true`, the move
 dialog and a toolbar offer "Simulate another leader's edit" (LR-02-05).
 
-- The action checks `DEMO_MODE` first, on the server (`src/server/actions/demo.ts:16`,
+- The action checks `DEMO_MODE` first, on the server (`src/server/actions/demo.ts:22`,
   `src/server/demo-mode.ts:6`). Without it the answer is `NOT_FOUND` and nothing is read or written
   (D-023). DB test: "returns NOT_FOUND when DEMO_MODE is unset, and writes nothing".
 - Then the same mutation front half as a move (`runMutation`), and the service
@@ -389,7 +401,8 @@ audit rows beside the board (`src/app/board/page.tsx:102`).
    code never issues them; BR-07 adds grants.
 6. **Then how does the seed or the demo reset clear it?** One escape hatch: `TRUNCATE` is allowed
    only in a transaction that sets `app.allow_seat_changes_reset` with `SET LOCAL`. The demo reset
-   is a recorded exception (D-039) gated by `DEMO_MODE` and a throttle.
+   is a recorded exception (D-039) gated by `DEMO_MODE` and a throttle; the helper both use is in
+   `scripts/seed/app-rows.ts:81`.
 7. **Why two audit rows per move instead of one?** Each row is about one seat, so a seat's history
    is a simple filter on `seat_id`. The shared `move_id` ties the pair back together.
 8. **Why can't a move be backdated?** dbt rebuilds seat state as of each report date, ordered by

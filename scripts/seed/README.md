@@ -235,6 +235,17 @@ ingest tables: otherwise a second seed would wipe `workers` and then skip the fi
 hatch in the `app.seat_changes` TRUNCATE guard (migration `0002`) and ends with the transaction.
 The checksum covers every seeded row except columns the database fills with the clock.
 
+### Demo "Reset demo data" (LR-04-01)
+
+With `DEMO_MODE=true` the banner's **Reset demo data** button restores only the `app` tables, in one
+transaction, using the same code as the seed (`app-rows.ts`: `truncateAppTables`, `insertAppRows`,
+shared by `run-seed.ts` and `src/server/services/demo-reset.ts`), so the `app` rows (and so
+`pnpm db:seed:check`) match the seed. It leaves `workday` alone. Emptying `app.seat_changes` uses the
+same guarded TRUNCATE as the seed (the one sanctioned exception to append-only: demo-only, never
+UPDATE or DELETE; the trigger is unchanged). Resets are limited to one per minute by a timestamp in
+`app.demo_reset_state`, which the reset keeps and the full seed clears. The full reset, Workday
+included, is still `pnpm db:seed` or `db-deploy` with `reseed: true`.
+
 ## Known simplifications
 
 - **Leaders sit in a squad group's cost center** (D-032). The head of engineering and the division
@@ -252,4 +263,4 @@ The checksum covers every seeded row except columns the database fills with the 
 - `workday-reports.ts` report columns, CSV rows, the 11-15 changes and the diff; `csv.ts` writer
   (BOM, CRLF, quoting) and parser.
 - `../ingest/` loads the reports (`pnpm workday:ingest`): `reader.ts` reader interface and CSV file reader, `parse-csv.ts` its own CSV parser (not `csv.ts`, so a quoting bug can't hide behind a matching one), `validate.ts`, `load.ts`.
-- `generate.ts` pure generator; `run-seed.ts` database writes and report files; `checksum.ts`; `index.ts` CLI.
+- `generate.ts` pure generator; `app-rows.ts` app-table rows and writes, shared with the demo reset; `run-seed.ts` database writes and report files; `checksum.ts`; `index.ts` CLI.

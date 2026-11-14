@@ -1,7 +1,13 @@
 import "server-only";
-import { simulateEditInputSchema, type SimulateEditResult } from "@/lib/schemas/demo";
+import { revalidatePath } from "next/cache";
+import {
+  simulateEditInputSchema,
+  type ResetDemoResult,
+  type SimulateEditResult,
+} from "@/lib/schemas/demo";
 import { runMutation } from "@/server/actions/run-mutation";
 import { isDemoMode } from "@/server/demo-mode";
+import { resetDemoData } from "@/server/services/demo-reset";
 import { simulateAnotherLeaderEdit } from "@/server/services/demo-touch";
 
 // "Simulate another leader's edit" (LR-02-05). DEMO_MODE is checked first, on the server (D-023):
@@ -17,4 +23,17 @@ export async function simulateAnotherLeaderEditAction(input: unknown): Promise<S
   return runMutation(simulateEditInputSchema, input, (data, leader) =>
     simulateAnotherLeaderEdit(data.seatId, leader),
   );
+}
+
+// "Reset demo data" (LR-04-01). DEMO_MODE first, as above: NOT_FOUND and nothing written. No
+// input and no leader: it resets the whole shared demo, so it is not tied to anyone's scope; the
+// throttle (one per minute, kept in the database) is its guard. On success every page is
+// revalidated so open boards show the restored seed.
+// D-039 exception: no leader permission check (see also demo-reset.ts for the seat_changes one).
+export async function resetDemoDataAction(): Promise<ResetDemoResult> {
+  "use server";
+  if (!isDemoMode()) return { ok: false, code: "NOT_FOUND", message: "Not found." };
+  const result = await resetDemoData();
+  if (result.ok) revalidatePath("/", "layout");
+  return result;
 }
