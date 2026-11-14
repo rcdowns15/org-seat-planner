@@ -3,19 +3,16 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-14 afternoon · orchestrator (Saturday brief done: all four PRs open or merged)
-- **Milestone:** M2 (BR-02): 8 of 9 cut-line LRs done (LR-02-11 new). M3 (BR-03): 5 of 6 (LR-03-05 in review). M4 (BR-04): 1 of 6 (LR-04-03 done; LR-04-01 in review). Cut line overall: 23 of 30 (77%). Feature freeze Sun 11/15 noon.
-- **Production (https://org-seat-planner.vercel.app):** runs main with seat history (#19) and the write-back explainer (#20). Neon migrated through 0005 (`db-deploy` 43635627305); it has the 11-15 report and marts from the LR-03-05 Neon run. Not live yet: demo reset + banner (#21, needs migration 0006), `/sql` analytics presets (#22).
-- **In flight (open PRs, all verified and reviewed, no P1/P2 open):**
-  - LR-04-01 → PR #21 (migration 0006). After merging, run `db-deploy` with `reseed: false`.
-  - LR-03-05 → PR #22.
-  - #21 and #22 both touch `scripts/seed/run-seed.ts` and the escape-hatch citation at `docs/explainers/write-back.md:266`. Whichever merges second needs a rebase (orchestrator).
-- **Ready, not yet dispatched:** LR-02-11 (board readability); LR-04-07 ("try to break it", #20 merged).
+- **Last updated:** 2026-11-14 evening · orchestrator (Saturday brief done: LR-02-06, LR-04-03, LR-04-01 merged; LR-03-05 in review)
+- **Milestone:** M2 (BR-02): 8 of 9 cut-line LRs done (LR-02-11 new). M3 (BR-03): 5 of 6 (LR-03-05 in review, #22). M4 (BR-04): 2 of 6 (LR-04-03, LR-04-01 done). Cut line overall: 24 of 30 (80%). Feature freeze Sun 11/15 noon.
+- **Production (https://org-seat-planner.vercel.app):** runs main with seat history (#19), the write-back explainer (#20), and the demo reset + banner (#21). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). It has the 11-15 report and marts from the LR-03-05 Neon run. Not live yet: `/sql` analytics presets (#22).
+- **In flight:** LR-03-05 → PR #22, rebased onto main after #21 (397d998), fully re-verified (e2e 30/30). No migration.
+- **Ready, not yet dispatched:** LR-02-11 (board readability); LR-04-07 ("try to break it").
 - **Blocked:** nothing.
 - **Waiting on Rob:**
-  1. Review and merge #21 and #22 (check CI first); `db-deploy` (`reseed: false`) after #21.
+  1. Review and merge #22 once CI is green (no `db-deploy` needed).
   2. Start a fresh orchestrator session for the next brief.
-- **Next:** next brief (fresh session): LR-02-11 and LR-04-07 now; LR-04-02 and LR-04-06 after #22 merges; rebase whichever of #21/#22 is left after the first merges; BR-02 and BR-03 big-rock reviews; two-executor cap.
+- **Next:** next brief (fresh session): LR-02-11 and LR-04-07 now; LR-04-02 and LR-04-06 after #22 merges; BR-02 and BR-03 big-rock reviews; two-executor cap. Small follow-ups from reviews (P3s) are listed in PRs #19–#22.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
