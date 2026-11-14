@@ -109,7 +109,7 @@ whose group is in their division; a group leader edits only their group's squads
 `requireEditSquads` (`src/server/services/permissions.ts:48`) needs permission on every squad in
 the list, looks each one up through the caller's transaction, and fails closed on an empty list or
 an unknown squad (`src/server/services/permissions.ts:62`; an unknown squad id finds no row, so
-`canEditSquad`'s `rows.length === 1` at `src/server/services/permissions.ts:41` is false). The
+`canEditSquad`'s `rows.length === 1` at `src/server/services/permissions.ts:43` is false). The
 move service passes both squad ids (`src/server/services/moves.ts:121`). An unknown seat id has no
 squad to authorize against, so it is also `FORBIDDEN` (`src/server/services/moves.ts:120`) rather
 than a "not found" that would let someone probe which seat ids exist.
@@ -183,7 +183,7 @@ The list itself is pinned by `tests/unit/move-schema.test.ts`: "lists the failur
 order". That holds for every code but `CONFLICT`: it appears once in the list, at the end, because
 it is one code with two check points. The early check runs right after `FORBIDDEN` (row 4 above);
 the write-time check runs last (row 11). The dialog also has one client-only code, `NETWORK`, for
-when the server can't be reached (`src/components/board/move-dialog.tsx:89`); it never comes from
+when the server can't be reached (`src/components/board/move-dialog.tsx:88`); it never comes from
 the server.
 
 ## 4. Optimistic vs. pessimistic locking
