@@ -42,7 +42,9 @@ describe("findReferences: what counts as a code reference", () => {
 
 describe("checkDocs", () => {
   it("passes on references that resolve", () => {
-    const docs = [{ file: "README.md", text: "`src/server/services/moves.ts:1-3` `package.json:3`" }];
+    const docs = [
+      { file: "README.md", text: "`src/server/services/moves.ts:1-3` `package.json:3`" },
+    ];
     expect(checkDocs(docs, lineCountOf)).toEqual([]);
   });
 
