@@ -119,6 +119,19 @@ describe("savepoint recovery", () => {
 });
 
 describe("getUnderTheHood", () => {
+  it("with analytics: false (the board) runs only the five app presets, not the dbt marts", async () => {
+    const board = await getUnderTheHood({ seatId: null, groupId: null }, { analytics: false });
+    expect(board.sections.map((s) => s.key)).toEqual([
+      "seat",
+      "recent_changes",
+      "worker",
+      "plan_gaps",
+      "last_move_impact",
+    ]);
+    const all = await getUnderTheHood({ seatId: null, groupId: null });
+    expect(all.sections).toHaveLength(8);
+  });
+
   it("rejects ids that are not positive integers", async () => {
     await expect(getUnderTheHood({ seatId: -1, groupId: null })).rejects.toThrow();
     await expect(getUnderTheHood({ seatId: 1.5, groupId: null })).rejects.toThrow();
@@ -135,6 +148,18 @@ describe("getUnderTheHood", () => {
     expect(section(sections, "plan_gaps").empty).not.toBeNull();
     expect(section(sections, "last_move_impact").empty).toMatch(/No move yet/);
     expect(rowsOf(section(sections, "recent_changes"))).toHaveLength(0);
+  });
+
+  it("analytics presets run read-only and never surface a database error, built or not", async () => {
+    const { sections } = await getUnderTheHood({ seatId: null, groupId: null });
+    for (const key of ["reconciliation_exceptions", "workday_changes", "squad_headcount_vs_plan"]) {
+      const s = section(sections, key);
+      // Either the mart's rows (or its empty message), or the "not built yet" message: whichever
+      // state the analytics schema is in, the section is not an error.
+      expect(s.result === null || s.result.ok, `${key} must not be an error`).toBe(true);
+      expect(s.sql).toMatch(/^select /);
+      expect(s.sql).not.toMatch(/\b(insert|update|delete|drop)\b/i);
+    }
   });
 
   it("selected seat and worker presets bind the seat id and show version and Workday record", async () => {

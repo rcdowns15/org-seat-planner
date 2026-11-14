@@ -42,10 +42,11 @@ export default async function BoardPage({
   const canMoveTo = canEditAnyGroup(leader, board.groups);
   const demoMode = isDemoMode();
 
-  const underTheHood = await getUnderTheHood({
-    seatId: selectedSeatId,
-    groupId: board.group.groupId,
-  });
+  // The board panel hides the analytics presets (`analytics={false}` below), so don't run them.
+  const underTheHood = await getUnderTheHood(
+    { seatId: selectedSeatId, groupId: board.group.groupId },
+    { analytics: false },
+  );
 
   const divisions = [...new Set(board.groups.map((g) => g.divisionName))];
 
