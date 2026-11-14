@@ -58,6 +58,7 @@ hiring-gap check (D-033); local quickstart.
 - [ ] Every production-mapping row says Built or Planned, and every Built row links to code
 - [ ] The roadmap names cost-aware planning as a Planned next layer (added 2026-11-14): today's constraint is approved seats (a headcount budget); next comes standard cost by job level and location, quarterly budgets per cost center from FP&A, and an over-budget warning on moves, with individual pay never shown to leaders (see `docs/PARKING_LOT.md`)
 - [ ] The demo script names only seeded fixtures that exist (checked against `scripts/seed/README.md`)
+- [ ] (BR-03 review P3s, 2026-11-15) `pnpm run pipeline` appears in both `README.md` and `analytics/README.md`; the demo script's reconciliation step says the seated-worker exceptions are resolved outside the app today (BR-07 adds resolution)
 Likely files: `README.md`.
 
 ### LR-04-03 · Write-back explainer and `pnpm docs:check` · status: done (https://github.com/rcdowns15/org-seat-planner/pull/20) · depends: LR-02-08 (merged, #16), LR-02-05 (merged, #17) · owner: agent · executor model: opus
@@ -108,6 +109,7 @@ Added 2026-11-14 instead of a writable SQL console (D-026 stands, D-040). `scrip
 - [ ] It refuses to run against a non-local host, or the explainer and the script header both say "local only" and it carries no connection string
 - [ ] `pnpm docs:check` passes with the new explainer section
 - [ ] Two misleading comments fixed (Rob 2026-11-14, from the LR-04-01/LR-03-05 P3s): (1) the lock comment in `scripts/seed/app-rows.ts` and the matching write-back explainer sentence no longer say a reset and a move "can't deadlock"; they say it's safe because every writer locks seats first, and the worst case is Postgres aborting one transaction so the reset returns `FAILED`; (2) the "check order" comment at `src/lib/schemas/move.ts:26` matches the current order after D-037 part 2 (`FORBIDDEN`, then `CONFLICT`, then the domain checks). Comment and doc text only, no behavior change.
+- [ ] (BR-03 big-rock review P2, 2026-11-15) `docs/explainers/write-back.md` citations into `src/app/board/page.tsx` point at the intended lines again (the move prop and the history panel; `:94` → `:95`, `:102` → `:103` as of main 4980828, re-check after LR-02-11 merges)
 Likely files: `scripts/demo/break-it.sql`, `docs/explainers/write-back.md`, `scripts/seed/app-rows.ts`, `src/lib/schemas/move.ts`.
 
 ### LR-04-05 · Production smoke test workflow (after the interview) · status: todo · depends: LR-04-01 · owner: agent · executor model: sonnet

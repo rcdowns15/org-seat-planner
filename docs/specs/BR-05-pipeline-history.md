@@ -17,6 +17,10 @@ extracts, snapshot, `dim_date`, `fct_seat_changes`, `fct_seats_daily`, `fct_head
 modeling explainer.
 Out: metrics (BR-06), dashboard (BR-08).
 
+## Notes from the BR-03 big-rock review (2026-11-15)
+- `rpt_reconciliation_exceptions` compares only the latest two reports, so a worker missing from a third report drops out of the exceptions; `rpt_workday_changes` labels a returning worker `hire`. Harmless with two reports; must be handled once 18 months of reports exist.
+- The validator accepts a `Terminated` row with no termination date (and an `Active` row with one); such a worker is classified `missing`, not `aged_out`.
+
 ## Exit criteria
 - Replaying history reproduces the current seat state exactly.
 - `fct_headcount_daily` for today equals live counts from `app.seats`.

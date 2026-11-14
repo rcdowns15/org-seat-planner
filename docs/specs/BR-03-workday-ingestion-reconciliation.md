@@ -1,6 +1,6 @@
 # BR-03 — Workday ingestion and reconciliation (thin pipeline slice)
 
-**Status:** in-progress · **Depends on:** BR-01 (can run in parallel with BR-02) · **Milestone:** M3 · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** yes
+**Status:** done (big-rock review 2026-11-15: pass with P2s, see "Big-rock review") · **Depends on:** BR-01 (can run in parallel with BR-02) · **Milestone:** M3 · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** yes
 
 ## Goal
 A biweekly mock Workday custom report (CSV) is validated and ingested into a raw landing table and a
@@ -32,6 +32,14 @@ client, other sources (TA, FP&A) and an exceptions UI (BR-07), dashboard (BR-08)
 - After the 11-15 report, `rpt_reconciliation_exceptions` lists exactly the seeded exceptions, and
   `rpt_workday_changes` lists exactly the documented changes.
 - The dbt CI job is green; the manual dbt-on-Neon workflow is green; the SQL panel shows both marts on production.
+
+## Big-rock review (2026-11-15, Sunday orchestrator)
+Verdict: **pass with P2s**, no P1. Reviewed main at 507077f (PRs #9, #10, #12, #14, #18, #22).
+- Exit 1 met: `ci.yml` db job runs migrate → seed → `pnpm run pipeline` green on main (11-01 skipped as already loaded by the seed, 11-15 loaded, dbt build passes); dbt non-zero exit covered by `tests/unit/pipeline-lib.test.ts`.
+- Exit 2 met: `assert_reconciliation_exceptions_match_seed_readme` and `assert_workday_changes_match_seed_readme` (both-ways `EXCEPT`), kept in step by `tests/unit/seed-readme-dbt.test.ts`; CI fails if the seed-list tests skip.
+- Exit 3 met: dbt CI green; Neon pipeline run 43530897148 green; production `/sql` checked 2026-11-15 by the orchestrator: the squad headcount vs. plan preset renders 180 rows and the reconciliation preset renders 100878 `seated_missing_from_report` and 100047 `terminated_seated` (health ok, 2202 seats). (P2 "no recorded evidence" closed by this check.)
+- P2: `docs/explainers/write-back.md` citations `src/app/board/page.tsx:94` and `:102` drifted one line in LR-03-05 fix round 1 (now `:95`, `:103`). Folded into LR-04-07, which edits that explainer.
+- P3s (noted, no action before the freeze): the two seated-worker exceptions can't be cleared from the app (no vacate action; the mart comment says a leader's fix clears them; resolution is BR-07; LR-04-02 demo script should say so); an unseated missing worker drops out of exceptions after a third report and a returning worker is labelled `hire` (matters in BR-05); the validator doesn't check status vs. termination date agreement; LR-03-01…04/06 acceptance boxes left unticked (evidence lives in the PRs); spec still says `pnpm pipeline` (approved deviation: `pnpm run pipeline`); neither README mentions `pnpm run pipeline` (LR-04-02).
 
 ## Little rocks
 Parallel: LR-03-01 and LR-03-02 overlap once LR-03-01's migration is committed (LR-03-02 stacks on it; see its dependency note). LR-03-03 needs LR-03-02 and LR-03-04
