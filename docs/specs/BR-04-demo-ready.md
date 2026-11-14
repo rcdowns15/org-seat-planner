@@ -80,7 +80,7 @@ second. Add `pnpm docs:check`, a script that checks every `path:line` reference 
 - [ ] A "read these first" list at the top: the 5–8 `path:line` spots Rob must be able to explain, in reading order
 Likely files: `docs/explainers/write-back.md`, `scripts/docs-check.ts`, `tests/unit/docs-check.test.ts`, `.github/workflows/ci.yml`, `package.json`.
 
-### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: in-progress · depends: LR-03-05 (merged, #22), LR-04-03 (merged, #20) · owner: agent · executor model: opus
+### LR-04-06 · Pipeline explainer (split from LR-04-03) · status: review (https://github.com/rcdowns15/org-seat-planner/pull/23) · depends: LR-03-05 (merged, #22), LR-04-03 (merged, #20) · owner: agent · executor model: opus
 `docs/explainers/pipeline.md`, citing code as `path:line`: the ingest contract (validate the whole
 file, then load; raw vs. current; idempotency by hash); each Workday transform in staging; every
 mart's grain; headcount rebuilt as of each report date (D-036); how the reconciliation rules work
