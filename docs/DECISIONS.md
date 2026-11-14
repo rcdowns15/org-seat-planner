@@ -308,3 +308,24 @@ that a new writer could miss.
 **Alternatives:** keep the criteria per little rock with no rule (a future writer could miss it);
 order by save time in dbt (the invariant would hold only in analytics, see D-037).
 **Timeline impact:** none. No new little rock, and the criteria already exist.
+
+### D-039 · 2026-11-14 · accepted (Rob, 2026-11-14) · The demo reset is a recorded exception to the permission and append-only rules
+**Decision:** LR-04-01's "Reset demo data" server action (1) checks only `DEMO_MODE` (server-side,
+D-023) and a one-per-minute throttle, with no leader permission check; (2) clears
+`app.seat_changes` through the seed's existing TRUNCATE escape hatch (migration 0002,
+`SET LOCAL app.allow_seat_changes_reset`), leaving the append-only trigger unchanged; (3) adds an
+`app.demo_reset_state` table to hold the throttle. The project rules "every mutation is validated
+server-side" and "`app.seat_changes` is append-only" gain a carve-out for this one action, and no
+other code path may use the escape hatch from `src/`.
+**Why:** a demo reset restores the whole demo for every visitor, so a check scoped to one leader's
+squads doesn't fit, and restoring the seed means removing visitors' audit rows. `DEMO_MODE` keeps it
+off anywhere but the demo, the throttle stops abuse, and reusing the seed's hatch adds no new
+bypass. Recording it keeps the rule honest instead of quietly broken.
+**Alternatives:** (1) permission-check the reset against a division-scoped leader (arbitrary: any
+visitor can pick that leader); (2) reset by inserting reversing rows (thousands of rows, and the
+board would never return to the seed checksum); (3) reset only through `db-deploy` with
+`reseed: true` (no self-serve recovery during a demo).
+**Consequences:** LR-07-01's role design must keep a path for the reset when the app runs as
+`seat_app` (for example, a narrowly granted `SECURITY DEFINER` function, or the reset runs under the
+seed role), or drop the in-app reset outside demo deployments.
+**Timeline impact:** none. Already built.

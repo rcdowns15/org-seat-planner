@@ -32,6 +32,7 @@ reset path, which stays with the seed and ingest roles (LR-01-06 reviewer P3);
 app connects as `seat_app`; ingest uses its own URL.
 - [ ] DB test as `seat_app`: `INSERT` into `workday.workers`, and `UPDATE` or `TRUNCATE` on `app.seat_changes`, all fail with permission denied
 - [ ] All BR-02 tests pass while connected as `seat_app`
+- [ ] The demo reset (D-039) still works with `DEMO_MODE=true` when the app runs as `seat_app`, through a narrowly granted path (e.g. a `SECURITY DEFINER` function) rather than a broad `TRUNCATE` grant, with a DB test
 Likely files: `db/migrations/*`, `db/init/02-roles.sql`, `src/server/db.ts`, `.env.example`, `tests/db/roles.test.ts`.
 
 ### LR-07-02 · Create roles on Neon and set env vars · status: todo · depends: LR-07-01 · owner: rob · executor model: —

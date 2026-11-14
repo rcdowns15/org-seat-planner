@@ -17,7 +17,7 @@ pipeline explainers, `pnpm docs:check`, rehearsal, release tag. After the interv
 smoke workflow.
 
 ## Exit criteria
-- A fresh clone that follows the README quickstart reaches a working board and a green `pnpm pipeline`.
+- A fresh clone that follows the README quickstart reaches a working board and a green `pnpm run pipeline` (pnpm 12 reserves `pnpm pipeline`; approved 2026-11-14).
 - Every code reference in the README and explainers resolves (`pnpm docs:check` in CI).
 - Rob runs the demo script on production in five minutes or less, twice.
 
@@ -33,12 +33,9 @@ per minute. `db-deploy` with `reseed: true` remains the full reset.
 - [ ] DB test: without `DEMO_MODE`, the reset server action returns a `NOT_FOUND` result and writes nothing (D-023 clarification); a second reset within a minute is refused
 - [ ] e2e: the banner is visible on every page
 Likely files: `src/server/actions/demo.ts`, `scripts/seed/index.ts`, `src/components/demo-banner.tsx`, `src/components/demo-toolbar.tsx`, `tests/db/reset.test.ts`.
-**Built 2026-11-13 (`lr/LR-04-01-demo-reset` @ 21f249f, not verified). Pending Rob decision before the PR:**
-- The reset has no leader permission check, only `DEMO_MODE` and the one-per-minute throttle. That's an exception to the "permission check on every mutation" project rule.
-- It clears `app.seat_changes` through the TRUNCATE escape hatch from migration 0002 (the one the seed uses). The trigger is unchanged. That's an exception to "append-only".
-- It adds an `app.demo_reset_state` table for the throttle.
-- Navigator's recommendation: accept, and record it as D-039 with a project-rule carve-out. BR-07's LR-07-01 role design must then keep a path for the reset.
-- Its migration must be renumbered 0006: stack on LR-02-06 and regenerate.
+**Built 2026-11-13 (`lr/LR-04-01-demo-reset` @ 21f249f, not verified).** Design accepted 2026-11-14 as D-039: no leader permission check (only `DEMO_MODE` + throttle), clears `app.seat_changes` through the migration 0002 TRUNCATE escape hatch (trigger unchanged), new `app.demo_reset_state` table. Before the PR:
+- [ ] The `CLAUDE.md` project rules carry the D-039 carve-out (the reviewer checks against it)
+- [ ] The migration is renumbered 0006: stack on LR-02-06 and regenerate it with `pnpm db:generate` (custom SQL in a custom migration); 0005 stays LR-02-06's
 
 ### LR-04-02 · README v1: the case study · status: todo · depends: LR-03-05, LR-04-01 · owner: agent · executor model: sonnet
 Rewrite `README.md`: what it is and why (one paragraph, fictional-company notice); live demo link;
@@ -55,7 +52,8 @@ Airflow; Postgres `analytics` → Snowflake; dbt Core → dbt Cloud; MetricFlow 
 Layer; SQL panel and future dashboard → Tableau / Sheets; mock auth → SSO); a roadmap linking the
 BR-05…BR-08 specs, which names the TA offers feed (LR-07-04) as the next step after today's
 hiring-gap check (D-033); local quickstart.
-- [ ] The orchestrator follows the quickstart in a fresh clone (clean directory) and reaches a working board and a green `pnpm pipeline`; the PR shows the commands and output
+- [ ] The orchestrator follows the quickstart in a fresh clone (clean directory) and reaches a working board and a green `pnpm run pipeline`; the PR shows the commands and output
+- [ ] The demo script's reconciliation step matches production, where the pipeline has already loaded the 11-15 report (see the LR-03-05 demo note); the SQL panel analytics presets are on `/sql`, not on the board
 - [ ] Every production-mapping row says Built or Planned, and every Built row links to code
 - [ ] The demo script names only seeded fixtures that exist (checked against `scripts/seed/README.md`)
 Likely files: `README.md`.
@@ -67,7 +65,7 @@ reading the PRs line by line. The pipeline explainer moved to LR-04-06.
 life of a move from drag to commit; the acting-leader cookie and the permission check on both
 squads; why each validation exists, where it runs, and in what order (`FORBIDDEN`, then `CONFLICT`,
 then the domain checks, D-037); optimistic vs. pessimistic locking; why `seat_changes` is
-append-only (trigger, grants, two rows per move, no backdating, D-038); the conflict demo; what the
+append-only (trigger, grants, two rows per move, no backdating, D-038) and the one recorded exception, the demo reset (D-039); the conflict demo; what the
 database enforces vs. the app; what changes in production (SSO, row-level security, approvals, an
 outbox to push changes downstream). It ends with 10–12 likely interview questions and short
 answers. The seat history panel (LR-02-06) gets a short section in whichever of the two merges

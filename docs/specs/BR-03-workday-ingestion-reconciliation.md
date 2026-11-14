@@ -154,17 +154,17 @@ counts by type). `pipeline.yml` (manual `workflow_dispatch`) runs the same again
 reconciliation exceptions, latest Workday changes, squad headcount vs. plan (with a friendly message
 if `analytics` is empty). Write `docs/orchestration.md`: each pipeline step mapped to the Airflow
 task it would be in production (sensor on the report, ingest, dbt build, alert on exceptions).
-- [ ] `pnpm pipeline` on a freshly seeded DB runs both reports and prints the summary; a failing dbt test makes it exit non-zero (test)
+- [ ] `pnpm run pipeline` on a freshly seeded DB runs both reports and prints the summary; a failing dbt test makes it exit non-zero (test)
 - [ ] A `pipeline.yml` run against Neon is green (link it)
 - [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
 Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
 **Built 2026-11-13 (`lr/LR-03-05-pipeline` @ 67e79c0, pushed, not verified by the orchestrator). Pending before the PR:**
 - **Neon run 43530897148 is red:** `workday.ingest_runs` is missing on Neon. Rob runs `db-deploy` on main with `reseed: false`, then the job is re-run.
 - **Temporary trigger:** remove the `push:` trigger from `pipeline.yml` before the PR.
-- **Deviations needing Rob's OK:**
-  1. The command is `pnpm run pipeline`, because pnpm 12's built-in `pipeline` command takes precedence. `CLAUDE.md` and the BR-04 demo text need the new name.
+- **Deviations approved by Rob 2026-11-14** (part of this little rock's scope now):
+  1. The command is `pnpm run pipeline`, because pnpm 12's built-in `pipeline` command takes precedence. `CLAUDE.md` (Commands) is updated in this little rock; BR-04 criteria already say `pnpm run pipeline`. Older docs saying `pnpm pipeline` mean the same script.
   2. The three analytics presets live only on `/sql`, not in the board's panel: with them on the board, it loaded slowly enough to fail six e2e specs.
-  3. `ci.yml` now runs the pipeline before e2e. This was outside the brief, but the new e2e test reads the marts.
+  3. `ci.yml` runs the pipeline before e2e, because the new e2e test reads the marts.
 - **Demo note:** running the pipeline on Neon loads the 11-15 report. Production then already shows the post-refresh exceptions, and the seed-list dbt tests skip there (expected). LR-04-02's demo script must match this.
 
 ### LR-03-06 · Stop a position backfill from wedging ingestion · status: done (https://github.com/rcdowns15/org-seat-planner/pull/12) · depends: LR-03-01, LR-03-02 (touches `analytics/` tests; dispatch after #10 merges) · owner: agent · executor model: sonnet · cut line: yes (D-034)
