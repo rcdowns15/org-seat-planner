@@ -21,10 +21,16 @@ export function cardState(status: SeatStatus, seatType: SeatType): CardState {
   return status;
 }
 
+// The one name for a seat everywhere it is shown: the card, the history panel title and the
+// "Move to…" options. Labels are "Seat <id>" (seat ids are unique across the whole database).
+export function seatLabel(seatId: number): string {
+  return `Seat ${seatId}`;
+}
+
 // What a seat is, in words, for the Select button's accessible name:
-// "Open seat 206" or "Filled (employee) seat 12, Jane Doe".
+// "Seat 206, Open" or "Seat 12, Filled (employee), Jane Doe".
 export function seatDescription(seatId: number, state: CardState, workerName: string | null) {
-  return `${cardStateLabel(state)} seat ${seatId}${workerName ? `, ${workerName}` : ""}`;
+  return `${seatLabel(seatId)}, ${cardStateLabel(state)}${workerName ? `, ${workerName}` : ""}`;
 }
 
 // Always shown as text next to an icon, never color alone.

@@ -1,6 +1,7 @@
 "use client";
 
 import type { BoardSquad } from "@/lib/board";
+import { sortSeats } from "@/lib/board-sort";
 import { SeatCard } from "./seat-card";
 
 type Props = {
@@ -33,7 +34,7 @@ export function SquadColumn({
         </p>
       </header>
       <ul className="flex flex-col gap-2">
-        {squad.seats.map((seat) => (
+        {sortSeats(squad.seats).map((seat) => (
           <SeatCard
             key={seat.seatId}
             seat={seat}

@@ -112,7 +112,7 @@ test.describe("seat history panel", () => {
     // Source seat: the newest row is the move out. Before: the worker; after: backfill.
     await card(page, pick.from.seatId).getByTestId("select-seat-button").click();
     await expect(page).toHaveURL(new RegExp(`seat=${pick.from.seatId}`));
-    await expect(panel).toContainText(`History of seat ${pick.from.seatId}`);
+    await expect(panel).toContainText(`History of Seat ${pick.from.seatId}`);
     const out = panel.getByTestId("seat-history-entry").first();
     await expect(out.getByTestId("history-change-type")).toHaveText("Moved out");
     await expect(out.getByTestId("history-before-after")).toContainText(pick.from.workerName);
@@ -124,7 +124,7 @@ test.describe("seat history panel", () => {
     // Target seat: the newest row is the move in, with the same actor and date.
     await card(page, pick.to.seatId).getByTestId("select-seat-button").click();
     await expect(page).toHaveURL(new RegExp(`seat=${pick.to.seatId}`));
-    await expect(panel).toContainText(`History of seat ${pick.to.seatId}`);
+    await expect(panel).toContainText(`History of Seat ${pick.to.seatId}`);
     const into = panel.getByTestId("seat-history-entry").first();
     await expect(into.getByTestId("history-change-type")).toHaveText("Moved in");
     await expect(into.getByTestId("history-before-after")).toContainText(pick.from.workerName);
@@ -228,9 +228,9 @@ test.describe("seat history panel", () => {
     await page.goto(`/board?group=${groupId}`);
     const button = open.getByTestId("select-seat-button");
     await expect(button).toHaveText(/^Select/);
-    await expect(button).toHaveAccessibleName("Select Open seat 206");
-    await expect(page.getByRole("button", { name: "Select Open seat 206" })).toHaveCount(1);
+    await expect(button).toHaveAccessibleName("Select Seat 206, Open");
+    await expect(page.getByRole("button", { name: "Select Seat 206, Open" })).toHaveCount(1);
     await button.click();
-    await expect(button).toHaveAccessibleName("Selected Open seat 206");
+    await expect(button).toHaveAccessibleName("Selected Seat 206, Open");
   });
 });
