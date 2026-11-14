@@ -3,6 +3,7 @@
 -- LOCAL ONLY. Run it against the Docker Compose database, never a deployed one. Everything runs in
 -- one transaction that ends in ROLLBACK, so it writes nothing (check: `pnpm db:seed:check` prints
 -- the same checksum before and after). It carries no connection string: you supply the connection.
+-- Run on a freshly seeded local DB (`pnpm db:seed`) for the results to match the comments.
 --
 -- Run it (after `docker compose up -d db`, `pnpm db:migrate`, `pnpm db:seed`):
 --   psql -h localhost -U seatplanner -d seatplanner -f scripts/demo/break-it.sql
@@ -11,7 +12,9 @@
 --
 -- Guard: psql's built-in :HOST variable is the server host of the connection (or the socket
 -- directory, which starts with "/", for a local socket). Anything other than localhost, 127.0.0.1,
--- ::1 or a socket makes the script quit before it touches anything.
+-- ::1 or a socket makes the script quit before it touches anything. The guard stops accidents, not
+-- deliberate bypasses (e.g. `hostaddr=` with `host=localhost`, or a local port-forward to a remote
+-- database).
 --
 -- Errors: ON_ERROR_STOP is off so psql keeps going after a rejected statement. In Postgres a failed
 -- statement aborts the whole transaction, so each attempt runs after its own SAVEPOINT and ends
@@ -108,18 +111,19 @@ ROLLBACK TO SAVEPOINT attempt;
 
 \echo
 \echo '=== 8. Optimistic locking: the app''s statement shape vs. a raw UPDATE ==='
-\echo 'Seat 206 starts at version 0. Leader A and leader B both loaded it at version 0.'
+\echo 'Seat 206 is read at its current version (a fresh seed: 0). Leaders A and B both loaded it at that version.'
+SELECT version AS v206 FROM app.seats WHERE seat_id = 206 \gset
 SAVEPOINT attempt;
 
 \echo 'Leader A saves with the app''s shape (WHERE seat_id AND version, then version + 1).'
 \echo 'Expect: UPDATE 1.'
 UPDATE app.seats SET status = 'backfill', version = version + 1
-WHERE seat_id = 206 AND version = 0;
+WHERE seat_id = 206 AND version = :v206;
 
-\echo 'Leader B saves with the same shape and the now-stale version 0.'
+\echo 'Leader B saves with the same shape and the now-stale version.'
 \echo 'Expect: UPDATE 0. Zero rows is how the app detects CONFLICT (D-011) and rolls back.'
 UPDATE app.seats SET status = 'open', version = version + 1
-WHERE seat_id = 206 AND version = 0;
+WHERE seat_id = 206 AND version = :v206;
 
 \echo 'A raw UPDATE with no version check, as someone with database access could run it.'
 \echo 'Expect: UPDATE 1 (SUCCEEDS). Nothing in the database forces the version check: optimistic'

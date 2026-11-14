@@ -324,7 +324,7 @@ dialog and a toolbar offer "Simulate another leader's edit" (LR-02-05).
 | Audit is append-only | Triggers (migration 0002); grants from BR-07 | No `UPDATE`/`DELETE` in code |
 | A change is undone at most once | Unique `reverses_change_id` (`db/schema/app.ts:161`) | (LR-02-07) |
 | Move rows carry a `move_id` | `CHECK` (`db/schema/app.ts:180`) | Service generates one per move |
-| No lost updates | The `UPDATE ... WHERE version` row lock | `CONFLICT` result and Refresh |
+| No lost updates | Row lock makes each version-checked `UPDATE` atomic, but nothing forces the check (section 11, attempt 8b) | `WHERE version = $n` on every seat update; zero rows is a `CONFLICT` result and Refresh |
 | Permission on both squads | Not yet (row-level security is a production step) | `requireEditSquads` |
 | Worker active, type match, receiving status | No (Workday status lives in another schema and changes on ingest) | Service checks 5 to 8 |
 | Effective-date window and no backdating | No (depends on the clock and on other rows) | Service checks 9 and 10; dbt has a warn-level backstop test |
@@ -440,11 +440,11 @@ docker exec -i org-seat-planner-db-1 psql -U seatplanner -d seatplanner < script
 The second form is for a machine without `psql`: it uses the one inside the Postgres container.
 
 - **Local only.** The script holds no connection string. It checks psql's `:HOST` variable
-  (`scripts/demo/break-it.sql:27`) and quits before touching anything unless the host is
+  (`scripts/demo/break-it.sql:30`) and quits before touching anything unless the host is
   `localhost`, `127.0.0.1`, `::1` or a local socket (`docker exec` connects over one, so its host
   is a path starting with `/`).
 - **It writes nothing.** Everything runs inside one transaction that ends in `ROLLBACK`
-  (`scripts/demo/break-it.sql:133`). Run it twice and `pnpm db:seed:check` prints the same
+  (`scripts/demo/break-it.sql:137`). Run it twice and `pnpm db:seed:check` prints the same
   checksum.
 - **One error doesn't stop the rest.** A failed statement aborts a Postgres transaction, so each
   attempt runs after its own `SAVEPOINT` and ends with `ROLLBACK TO SAVEPOINT`.
@@ -471,7 +471,7 @@ What this demonstrates, by layer:
 | History is append-only | Yes (triggers) | |
 | A worker holds at most one seat | Yes (unique index) | Also `NOT_IN_SEAT` |
 | A filled seat has a worker | Yes (`CHECK`) | |
-| A seat only receives a worker if open/backfill, type matches, worker is active | No (attempt 7) | Yes (checks 5 to 8) |
+| A seat only receives a worker if open/backfill, type matches, worker is active | No (attempt 7 shows the open/backfill gap; worker status and seat-type matching are likewise unchecked) | Yes (checks 5 to 8) |
 | Moves are audited | No | Yes (same-transaction insert into `app.seat_changes`) |
 | No lost updates | No (attempt 8b) | Yes (`WHERE version = $n`) |
 | Who may edit a squad | No | Yes (`requireEditSquads`) |
