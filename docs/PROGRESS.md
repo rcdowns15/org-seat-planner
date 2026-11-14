@@ -3,10 +3,10 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-15 · orchestrator (#23 merged: LR-04-06 done; LR-02-11 in review)
+- **Last updated:** 2026-11-15 · orchestrator (LR-02-11 PR #24 open)
 - **Milestone:** M2 (BR-02): 8 of 9 cut-line LRs done (LR-02-11 open). M3 (BR-03): done (big-rock review pass with P2s, 11-15). M4 (BR-04): 3 of 6 (LR-04-03, LR-04-01, LR-04-06 done). Cut line overall: 26 of 30 (87%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
-- **In flight:** LR-02-11 verified (e2e 32/32), reviewer running; PR next. No open PRs.
+- **In flight:** PR #24 LR-02-11 board readability (review pass, 3 P3s; awaiting Rob). LR-04-07 starts when #24 merges; then LR-04-02; BR-02 big-rock review after #24.
 - **Ready, not yet dispatched:** LR-04-07 ("try to break it" + two comment fixes), LR-04-02 (README). Both are queued in the running Sunday session.
 - **Blocked:** nothing.
 - **Waiting on Rob:** merge PRs as soon as they open (freeze is Sun noon); paste the lessons into `code/LESSONS.md`.
@@ -25,6 +25,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-15 — LR-02-11 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/24 (Sonnet; e2e 32/32; review pass, no P1/P2, 3 P3s noted).
 - 2026-11-15 — LR-04-06 → `done` (PR #23 merged).
 - 2026-11-15 — LR-04-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/23 (Opus; review pass, no P1/P2, 6 P3s + 6 citation near-misses noted).
 - 2026-11-15 — BR-03 big-rock review: pass with P2s, no P1 → BR-03 `done`. Exit 3 evidence recorded (orchestrator checked production `/sql`: headcount-vs-plan 180 rows, exceptions 100878 + 100047). Citation-drift P2 (`write-back.md` → `board/page.tsx:94/:102`) folded into LR-04-07; README P3s folded into LR-04-02; two BR-05-relevant P3s noted in the BR-05 spec.
