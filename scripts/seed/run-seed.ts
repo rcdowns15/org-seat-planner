@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -8,9 +6,8 @@ import { ingestReport } from "../ingest/load";
 import { CsvFileReader } from "../ingest/reader";
 import { insertAppRows, toRows, truncateAppTables } from "./app-rows";
 import { seedChecksum } from "./checksum";
-import { NEXT_REPORT_DATE, SEED_DATE } from "./config";
 import { generateSeedData } from "./generate";
-import { buildReportCsv, reportFileName } from "./workday-reports";
+import { writeReportCsvs } from "./write-report-csvs";
 
 export const DEFAULT_REPORT_DIR = path.join("data", "workday");
 
@@ -41,17 +38,7 @@ export async function runSeed(
       await insertAppRows(tx, rows);
     });
 
-    await mkdir(reportDir, { recursive: true });
-    const reports: SeedResult["reports"] = [];
-    for (const [date, list] of [
-      [SEED_DATE, data.workers],
-      [NEXT_REPORT_DATE, data.nextReportWorkers],
-    ] as const) {
-      const csv = buildReportCsv(list);
-      const file = path.join(reportDir, reportFileName(date));
-      await writeFile(file, csv, "utf8");
-      reports.push({ file, sha256: createHash("sha256").update(csv).digest("hex") });
-    }
+    const reports = await writeReportCsvs(data, reportDir);
 
     // workday.workers is loaded the way production data would be: through the ingest script, from
     // the 11-01 report. The 11-15 report is left for the demo's "simulate Workday refresh".

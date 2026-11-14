@@ -130,6 +130,19 @@ export const PRESET_KEYS = [
 ] as const;
 export type PresetKey = (typeof PRESET_KEYS)[number];
 
+// The presets that read the `analytics` dbt marts (the rest read `app` and `workday`). The /sql
+// page shows all of them; the board panel skips these (see getUnderTheHood).
+const ANALYTICS_PRESET_KEYS: readonly PresetKey[] = [
+  "reconciliation_exceptions",
+  "workday_changes",
+  "squad_headcount_vs_plan",
+];
+
+// The presets to run, in display order. Exported for the unit tests.
+export function presetKeys(includeAnalytics: boolean): PresetKey[] {
+  return PRESET_KEYS.filter((k) => includeAnalytics || !ANALYTICS_PRESET_KEYS.includes(k));
+}
+
 type Preset = {
   title: string;
   description: string;
@@ -355,18 +368,23 @@ export type UnderTheHood = {
 };
 
 // Everything the panel shows. The IDs are checked against the Zod schema here, so a bad value
-// can't reach a query.
-export async function getUnderTheHood(rawParams: unknown): Promise<UnderTheHood> {
+// can't reach a query. `analytics: false` skips the three dbt-mart presets (the board panel doesn't
+// show them, so it shouldn't pay for them); the default runs all eight.
+export async function getUnderTheHood(
+  rawParams: unknown,
+  options: { analytics?: boolean } = {},
+): Promise<UnderTheHood> {
   const ids = panelParamsSchema.parse(rawParams);
+  const keys = presetKeys(options.analytics ?? true);
   // One connection, one snapshot, presets run one after another (a single client can't run
-  // queries in parallel anyway). Latency: worst case is about 8 x 2s (every preset hitting the
+  // queries in parallel anyway). Latency: worst case is about 2s per preset, 8 for /sql and 5 for the board (every preset hitting the
   // statement timeout) plus the connect timeout. Accepted as the price of one consistent snapshot.
   const out = await inReadOnlyTransaction(async (run) => {
     const done: PanelSection[] = [];
-    for (const key of PRESET_KEYS) done.push(await runPreset(key, ids, run));
+    for (const key of keys) done.push(await runPreset(key, ids, run));
     return done;
   });
-  const sections = out.ok ? out.value : PRESET_KEYS.map((key) => failedSection(key, out)); // could not connect
+  const sections = out.ok ? out.value : keys.map((key) => failedSection(key, out)); // could not connect
   return { sections, lastSave: lastSave() };
 }
 

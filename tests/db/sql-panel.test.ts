@@ -119,6 +119,19 @@ describe("savepoint recovery", () => {
 });
 
 describe("getUnderTheHood", () => {
+  it("with analytics: false (the board) runs only the five app presets, not the dbt marts", async () => {
+    const board = await getUnderTheHood({ seatId: null, groupId: null }, { analytics: false });
+    expect(board.sections.map((s) => s.key)).toEqual([
+      "seat",
+      "recent_changes",
+      "worker",
+      "plan_gaps",
+      "last_move_impact",
+    ]);
+    const all = await getUnderTheHood({ seatId: null, groupId: null });
+    expect(all.sections).toHaveLength(8);
+  });
+
   it("rejects ids that are not positive integers", async () => {
     await expect(getUnderTheHood({ seatId: -1, groupId: null })).rejects.toThrow();
     await expect(getUnderTheHood({ seatId: 1.5, groupId: null })).rejects.toThrow();

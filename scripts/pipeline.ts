@@ -13,10 +13,11 @@ import { Pool } from "pg";
 import { ingestReport } from "./ingest/load";
 import { CsvFileReader } from "./ingest/reader";
 import {
+  dbtStep,
+  exitCodeFor,
   formatSummary,
-  parseDbtOutput,
+  redact,
   runSteps,
-  type DbtCounts,
   type Step,
   type Summary,
 } from "./pipeline-lib";
@@ -111,14 +112,13 @@ async function main(): Promise<void> {
     steps.push({
       name: "dbt build",
       run: async () => {
-        const { code, output } = await runDbtBuild();
-        const counts: DbtCounts = parseDbtOutput(output);
+        const { counts, ...outcome } = await dbtStep(runDbtBuild);
         summary.dbt = counts;
-        return { ok: code === 0, detail: `dbt exited with code ${code}` };
+        return outcome;
       },
     });
 
-    const outcome = await runSteps(steps);
+    const outcome = await runSteps(steps, [connectionString]);
     summary.failed = outcome.results.find((r) => !r.ok) ?? null;
 
     // Exception counts come from the reconciliation mart; skipped if a step failed.
@@ -137,12 +137,10 @@ async function main(): Promise<void> {
       summary.exceptionsNote = "not read (a step failed).";
     }
     console.log(formatSummary(summary));
-    if (!outcome.ok) process.exitCode = 1;
+    process.exitCode = exitCodeFor(outcome);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      `pipeline failed: ${message.replaceAll(connectionString, "[connection string]")}`,
-    );
+    console.error(`pipeline failed: ${redact(message, [connectionString])}`);
     process.exitCode = 1;
   } finally {
     await pool.end();
