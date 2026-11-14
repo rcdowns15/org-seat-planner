@@ -41,8 +41,8 @@ Read them in this order. If you can explain these eight spots, you can explain t
 2. Every seat on the board carries its `version`, read straight from `app.seats`
    (`src/server/queries/board.ts:47`).
 3. A filled card is draggable and an open or backfill card is droppable
-   (`src/components/board/seat-card.tsx:52`). The keyboard path is the "Move to…" button
-   (`src/components/board/seat-card.tsx:124`); both open the same dialog.
+   (`src/components/board/seat-card.tsx:58`). The keyboard path is the "Move to…" button
+   (`src/components/board/seat-card.tsx:133`); both open the same dialog.
 4. Dropping a card does not save anything. `onDragEnd` only opens the move dialog
    (`src/components/board/board-view.tsx:128`).
 5. When the dialog opens, the board snapshots the seat versions it is showing
@@ -364,7 +364,7 @@ audit rows beside the board (`src/app/board/page.tsx:102`).
   `created_at desc, change_id desc` (`src/server/queries/history.ts:51`): the two rows of one move
   share a transaction timestamp, so `change_id` breaks the tie with the later insert. Each entry
   shows both the saved time and the effective date
-  (`src/components/seat-history-panel.tsx:114`). DB test: "returns
+  (`src/components/seat-history-panel.tsx:115`). DB test: "returns
   one seat's rows newest first, ties broken by change_id descending, and no other seat's rows"
   (`tests/db/history.test.ts:43`), which inserts rows out of time order so neither insert order
   nor `change_id` alone would pass.

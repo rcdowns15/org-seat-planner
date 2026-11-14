@@ -15,7 +15,7 @@ import { addUtcDays, utcToday } from "@/lib/dates";
 import { SimulateEditButton } from "@/components/simulate-edit-button";
 import type { SimulateEditResult } from "@/lib/schemas/demo";
 import { MAX_EFFECTIVE_DAYS_AHEAD, type MoveResult } from "@/lib/schemas/move";
-import { cardState, cardStateLabel } from "@/lib/seat-card";
+import { cardState, cardStateLabel, seatLabel } from "@/lib/seat-card";
 import type { BoardSeat } from "@/lib/board";
 
 export type SeatRef = { seat: BoardSeat; squadName: string };
@@ -42,9 +42,9 @@ type Props = {
   onMoved: () => void;
 };
 
-function seatLabel(ref: SeatRef): string {
+function seatOptionLabel(ref: SeatRef): string {
   const state = cardStateLabel(cardState(ref.seat.status, ref.seat.seatType));
-  return `${ref.squadName}, seat ${ref.seat.seatId} (${state})`;
+  return `${ref.squadName}, ${seatLabel(ref.seat.seatId)} (${state})`;
 }
 
 export function MoveDialog({
@@ -104,13 +104,13 @@ export function MoveDialog({
             {from.seat.workerName} ({from.seat.jobTitle ?? "Title unknown"})
           </dd>
           <dt className="text-muted-foreground">From</dt>
-          <dd data-testid="move-from">{seatLabel(from)}</dd>
+          <dd data-testid="move-from">{seatOptionLabel(from)}</dd>
           <dt className="text-muted-foreground">
             <label htmlFor="move-to-seat">To</label>
           </dt>
           <dd data-testid="move-to">
             {to ? (
-              seatLabel(to)
+              seatOptionLabel(to)
             ) : (
               <select
                 id="move-to-seat"
@@ -121,7 +121,7 @@ export function MoveDialog({
                 <option value="">Choose a seat…</option>
                 {targets.map((t) => (
                   <option key={t.seat.seatId} value={t.seat.seatId}>
-                    {seatLabel(t)}
+                    {seatOptionLabel(t)}
                   </option>
                 ))}
               </select>

@@ -86,3 +86,32 @@ test("a malformed group id is a 404", async ({ page }) => {
     expect(res?.status()).toBe(404);
   }
 });
+
+test("a seat card's label matches the title of the history panel it opens", async ({ page }) => {
+  await page.goto("/board");
+  const card = page.getByTestId("seat-card").first();
+  const label = (await card.getByTestId("seat-label").textContent())!;
+  expect(label).toMatch(/^Seat \d+$/);
+  await card.getByTestId("select-seat-button").click();
+  await expect(page.getByTestId("seat-history-panel").getByRole("heading")).toHaveText(
+    `History of ${label}`,
+  );
+  await expect(card.getByTestId("select-seat-button")).toHaveAccessibleName(
+    new RegExp(`^Selected ${label},`),
+  );
+});
+
+test("in each squad column, seats that can receive a move come before filled seats", async ({
+  page,
+}) => {
+  await page.goto("/board");
+  const rank = (s: string | null) =>
+    s === "open" || s === "backfill" ? 0 : s === "offer_accepted" ? 1 : 2;
+  for (const column of await page.getByTestId("squad-column").all()) {
+    const states = await column
+      .getByTestId("seat-card")
+      .evaluateAll((els) => els.map((el) => el.getAttribute("data-state")));
+    const ranks = states.map(rank);
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  }
+});

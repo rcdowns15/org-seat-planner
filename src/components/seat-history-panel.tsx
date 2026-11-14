@@ -4,6 +4,7 @@ import { ArrowRight, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { changeTypeLabel, type SeatHistoryEntry } from "@/lib/history";
+import { seatLabel } from "@/lib/seat-card";
 import { formatSeatStatus } from "@/lib/seat-status";
 
 type Props = {
@@ -65,7 +66,7 @@ export function SeatHistoryPanel({ seatId, entries }: Props) {
     >
       <header className="flex items-center gap-2">
         <h2 id="seat-history-title" className="text-sm font-semibold">
-          History of seat {seatId}
+          History of {seatLabel(seatId)}
         </h2>
         <button
           type="button"

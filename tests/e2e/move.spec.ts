@@ -152,8 +152,8 @@ test.describe("drag-and-drop move", () => {
     const dialog = page.getByTestId("move-dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByTestId("move-who")).toContainText(pick.from.workerName);
-    await expect(dialog.getByTestId("move-from")).toContainText(`seat ${pick.from.seatId}`);
-    await expect(dialog.getByTestId("move-to")).toContainText(`seat ${pick.to.seatId}`);
+    await expect(dialog.getByTestId("move-from")).toContainText(`Seat ${pick.from.seatId}`);
+    await expect(dialog.getByTestId("move-to")).toContainText(`Seat ${pick.to.seatId}`);
     await expect(dialog.getByLabel("Effective date")).toHaveValue(utcToday());
 
     await dialog.getByRole("button", { name: "Save" }).click();

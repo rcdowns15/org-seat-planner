@@ -12,7 +12,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cardState, cardStateLabel, seatDescription, type CardState } from "@/lib/seat-card";
+import {
+  cardState,
+  cardStateLabel,
+  seatDescription,
+  seatLabel,
+  type CardState,
+} from "@/lib/seat-card";
 import { workerStatusLabel, type BoardSeat } from "@/lib/board";
 
 const ICONS: Record<CardState, LucideIcon> = {
@@ -88,6 +94,9 @@ export function SeatCard({ seat, editable, canMoveTo, onMoveTo, selected, onSele
     >
       <div className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
         <Icon aria-hidden className="size-3.5" />
+        <span data-testid="seat-label" className="text-foreground font-semibold">
+          {seatLabel(seat.seatId)}
+        </span>
         <span data-testid="seat-state-label">{cardStateLabel(state)}</span>
         {/* The keyboard path to selection; the whole card is also clickable. The "Selected" text
             and check icon mean selection is never shown by the border color alone. */}

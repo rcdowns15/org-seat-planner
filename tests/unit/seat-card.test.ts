@@ -11,9 +11,9 @@ describe("seat card states", () => {
   });
 
   it("describes a seat in words for the Select button's accessible name", () => {
-    expect(seatDescription(206, "open", null)).toBe("Open seat 206");
+    expect(seatDescription(206, "open", null)).toBe("Seat 206, Open");
     expect(seatDescription(12, "filled_employee", "Jane Doe")).toBe(
-      "Filled (employee) seat 12, Jane Doe",
+      "Seat 12, Filled (employee), Jane Doe",
     );
   });
 
