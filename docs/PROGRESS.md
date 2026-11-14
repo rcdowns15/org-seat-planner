@@ -4,7 +4,7 @@ Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
 - **Last updated:** 2026-11-14 afternoon · orchestrator (LR-04-07 PR #25 open)
-- **Milestone:** M2 (BR-02): cut line complete, big-rock review pass with P2s (11-15). M3 (BR-03): done (big-rock review pass with P2s, 11-15). M4 (BR-04): 3 of 6 (LR-04-03, LR-04-01, LR-04-06 done). Cut line overall: 27 of 30 (90%). Feature freeze Sun 11/15 noon.
+- **Milestone:** M2 (BR-02): cut line complete, big-rock review pass with P2s (11-14). M3 (BR-03): done (big-rock review pass with P2s, 11-14). M4 (BR-04): 3 of 6 (LR-04-03, LR-04-01, LR-04-06 done). Cut line overall: 27 of 30 (90%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
 - **In flight:** PR #25 LR-04-07 "try to break it" (review 2 pass; awaiting Rob). LR-04-02 (README) starts when #25 merges.
 - **Ready, not yet dispatched:** LR-04-07 ("try to break it" + two comment fixes), LR-04-02 (README). Both are queued in the running Sunday session.
@@ -25,13 +25,13 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
-- 2026-11-15 — LR-04-07 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/25 (Sonnet: build + 1 fix round; review 1 one P2 (section 7 vs section 11 on lost updates) + three P3s fixed; review 2 pass; also carries the BR-03 page.tsx and BR-02 results/permissions citation fixes).
-- 2026-11-15 — BR-02 big-rock review (cut line): pass with P2s, no P1. P2 fixed by rewording exit 1 (the `/audit` page is LR-02-09, after the interview; evidence is the drag e2e plus both history panels). Two write-back citation P3s go onto the LR-04-07 branch; other P3s recorded in the BR-02 spec. BR-02 stays `in-progress` only for LR-02-07/09.
-- 2026-11-15 — LR-02-11 → `done` (PR #24 merged). BR-02 cut-line LRs all merged; big-rock review started. LR-04-07 → `in-progress`.
-- 2026-11-15 — LR-02-11 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/24 (Sonnet; e2e 32/32; review pass, no P1/P2, 3 P3s noted).
-- 2026-11-15 — LR-04-06 → `done` (PR #23 merged).
-- 2026-11-15 — LR-04-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/23 (Opus; review pass, no P1/P2, 6 P3s + 6 citation near-misses noted).
-- 2026-11-15 — BR-03 big-rock review: pass with P2s, no P1 → BR-03 `done`. Exit 3 evidence recorded (orchestrator checked production `/sql`: headcount-vs-plan 180 rows, exceptions 100878 + 100047). Citation-drift P2 (`write-back.md` → `board/page.tsx:94/:102`) folded into LR-04-07; README P3s folded into LR-04-02; two BR-05-relevant P3s noted in the BR-05 spec.
+- 2026-11-14 — LR-04-07 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/25 (Sonnet: build + 1 fix round; review 1 one P2 (section 7 vs section 11 on lost updates) + three P3s fixed; review 2 pass; also carries the BR-03 page.tsx and BR-02 results/permissions citation fixes).
+- 2026-11-14 — BR-02 big-rock review (cut line): pass with P2s, no P1. P2 fixed by rewording exit 1 (the `/audit` page is LR-02-09, after the interview; evidence is the drag e2e plus both history panels). Two write-back citation P3s go onto the LR-04-07 branch; other P3s recorded in the BR-02 spec. BR-02 stays `in-progress` only for LR-02-07/09.
+- 2026-11-14 — LR-02-11 → `done` (PR #24 merged). BR-02 cut-line LRs all merged; big-rock review started. LR-04-07 → `in-progress`.
+- 2026-11-14 — LR-02-11 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/24 (Sonnet; e2e 32/32; review pass, no P1/P2, 3 P3s noted).
+- 2026-11-14 — LR-04-06 → `done` (PR #23 merged).
+- 2026-11-14 — LR-04-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/23 (Opus; review pass, no P1/P2, 6 P3s + 6 citation near-misses noted).
+- 2026-11-14 — BR-03 big-rock review: pass with P2s, no P1 → BR-03 `done`. Exit 3 evidence recorded (orchestrator checked production `/sql`: headcount-vs-plan 180 rows, exceptions 100878 + 100047). Citation-drift P2 (`write-back.md` → `board/page.tsx:94/:102`) folded into LR-04-07; README P3s folded into LR-04-02; two BR-05-relevant P3s noted in the BR-05 spec.
 - 2026-11-14 — Navigator (bookkeeping): "Where we stand" resynced with the specs. LR-04-06 and LR-02-11 are no longer listed as undispatched, and the steps Rob already did (commit the docs, start the Sunday session) are off his list. No plan change.
 - 2026-11-14 — Navigator (small, triage; Rob approved): LR-04-07 gains a criterion to fix two misleading comments (the "can't deadlock" wording in `app-rows.ts` plus the write-back explainer, and the stale check-order comment at `move.ts:26`). The other P3s and the possibly flaky CLI guard test are parked as one post-interview cleanup little rock. Symbol-based citations parked; until then the reviewer checks explainer citations into files a little rock changes. Brief order: LR-04-06 ∥ LR-02-11 → LR-04-07 → LR-04-02; BR-03 big-rock review now, BR-02's after LR-02-11. No timeline impact.
 - 2026-11-14 — Navigator, from the orchestrator's Saturday report (small, bookkeeping): LR-04-02, LR-04-06, LR-04-07 → `ready` in the spec; BR-04 header and master plan rollup updated (BR-03 6/6, review pending; BR-04 2/6). LR-04-02 gains a quickstart criterion (`uv sync && uv run dbt deps` before the first pipeline run; keep `DBT_USER`/`DBT_PASSWORD`). Stale `pnpm pipeline` wording fixed in the master plan and BR-04 spec; D-020 gets a note. No timeline impact.
