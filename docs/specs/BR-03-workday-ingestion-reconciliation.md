@@ -146,7 +146,7 @@ Likely files: `analytics/models/intermediate/int_worker_report_versions.sql`, `a
   - Consider `severity: warn` on the `cost_center_name` relationships test.
   - Note: one change type per row (documented).
 
-### LR-03-05 · `pnpm pipeline`, dbt on Neon, SQL panel presets · status: review (https://github.com/rcdowns15/org-seat-planner/pull/22) · depends: LR-03-04, LR-02-08, LR-01-09 · owner: agent · executor model: sonnet
+### LR-03-05 · `pnpm pipeline`, dbt on Neon, SQL panel presets · status: done (https://github.com/rcdowns15/org-seat-planner/pull/22) · depends: LR-03-04, LR-02-08, LR-01-09 · owner: agent · executor model: sonnet
 `pnpm pipeline [--report <file>]`: ingest the given (or latest) report → `uv run dbt build`, stopping
 at the first failure and printing a summary (rows ingested, models built, tests passed, exception
 counts by type). `pipeline.yml` (manual `workflow_dispatch`) runs the same against Neon with the
