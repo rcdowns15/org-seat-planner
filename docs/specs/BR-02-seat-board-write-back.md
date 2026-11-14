@@ -118,7 +118,7 @@ seeded "Another leader") so the audit trail stays honest.
 - [ ] Every `seat_changes` insert this little rock adds obeys D-038 (reviewer check)
 Likely files: `src/server/actions/demo.ts`, `src/server/demo-mode.ts`, `src/components/move-dialog.tsx`, `src/components/demo-toolbar.tsx`, `tests/e2e/conflict.spec.ts`, `tests/db/demo.test.ts`.
 
-### LR-02-06 · Seat history panel · status: in-progress · depends: LR-02-04 · owner: agent · executor model: sonnet
+### LR-02-06 · Seat history panel · status: review (https://github.com/rcdowns15/org-seat-planner/pull/19) · depends: LR-02-04 · owner: agent · executor model: sonnet
 Clicking a seat card opens a side panel with that seat's `seat_changes`, newest first: what changed,
 who did it, when it was saved, the effective date.
 - [ ] DB test: history query returns rows newest first and only for that seat
