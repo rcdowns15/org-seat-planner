@@ -30,6 +30,8 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-14 — LR-04-01 → `done` (PR #21 merged). `db-deploy` 43640253414 green (migrate ok, reseed skipped): Neon through 0006; production health ok (2202 seats). #22 rebased onto main (run-seed.ts import conflict resolved; the obsolete citation commit was dropped because main now cites `app-rows.ts`).
+- 2026-11-14: Navigator (small, triage): cost-aware planning (dollar budgets, standard cost by level/location, over-budget warning on moves) parked; LR-04-02 gains a roadmap criterion naming it as Planned. No timeline impact.
 - 2026-11-14 — LR-03-05 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/22 (Sonnet: finish pass + 1 fix round; review 1 two P2s (dbt exit-code test, ERROR count) + four P3s fixed; review 2 pass, 3 P3s noted; e2e 27/27; Neon run 43530897148 green). Orchestrator rebased onto main after #20 and fixed one drifted explainer citation. LR-04-01 fix round 2 (CI `docs:check` after #20 merged) pushed to #21.
 - 2026-11-14 — LR-04-03 → `done` (PR #20 merged). Its `docs:check` then failed CI on #21 (LR-04-01 moved the escape hatch out of `run-seed.ts`); LR-04-01 fix round 2 rebases and updates the explainer citations and the D-039 section.
 - 2026-11-14 — LR-04-01 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/21 (Sonnet: restack onto LR-02-06 with migration 0006 + 1 fix round; review 1 P2 (faker on runtime path) + three P3s fixed, one P3 noted; review 2 pass, two P3s noted; e2e 29/29, dbt PASS=253). Needs `db-deploy` (`reseed: false`) after merge.

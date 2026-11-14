@@ -24,7 +24,7 @@ smoke workflow.
 ## Little rocks
 Parallel: LR-04-03 (write-back explainer) runs now, alongside LR-02-06, LR-03-05 and LR-04-01. LR-04-02 and LR-04-06 run together once LR-03-05 is merged. LR-04-07 follows LR-04-03 (it extends the write-back explainer).
 
-### LR-04-01 · Demo mode: reset and fictional-data banner · status: review (https://github.com/rcdowns15/org-seat-planner/pull/21) · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
+### LR-04-01 · Demo mode: reset and fictional-data banner · status: done (https://github.com/rcdowns15/org-seat-planner/pull/21) · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
 With `DEMO_MODE=true`: a site-wide banner ("Second Republic Bank is fictional; all data is
 generated") and a "Reset demo data" action that restores the `app` tables to the seed (one
 transaction; Workday tables are untouched because the app never writes them). Throttle resets to one
@@ -55,6 +55,7 @@ hiring-gap check (D-033); local quickstart.
 - [ ] The orchestrator follows the quickstart in a fresh clone (clean directory) and reaches a working board and a green `pnpm run pipeline`; the PR shows the commands and output
 - [ ] The demo script's reconciliation step matches production, where the pipeline has already loaded the 11-15 report (see the LR-03-05 demo note); the SQL panel analytics presets are on `/sql`, not on the board
 - [ ] Every production-mapping row says Built or Planned, and every Built row links to code
+- [ ] The roadmap names cost-aware planning as a Planned next layer (added 2026-11-14): today's constraint is approved seats (a headcount budget); next comes standard cost by job level and location, quarterly budgets per cost center from FP&A, and an over-budget warning on moves, with individual pay never shown to leaders (see `docs/PARKING_LOT.md`)
 - [ ] The demo script names only seeded fixtures that exist (checked against `scripts/seed/README.md`)
 Likely files: `README.md`.
 
