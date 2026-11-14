@@ -29,11 +29,21 @@ Out: Workday ingestion and reconciliation (BR-03), dashboard (BR-08), real auth 
 
 ## Exit criteria
 - Playwright: drag a worker to an open seat in another squad, save, see it on the board, and the
-  audit log shows the move. Runs green in CI.
+  audit trail has the move: two `seat_changes` rows sharing a `move_id`, shown in both seats'
+  history panels. Runs green in CI. (Reworded 2026-11-15 from "the audit log shows the move" after
+  the BR-02 big-rock review: the `/audit` page is LR-02-09, after the interview.)
 - `pnpm test:db` covers every validation failure code, the version conflict and concurrent saves,
   and each failure case asserts that nothing was written.
 - The conflict demo and the SQL panel work on the deployed app.
-- (After the interview) undo and the audit log page, per LR-02-07 and LR-02-09.
+- (After the interview) undo and the audit log page (including a Playwright check that `/audit` shows the move), per LR-02-07 and LR-02-09.
+
+## Big-rock review (cut line, 2026-11-15, Sunday orchestrator)
+Verdict: **pass with P2s**, no P1. Reviewed main at ba7b618 (PRs #7, #8, #11, #13, #15, #16, #17, #19, #24). BR-02 stays `in-progress` only for the after-interview LR-02-07 and LR-02-09; the cut line is complete.
+- Exit 1 met: `tests/e2e/move.spec.ts:137` (real drag, board updates, +2 `seat_changes` rows) and `tests/e2e/history.spec.ts:92` (both seats' history panels show the move); CI `db` job runs e2e (green on #24). The P2 (criterion named the deferred `/audit` page) is fixed by the rewording above.
+- Exit 2 met: one `tests/db/moves.test.ts` case per failure code, each asserting nothing was written (`expectNothingWritten`); concurrent saves at `moves.test.ts:541` (exactly one wins).
+- Exit 3 met, read-only on production: `/api/health` ok (2202 seats); `/board` renders the demo tools and the Under-the-hood panel; `/board?seat=156` shows "Simulate another leader's edit on seat 156"; `/sql` renders the presets. The conflict round trip is covered in CI by `tests/e2e/conflict.spec.ts:100` (not clicked on production).
+- Consistency: one mutation path (`runMutation` → service → `requireEditSquads` on every touched squad → one transaction → typed result); every seat UPDATE is version-checked; append-only enforced by trigger + no UPDATE/DELETE in `src/`; the reset hatch is used only from `scripts/seed/app-rows.ts` via `demo-reset.ts` (D-039); D-023 NOT_FOUND tested; server/client boundary clean.
+- P3s: `write-back.md` citations `src/lib/results.ts:2` → `:3` and `permissions.ts:62` → `:61` (fixed on the LR-04-07 branch); `moves.test.ts:595-597` accepts an impossible `SEAT_NOT_AVAILABLE` for the race loser (tighten to `CONFLICT`); spec checkboxes unticked for done LRs (evidence lives in the PRs); the READ_ONLY failure literal is built in three places and the INVALID_INPUT message differs (`run-mutation.ts:21` vs `moves.ts:65`): one shared constant after the freeze.
 
 ## Little rocks
 Parallel: LR-02-01 and LR-02-02 together; LR-02-05, LR-02-06 and LR-02-08 together after LR-02-04

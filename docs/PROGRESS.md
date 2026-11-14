@@ -3,10 +3,10 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-15 · orchestrator (#24 merged: LR-02-11 done; LR-04-07 and BR-02 big-rock review started)
-- **Milestone:** M2 (BR-02): 9 of 9 cut-line LRs done; big-rock review running. M3 (BR-03): done (big-rock review pass with P2s, 11-15). M4 (BR-04): 3 of 6 (LR-04-03, LR-04-01, LR-04-06 done). Cut line overall: 27 of 30 (90%). Feature freeze Sun 11/15 noon.
+- **Last updated:** 2026-11-15 · orchestrator (BR-02 big-rock review done; LR-04-07 running)
+- **Milestone:** M2 (BR-02): cut line complete, big-rock review pass with P2s (11-15). M3 (BR-03): done (big-rock review pass with P2s, 11-15). M4 (BR-04): 3 of 6 (LR-04-03, LR-04-01, LR-04-06 done). Cut line overall: 27 of 30 (90%). Feature freeze Sun 11/15 noon.
 - **Production (https://org-seat-planner.vercel.app):** runs main: seat history (#19), demo reset + banner (#21), `/sql` analytics presets (#22). Neon migrated through 0006 (`db-deploy` 43640253414); health ok (2202 seats). Neon has the 11-15 report and marts from the LR-03-05 Neon run.
-- **In flight:** LR-04-07 executor (Sonnet) running; BR-02 big-rock review running. No open PRs. Then LR-04-02 (README, last).
+- **In flight:** LR-04-07 executor (Sonnet) running. No open PRs. Then LR-04-02 (README, last).
 - **Ready, not yet dispatched:** LR-04-07 ("try to break it" + two comment fixes), LR-04-02 (README). Both are queued in the running Sunday session.
 - **Blocked:** nothing.
 - **Waiting on Rob:** merge PRs as soon as they open (freeze is Sun noon); paste the lessons into `code/LESSONS.md`.
@@ -25,6 +25,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-15 — BR-02 big-rock review (cut line): pass with P2s, no P1. P2 fixed by rewording exit 1 (the `/audit` page is LR-02-09, after the interview; evidence is the drag e2e plus both history panels). Two write-back citation P3s go onto the LR-04-07 branch; other P3s recorded in the BR-02 spec. BR-02 stays `in-progress` only for LR-02-07/09.
 - 2026-11-15 — LR-02-11 → `done` (PR #24 merged). BR-02 cut-line LRs all merged; big-rock review started. LR-04-07 → `in-progress`.
 - 2026-11-15 — LR-02-11 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/24 (Sonnet; e2e 32/32; review pass, no P1/P2, 3 P3s noted).
 - 2026-11-15 — LR-04-06 → `done` (PR #23 merged).
