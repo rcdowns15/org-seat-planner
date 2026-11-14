@@ -3,18 +3,19 @@
 Newest first. Navigator updates "Where we stand" at each check-in.
 
 ## Where we stand
-- **Last updated:** 2026-11-14 midday · navigator (LR-02-06 merged as #19; LR-03-05 Neon run green)
-- **Milestone:** M2 (BR-02): 8 of 8 cut-line LRs done (big-rock review pending). M3 (BR-03): 5 of 6 done. M4 (BR-04): 0 of 5. Cut line overall: 22 of 28 (79%). Feature freeze Sun 11/15 noon.
-- **Production (https://org-seat-planner.vercel.app):** Vercel deploys `main` on every merge, so it should be running main with seat history (#19). Neon has the 11-15 report loaded and the marts built by the LR-03-05 Neon run. Not live yet: demo reset + banner (LR-04-01) and the `/sql` analytics presets (LR-03-05).
+- **Last updated:** 2026-11-14 afternoon · navigator (D-040: LR-02-11 and LR-04-07 added above the cut line; person history parked)
+- **Milestone:** M2 (BR-02): 8 of 9 cut-line LRs done (LR-02-11 new). M3 (BR-03): 5 of 6. M4 (BR-04): 0 of 6 (LR-04-03 in review). Cut line overall: 22 of 30 (73%). Feature freeze Sun 11/15 noon.
+- **Production (https://org-seat-planner.vercel.app):** Vercel deploys `main` on every merge, so it runs main with seat history (#19); Neon migrated through 0005 (`db-deploy` 43635627305). Neon has the 11-15 report and marts from the LR-03-05 Neon run. Not live yet: demo reset + banner (LR-04-01), `/sql` analytics presets (LR-03-05).
 - **In flight (Saturday brief, orchestrator running):**
-  - LR-04-01: restack on main (LR-02-06 merged) with migration 0006, then verify, review, PR.
-  - LR-03-05 on `lr/LR-03-05-pipeline`: Neon run 43530897148 attempt 2 green (dbt PASS=253); remove the temporary `push:` trigger, then verify, review, PR.
-  - LR-04-03 (write-back explainer, Opus).
+  - LR-04-03 → `review`: PR #20.
+  - LR-04-01: restack on main with migration 0006, then verify, review, PR.
+  - LR-03-05: Neon run green (43530897148 attempt 2); remove the temporary `push:` trigger, then verify, review, PR.
+- **Ready, not yet dispatched:** LR-02-11 (board readability). LR-04-07 ("try to break it") waits for #20 to merge.
 - **Blocked:** nothing.
 - **Waiting on Rob:**
-  1. Confirm `db-deploy` (`reseed: false`) ran after #19 for migration 0005 (index only; the app works without it).
-  2. Review and merge PRs as they open; run `db-deploy` again after LR-04-01 merges (migration 0006), or the live reset fails.
-- **Next:** orchestrator finishes LR-04-01, LR-03-05, LR-04-03 PRs. Then the next brief: LR-04-02 and LR-04-06, plus the BR-02 and BR-03 big-rock reviews.
+  1. Commit and push the D-040 docs.
+  2. Review and merge #20 and the other PRs as they open; run `db-deploy` (`reseed: false`) after LR-04-01 merges (migration 0006).
+- **Next:** the current orchestrator finishes LR-04-01 and LR-03-05. Next brief (fresh session): LR-02-11 now; LR-04-07 after #20 merges; LR-04-02 and LR-04-06 after LR-03-05 merges; BR-02 and BR-03 big-rock reviews; the two-executor cap.
 
 Rewrite this block (don't append) whenever plan state changes; commit with the change.
 
@@ -29,6 +30,7 @@ Rewrite this block (don't append) whenever plan state changes; commit with the c
 - `pnpm test:db` fails to connect → Docker isn't running → `docker compose up -d db`.
 
 ## Log
+- 2026-11-14: D-040 accepted (big, cut line), from Rob's hands-on use of the board. New LR-02-11 (seat labels on cards, open/backfill seats first; `ready`) and LR-04-07 (`scripts/demo/break-it.sql`, a rolled-back local attack on the write path plus an explainer section; waits for LR-04-03) join the cut line; LR-04-04 rehearsal now includes running it. Person history and an in-app "try to break it" tab parked. Writable SQL console stays rejected, even on a private site (note under D-026). Drop list exhausted, so nothing moves below the line. Timeline impact: cut line 30 LRs / 26 PRs, about +0.5 Rob-hours (≈ 21 h), fits before Sunday noon; 1.5 days to the interview.
 - 2026-11-14 — LR-04-03 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/20 (Opus build + 1 fix round; review 1 one P2 + six P3s fixed; review 2 pass, two citation P3s fixed by the orchestrator; carries the seat history section since #19 merged first). `db-deploy` after #19 green (43635627305, reseed skipped).
 - 2026-11-14 — LR-02-06 → `done` (PR #19 merged). Rob runs `db-deploy` on main with `reseed: false` for migration 0005.
 - 2026-11-14 — LR-02-06 → `review`: https://github.com/rcdowns15/org-seat-planner/pull/19 (Sonnet build; e2e 26/26 today; review pass, 6 P3s noted). Step 0 done: D-039 carve-out and `pnpm run pipeline` in `CLAUDE.md` (82d4cf0). `db-deploy` (reseed skipped) ran green; LR-03-05 Neon run re-run green (43530897148, attempt 2, dbt PASS=253).

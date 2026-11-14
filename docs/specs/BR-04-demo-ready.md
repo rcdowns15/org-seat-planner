@@ -1,6 +1,6 @@
 # BR-04 — Demo-ready: README, explainers, rehearsal
 
-**Status:** todo · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04 and LR-04-06 (split from LR-04-03); LR-04-05 after the interview
+**Status:** todo · **Depends on:** BR-02, BR-03 · **Milestone:** M4 (interview-ready) · **Target:** Sat 11/14 – Sun 11/15 noon · **Cut line:** LR-04-01…04, LR-04-06 (split from LR-04-03) and LR-04-07 (D-040); LR-04-05 after the interview
 
 ## Goal
 The deployed demo holds up when strangers click around (a reset, a banner saying the data is
@@ -22,7 +22,7 @@ smoke workflow.
 - Rob runs the demo script on production in five minutes or less, twice.
 
 ## Little rocks
-Parallel: LR-04-03 (write-back explainer) runs now, alongside LR-02-06, LR-03-05 and LR-04-01. LR-04-02 and LR-04-06 run together once LR-03-05 is merged.
+Parallel: LR-04-03 (write-back explainer) runs now, alongside LR-02-06, LR-03-05 and LR-04-01. LR-04-02 and LR-04-06 run together once LR-03-05 is merged. LR-04-07 follows LR-04-03 (it extends the write-back explainer).
 
 ### LR-04-01 · Demo mode: reset and fictional-data banner · status: in-progress · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
 With `DEMO_MODE=true`: a site-wide banner ("Second Republic Bank is fictional; all data is
@@ -90,14 +90,22 @@ the same "read these first" list as LR-04-03.
 - [ ] At least 10 interview questions and a "read these first" list
 Likely files: `docs/explainers/pipeline.md`.
 
-### LR-04-04 · Rehearsal and interview tag · status: todo · depends: LR-04-02, LR-04-03, LR-04-06 · owner: rob · executor model: —
+### LR-04-04 · Rehearsal and interview tag · status: todo · depends: LR-04-02, LR-04-03, LR-04-06, LR-04-07 · owner: rob · executor model: —
 Sun 11/15 afternoon. Run the README demo script on production with a timer, twice. Explain the move
 path and the pipeline aloud from the explainers, then without them. Log every gap as a docs fix, a
 bug (new LR), or "fine". Reset the demo, then tag `v0.1-interview`.
 - [ ] Two timed runs at five minutes or less, recorded in `docs/PROGRESS.md`
-- [ ] Code walkthrough drill: with only the code open (no explainer), Rob walks the move service and one dbt mart aloud, then answers five explainer interview questions without looking. Misses go in the gap log.
+- [ ] Code walkthrough drill: with only the code open (no explainer), Rob walks the move service and one dbt mart aloud, then answers five explainer interview questions without looking. Then runs `scripts/demo/break-it.sql` locally and explains each result (D-040). Misses go in the gap log.
 - [ ] Gaps logged; any P1 bug fixed, or the demo script routed around it
 - [ ] `git tag v0.1-interview` pushed; production reset to the seed
+
+### LR-04-07 · "Try to break it" SQL script · status: todo · depends: LR-04-03 · owner: agent · executor model: sonnet · cut line: yes (D-040)
+Added 2026-11-14 instead of a writable SQL console (D-026 stands, D-040). `scripts/demo/break-it.sql`, run by Rob with `psql` against the **local** database during the interview, attacks the write path directly and shows what stops it. Every statement runs inside one transaction that ends in `ROLLBACK`, so the script changes nothing. Attempts, each with a comment saying what should happen and why: `DELETE` and `UPDATE` on `app.seat_changes` (append-only trigger rejects); seating a second worker in a filled seat or one worker in two seats (whatever constraint exists rejects it, or the comment says honestly that only the app enforces it); a raw `UPDATE app.seats` with no version check (succeeds: locking lives in the app's statement shape, which is the talking point). Use `SAVEPOINT`s so one rejected statement doesn't abort the rest. Add a "Try to break it" section to `docs/explainers/write-back.md`: how to run it, each attempt's expected result, and the database-vs-app enforcement table it demonstrates.
+- [ ] The script runs end to end on a freshly seeded local DB, and every attempt's actual result matches its comment (PR shows the output)
+- [ ] Running it twice leaves `pnpm db:seed:check` unchanged (it writes nothing)
+- [ ] It refuses to run against a non-local host, or the explainer and the script header both say "local only" and it carries no connection string
+- [ ] `pnpm docs:check` passes with the new explainer section
+Likely files: `scripts/demo/break-it.sql`, `docs/explainers/write-back.md`.
 
 ### LR-04-05 · Production smoke test workflow (after the interview) · status: todo · depends: LR-04-01 · owner: agent · executor model: sonnet
 `e2e-prod.yml` (manual, plus after each production deploy via `deployment_status`) runs a tagged

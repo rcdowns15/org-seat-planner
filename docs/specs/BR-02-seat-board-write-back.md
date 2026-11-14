@@ -1,6 +1,6 @@
 # BR-02 — Seat board and write-back (the centerpiece)
 
-**Status:** in-progress · **Depends on:** BR-01 · **Milestone:** M2 (thin slice = LR-02-01…04) · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** LR-02-01…06, LR-02-08 and LR-02-10 (D-037); LR-02-07 and LR-02-09 come after the interview
+**Status:** in-progress · **Depends on:** BR-01 · **Milestone:** M2 (thin slice = LR-02-01…04) · **Target:** Fri 11/13 – Sat 11/14 · **Cut line:** LR-02-01…06, LR-02-08, LR-02-10 (D-037) and LR-02-11 (D-040); LR-02-07 and LR-02-09 come after the interview
 
 ## Goal
 A leader picks who they're acting as, sees their org as a board of squads and seat cards, and drags a
@@ -173,3 +173,11 @@ with each move shown as one line (grouped by `move_id`).
 - [ ] DB test: filters (leader, squad, date range) and pagination return the right rows; filter values are bound parameters
 - [ ] e2e: after a move, the audit page's first row describes it
 Likely files: `src/server/queries/audit.ts`, `src/app/audit/page.tsx`, `tests/db/audit.test.ts`, `tests/e2e/audit.spec.ts`.
+
+### LR-02-11 · Board readability: seat labels and open seats first · status: ready · depends: LR-02-06 (merged, #19) · owner: agent · executor model: sonnet · cut line: yes (D-040)
+Added 2026-11-14 from Rob's hands-on use: cards don't say which seat they are, so the history panel's "Seat 72" title comes out of nowhere, and open seats are hard to find as drop targets. Every seat card shows its seat label, the same one the history panel title and "Move to…" options use. Within each squad column, seats that can receive a move (`open`, `backfill`) sort first, then `offer_accepted`, then filled seats; the order is stable (by seat label) inside each group.
+- [ ] e2e: a seat card's visible label matches the title of the history panel it opens
+- [ ] Unit test: the column sort puts `open`/`backfill` first, then `offer_accepted`, then filled, and is stable by seat label
+- [ ] Seat state is still shown by label and icon, not color alone; the card's accessible name includes the seat label
+- [ ] Existing board e2e specs still pass (update selectors that relied on seat position)
+Likely files: `src/components/seat-card.tsx`, `src/components/board-view.tsx`, `src/lib/board-sort.ts`, `tests/unit/board-sort.test.ts`, `tests/e2e/board.spec.ts`.

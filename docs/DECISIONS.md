@@ -156,6 +156,7 @@ to show, and on a public site it's a security risk. Queries run in a `READ ONLY`
 timeout and row limit. LR-03-05 adds presets for the reconciliation and headcount marts, so the
 same panel shows the pipeline's output.
 **Alternatives:** free-form `SELECT` box behind a read-only role (parked; more surface to secure), a writable SQL console (rejected).
+**Note (2026-11-14, D-040):** Rob asked again, offering to make the site private. Still rejected: privacy fixes only the security half (it also hides the live demo from hiring managers), and raw writes still bypass permissions, locking and audit. The chosen alternative is LR-04-07's local "try to break it" script.
 
 ### D-027 · 2026-11-11 · accepted (Rob, 2026-11-11) · Cut line is a thin slice through every layer: write-back, Workday ingestion, dbt reconciliation
 **Why:** the target role weighs Workday pipelines, report transforms and HRIS-to-plan reconciliation
@@ -329,3 +330,10 @@ board would never return to the seed checksum); (3) reset only through `db-deplo
 `seat_app` (for example, a narrowly granted `SECURITY DEFINER` function, or the reset runs under the
 seed role), or drop the in-app reset outside demo deployments.
 **Timeline impact:** none. Already built.
+
+### D-040 · 2026-11-14 · accepted (Rob, 2026-11-14) · Two small little rocks join the cut line (board readability, "try to break it"); person history parked
+**Decision:** from Rob's hands-on use of the board: (1) new LR-02-11 shows each seat's label on its card and sorts open/backfill seats first in each column; (2) new LR-04-07 adds `scripts/demo/break-it.sql`, a rolled-back local script that attacks the write path and shows what the database rejects and what only the app enforces, plus an explainer section; (3) a person (worker) history panel and an in-app "try to break it" tab are parked; (4) the writable SQL console stays rejected (D-026 note), including on a private site. Both new little rocks go above the cut line.
+**Why:** Rob set the bar as "shows my technical depth and business/product judgment," not exec polish. Unlabeled seats and buried open seats slow the five-minute demo at its most important step (the drag). Attacking the database and explaining which rules it enforces vs. the app shows depth that a SQL console can't, without bypassing the safeguards the demo is about. Person history repeats what seat history already proves.
+**Alternatives:** writable SQL console on a private Vercel deployment (rejected: hides the live demo, bypasses validation/locking/audit); person history before the interview (one more PR for little new proof); the in-app tab now (a real UI PR the day before the freeze).
+**Cut line:** the drop list is exhausted (all four items are built and merged), so nothing moves below the line. These come out of Rob's buffer.
+**Timeline impact:** +2 little rocks and +2 PRs (cut line 30 LRs, 26 PRs); about +0.5 Rob-hours (cut line ≈ 21 h). Both are small and fit before the Sun 11/15 noon freeze; LR-04-07 waits for LR-04-03. About 1.5 days to the interview.
