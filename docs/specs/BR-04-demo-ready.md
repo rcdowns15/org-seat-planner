@@ -24,7 +24,7 @@ smoke workflow.
 ## Little rocks
 Parallel: LR-04-03 (write-back explainer) runs now, alongside LR-02-06, LR-03-05 and LR-04-01. LR-04-02 and LR-04-06 run together once LR-03-05 is merged. LR-04-07 follows LR-04-03 (it extends the write-back explainer).
 
-### LR-04-01 · Demo mode: reset and fictional-data banner · status: in-progress · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
+### LR-04-01 · Demo mode: reset and fictional-data banner · status: review (https://github.com/rcdowns15/org-seat-planner/pull/21) · depends: LR-02-05 (merged, #17) · owner: agent · executor model: sonnet
 With `DEMO_MODE=true`: a site-wide banner ("Second Republic Bank is fictional; all data is
 generated") and a "Reset demo data" action that restores the `app` tables to the seed (one
 transaction; Workday tables are untouched because the app never writes them). Throttle resets to one
@@ -34,8 +34,8 @@ per minute. `db-deploy` with `reseed: true` remains the full reset.
 - [ ] e2e: the banner is visible on every page
 Likely files: `src/server/actions/demo.ts`, `scripts/seed/index.ts`, `src/components/demo-banner.tsx`, `src/components/demo-toolbar.tsx`, `tests/db/reset.test.ts`.
 **Built 2026-11-13 (`lr/LR-04-01-demo-reset` @ 21f249f, not verified).** Design accepted 2026-11-14 as D-039: no leader permission check (only `DEMO_MODE` + throttle), clears `app.seat_changes` through the migration 0002 TRUNCATE escape hatch (trigger unchanged), new `app.demo_reset_state` table. Before the PR:
-- [ ] The `CLAUDE.md` project rules carry the D-039 carve-out (the reviewer checks against it)
-- [ ] The migration is renumbered 0006: stack on LR-02-06 and regenerate it with `pnpm db:generate` (custom SQL in a custom migration); 0005 stays LR-02-06's
+- [x] The `CLAUDE.md` project rules carry the D-039 carve-out (the reviewer checks against it) (82d4cf0)
+- [x] The migration is renumbered 0006: stack on LR-02-06 and regenerate it with `pnpm db:generate` (custom SQL in a custom migration); 0005 stays LR-02-06's
 
 ### LR-04-02 · README v1: the case study · status: todo · depends: LR-03-05, LR-04-01 · owner: agent · executor model: sonnet
 Rewrite `README.md`: what it is and why (one paragraph, fictional-company notice); live demo link;
