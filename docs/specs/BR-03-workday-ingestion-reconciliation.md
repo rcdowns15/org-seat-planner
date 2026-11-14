@@ -146,7 +146,7 @@ Likely files: `analytics/models/intermediate/int_worker_report_versions.sql`, `a
   - Consider `severity: warn` on the `cost_center_name` relationships test.
   - Note: one change type per row (documented).
 
-### LR-03-05 · `pnpm pipeline`, dbt on Neon, SQL panel presets · status: in-progress · depends: LR-03-04, LR-02-08, LR-01-09 · owner: agent · executor model: sonnet
+### LR-03-05 · `pnpm pipeline`, dbt on Neon, SQL panel presets · status: review (https://github.com/rcdowns15/org-seat-planner/pull/22) · depends: LR-03-04, LR-02-08, LR-01-09 · owner: agent · executor model: sonnet
 `pnpm pipeline [--report <file>]`: ingest the given (or latest) report → `uv run dbt build`, stopping
 at the first failure and printing a summary (rows ingested, models built, tests passed, exception
 counts by type). `pipeline.yml` (manual `workflow_dispatch`) runs the same against Neon with the
@@ -154,13 +154,11 @@ counts by type). `pipeline.yml` (manual `workflow_dispatch`) runs the same again
 reconciliation exceptions, latest Workday changes, squad headcount vs. plan (with a friendly message
 if `analytics` is empty). Write `docs/orchestration.md`: each pipeline step mapped to the Airflow
 task it would be in production (sensor on the report, ingest, dbt build, alert on exceptions).
-- [ ] `pnpm run pipeline` on a freshly seeded DB runs both reports and prints the summary; a failing dbt test makes it exit non-zero (test)
-- [ ] A `pipeline.yml` run against Neon is green (link it)
-- [ ] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
+- [x] `pnpm run pipeline` on a freshly seeded DB runs both reports and prints the summary; a failing dbt test makes it exit non-zero (test)
+- [x] A `pipeline.yml` run against Neon is green (link it): https://github.com/rcdowns15/org-seat-planner/actions/runs/43530897148 (attempt 2, 11-14)
+- [x] e2e: the SQL panel's reconciliation preset shows the seeded exceptions
 Likely files: `scripts/pipeline.ts`, `.github/workflows/pipeline.yml`, `src/server/queries/under-the-hood.ts`, `src/components/sql-panel.tsx`, `docs/orchestration.md`, `package.json`, `tests/e2e/sql-panel.spec.ts`.
-**Built 2026-11-13 (`lr/LR-03-05-pipeline` @ 67e79c0, pushed, not verified by the orchestrator). Pending before the PR:**
-- **Neon run 43530897148 is red:** `workday.ingest_runs` is missing on Neon. Rob runs `db-deploy` on main with `reseed: false`, then the job is re-run.
-- **Temporary trigger:** remove the `push:` trigger from `pipeline.yml` before the PR.
+**Built 2026-11-13; PR #22 opened 2026-11-14.** The Neon run was re-run green after `db-deploy` (`reseed: false`), and the temporary `push:` trigger is removed.
 - **Deviations approved by Rob 2026-11-14** (part of this little rock's scope now):
   1. The command is `pnpm run pipeline`, because pnpm 12's built-in `pipeline` command takes precedence. `CLAUDE.md` (Commands) is updated in this little rock; BR-04 criteria already say `pnpm run pipeline`. Older docs saying `pnpm pipeline` mean the same script.
   2. The three analytics presets live only on `/sql`, not in the board's panel: with them on the board, it loaded slowly enough to fail six e2e specs.
